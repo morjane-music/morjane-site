@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Morjane</title>
+  <link rel="canonical" href="https://morjane.re/" />
+
+  <!-- SEO -->
+  <meta name="description" content="Morjane, artiste réunionnaise. Une présence. Une trace. Un univers clair-obscur." />
+  <meta name="author" content="Morjane" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Morjane — Je ne fais pas du bruit. Je laisse une trace." />
+  <meta property="og:description" content="Une écriture brute. Une présence scénique. Un site qui se dévoile progressivement." />
+  <meta property="og:image" content="https://morjane.re/assets/images/hero.png" />
+  <meta property="og:url" content="https://morjane.re" />
+  <meta property="og:type" content="website" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@300;400;500&family=Cormorant+Garamond:ital@1&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="brand">
+    <img src="assets/images/logo.png" alt="Logo Morjane" class="brand-mark">
+    <span class="brand-name">MORJANE</span>
+  </div>
+
+  <nav class="main-nav">
+    <a href="#accueil">Accueil</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <section id="accueil" class="hero reveal">
+    <h1 class="visually-hidden">Morjane — Artiste autrice-compositrice-interprète</h1>
+    <div class="hero-media"></div>
+    <p class="hero-signature">
+      Je ne fais pas du bruit.<br>
+      Je laisse une trace.
+    </p>
+  </section>
+
+  <!-- REGARD -->
+  <section class="regard-section reveal">
+    <img src="assets/images/yeux.png" alt="Regard Morjane">
+  </section>
+
+  <!-- SCÈNE -->
+  <section class="scene-section reveal">
+    <div class="scene-overlay"></div>
+    <div class="scene-text">
+      <p>
+        Je ne cherche pas la lumière.<br>
+        Je la laisse me traverser.
+      </p>
+    </div>
+  </section>
+
+  <!-- SILENCE -->
+  <section class="silent-interlude reveal"></section>
+
+  <!-- CONTACT -->
+<section id="contact" class="section-simple section-contact reveal">
+
+  <p class="contact-intro">
+    Une question, un mot, une collaboration.
+  </p>
+
+  <form
+    class="contact-form"
+    action="https://formspree.io/f/mrezzgjk"
+    method="POST"
+  >
+    <input
+      type="hidden"
+      name="_subject"
+      value="Nouveau message — site Morjane"
+    >
+
+    <textarea
+      name="message"
+      rows="6"
+      placeholder="Ton message…"
+      required
+    ></textarea>
+
+    <button type="submit" class="contact-send">
+      Envoyer
+    </button>
+  </form>
+
+  <p class="contact-line">
+    Ou directement par mail :<br>
+    <a href="mailto:booking@morjane.re">booking@morjane.re</a>
+  </p>
+
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <p>Le site se dévoile progressivement.</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

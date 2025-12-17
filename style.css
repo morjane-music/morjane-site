@@ -1,0 +1,360 @@
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* BASE */
+body {
+  font-family: Inter, sans-serif;
+  color: #c2b6a6;
+  background: #0b0b0b;
+  line-height: 1.5;
+}
+
+body.menu-open {
+  overflow: hidden;
+}
+
+main {
+  padding-top: 64px;
+}
+
+/* ACCESSIBILITÉ */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+}
+
+/* HEADER */
+.site-header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  padding: 8px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(11,11,11,0.9);
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 48px;
+}
+
+.brand-name {
+  font-family: Montserrat, sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.35em;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: #c2b6a6;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+}
+
+/* NAV */
+.main-nav a {
+  margin-left: 24px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  color: rgba(194,182,166,0.7);
+  transition: color 0.25s ease;
+}
+
+.main-nav a:hover {
+  color: rgba(232,223,211,0.95);
+}
+
+/* HERO */
+.hero {
+  height: 100vh;
+  position: relative;
+}
+
+.hero-media {
+  position: absolute;
+  inset: 0;
+  background: url("assets/images/hero.png") center top / cover no-repeat;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(11,11,11,0.25);
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 70% 85%,
+    rgba(11,11,11,0.55),
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+.hero-signature {
+  position: absolute;
+  bottom: 28px;
+  right: 40px;
+  max-width: 320px;
+  text-align: right;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: clamp(24px, 2.6vw, 30px);
+  line-height: 1.32;
+  color: rgba(232,223,211,0.9);
+  text-shadow:
+    0 1px 12px rgba(0,0,0,0.45);
+}
+
+/* HERO — AJUSTEMENTS MOBILE */
+@media (max-width: 768px) {
+  .hero-media {
+    background-position: 41% top; /* recentrage fin, bras conservé */
+  }
+
+  .hero-signature {
+    right: 24px;
+  }
+}
+
+/* REGARD */
+.regard-section {
+  padding: 96px 0;          /* moins haut → plus d’air */
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.regard-section img {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  display: block;
+}
+
+/* SCÈNE */
+.scene-section {
+  min-height: 85vh;
+  background: url("assets/images/scene.png") center 70% / cover no-repeat;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+
+.scene-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(11,11,11,0.85),
+    transparent
+  );
+}
+
+.scene-text {
+  position: relative;
+  padding: 0 40px 24px;
+  max-width: 420px;
+}
+
+.scene-text p {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 22px;
+}
+
+/* SECTIONS */
+.section-simple {
+  padding: 120px 40px;
+}
+
+/* CONTACT */
+.section-contact {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.contact-intro {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 20px;
+  margin-bottom: 48px;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.contact-form textarea {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(201,152,82,0.25);
+  padding: 16px;
+  color: #c2b6a6;
+}
+
+.contact-send {
+  background: none;
+  border: none;
+  color: rgba(201,152,82,0.85);
+  letter-spacing: 0.14em;
+  cursor: pointer;
+}
+
+.contact-line a {
+  color: rgba(232,223,211,0.85); /* ivoire chaud */
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.contact-line a:hover {
+  color: rgba(201,152,82,0.9); /* doré au hover */
+}
+
+/* ANIMATIONS */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 1.2s ease, transform 1.2s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* CURSEUR */
+.cursor-light {
+  position: fixed;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(201,152,82,0.18),
+    rgba(201,152,82,0.08),
+    transparent 65%
+  );
+  filter: blur(20px);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+}
+
+body.on-image .cursor-light {
+  opacity: 0.18;
+  filter: blur(36px);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  main { padding-top: 56px; }
+
+  .menu-toggle { display: block; }
+
+  .main-nav {
+    position: fixed;
+    inset: 0;
+    background: #0b0b0b;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 32px;
+    transform: translateY(-100%);
+    transition: transform 0.4s ease;
+  }
+
+  .main-nav.open {
+    transform: translateY(0);
+  }
+
+  .main-nav a {
+    font-size: 20px;
+    letter-spacing: 0.3em;
+  }
+
+  .music-layout {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+
+  .music-image {
+    margin-left: 0;
+  }
+}
+
+/* FOOTER */
+.site-footer {
+  padding: 80px 40px 40px;
+  text-align: center;
+  opacity: 0.4;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+}
+
+/* SILENT INTERLUDE — RESPIRATION */
+.silent-interlude {
+  height: 70vh;
+  background-color: #0b0b0b;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Grain très subtil */
+.silent-interlude::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("assets/images/grain.png");
+  background-size: 400px 400px;
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+/* Lumière chaude diffuse */
+.silent-interlude::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(
+    circle at 50% 60%,
+    rgba(201,152,82,0.08),
+    transparent 60%
+  );
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Ajustement mobile */
+@media (max-width: 768px) {
+  .silent-interlude {
+    height: 55vh;
+  }
+}
