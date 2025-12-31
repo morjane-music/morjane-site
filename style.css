@@ -1,0 +1,1029 @@
+/* =====================================================
+   MORJANE — STYLE PRINCIPAL (VERSION STABLE)
+   -----------------------------------------------------
+   ⚠️ NE PAS DÉCOUPER EN PLUSIEURS FICHIERS
+   ⚠️ NE PAS MODIFIER LES CHEMINS SANS AUDIT
+===================================================== */
+
+
+/* =====================================================
+   01. RESET & BASE
+===================================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Inter, sans-serif;
+  color: #c2b6a6;
+  background: #0b0b0b;
+  line-height: 1.5;
+}
+
+body.menu-open {
+  overflow: hidden;
+}
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+main {
+  padding-top: 64px;
+}
+
+
+/* =====================================================
+   02. ACCESSIBILITÉ
+===================================================== */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+}
+
+
+/* =====================================================
+   03. HEADER & NAVIGATION
+===================================================== */
+
+.site-header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  padding: 8px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(11,11,11,0.9);
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 48px;
+}
+
+.brand-name {
+  font-family: Montserrat, sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.35em;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: #c2b6a6;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+}
+
+.main-nav a {
+  margin-left: 24px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  color: rgba(194,182,166,0.7);
+  transition: color 0.25s ease;
+}
+
+.main-nav a:hover {
+  color: rgba(232,223,211,0.95);
+}
+
+.menu-back {
+  display: none;
+}
+
+.main-nav button {
+  background: none;
+  border: none;
+}
+
+
+/* =====================================================
+   04. HERO
+===================================================== */
+
+.hero {
+  min-height: 120vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-media {
+  position: absolute;
+  inset: 0;
+  background: url("assets/images/hero.png") center 35% / cover no-repeat;
+  z-index: 1;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(11,11,11,0.25);
+  z-index: 2;
+}
+
+.hero-signature {
+  position: absolute;
+  bottom: 32px;
+  right: 32px;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: clamp(24px, 2.6vw, 30px);
+  line-height: 1.32;
+  opacity: 0.75;
+  z-index: 4;
+  max-width: 420px;
+  text-align: left;
+}
+
+
+/* =====================================================
+   05. MANIFESTE / BIO
+===================================================== */
+
+.section-manifeste {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 140px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.section-manifeste::before {
+  content: "";
+  position: absolute;
+  inset: -60% -30%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(201,152,82,0.04),
+    transparent 75%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.section-manifeste p {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.7;
+  color: rgba(236,224,200,0.92);
+}
+
+.manifeste-row {
+  position: relative;
+  margin-bottom: 104px;
+  z-index: 1;
+}
+
+.manifeste-row:nth-child(2) {
+  margin-bottom: 88px;
+}
+
+.manifeste-row:last-child {
+  margin-bottom: 0;
+}
+
+.manifeste-row:nth-child(1) .manifeste-text {
+  transform: translateX(-6px);
+}
+
+.manifeste-row:nth-child(2) .manifeste-text {
+  transform: translateX(6px);
+}
+
+.manifeste-row:nth-child(3) .manifeste-text {
+  transform: translateX(-6px);
+}
+
+.manifeste-text {
+  position: relative;
+  z-index: 2;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 22px;
+  color: rgba(236,224,200,0.95);
+  text-shadow: 0 0 18px rgba(201,152,82,0.08);
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.manifeste-line {
+  display: none;
+}
+
+
+/* =====================================================
+   06. REGARD / TRANSITION
+===================================================== */
+
+.regard-transition {
+  position: relative;
+  height: 40vh;
+  overflow: hidden;
+  background: #0b0b0b;
+  margin: 12vh 0;
+}
+
+.regard-transition img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 63%;
+}
+
+.regard-transition::before,
+.regard-transition::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 18%;
+  pointer-events: none;
+}
+
+.regard-transition::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(11,11,11,0.9), transparent);
+}
+
+.regard-transition::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(11,11,11,0.95), transparent);
+}
+
+
+/* =====================================================
+   07. SECTIONS GÉNÉRIQUES
+===================================================== */
+
+.section-simple {
+  padding: 120px 40px;
+}
+
+
+/* =====================================================
+   SILENCE ASSUMÉ — INTERLUDE
+===================================================== */
+
+.silent-interlude {
+  height: 18vh;
+  min-height: 120px;
+  max-height: 220px;
+  background: transparent;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .silent-interlude {
+    height: 10vh;
+    min-height: 72px;
+    max-height: 120px;
+  }
+}
+
+
+/* =====================================================
+   08. TRACE — TIMELINE (CLEAN)
+===================================================== */
+
+.section-trace {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 160px 40px;
+}
+
+.trace-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 120px;
+  align-items: flex-start;
+  justify-items: start;
+}
+
+.trace-left {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  align-items: center;
+  text-align: center;
+}
+
+.trace-intro {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.5;
+  color: rgba(232,223,211,0.85);
+  max-width: 520px;
+}
+
+.trace-signature {
+  display: flex;
+  justify-content: center;
+  max-width: 520px;
+}
+
+.trace-signature img {
+  width: 260px;
+  opacity: 0.28;
+  filter:
+    drop-shadow(0 0 14px rgba(201,152,82,0.35))
+    drop-shadow(0 0 36px rgba(201,152,82,0.22));
+}
+
+.trace-timeline {
+  position: relative;
+  padding-left: 48px;
+}
+
+.trace-timeline::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 8px;
+  width: 1px;
+  height: 100%;
+  background: rgba(201,152,82,0.15);
+}
+
+.trace-timeline::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 8px;
+  width: 1px;
+  height: var(--trace-progress, 0%);
+  background: rgba(201,152,82,0.4); /* plus subtil */
+  opacity: var(--trace-opacity, 0);
+  pointer-events: none;
+  transition:
+    height 0.25s ease-out,
+    opacity 0.35s ease;
+}
+
+.trace-item {
+  position: relative;
+  padding-left: 40px;
+  margin-bottom: 72px;
+  opacity: 1;
+}
+
+.trace-dot {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(201,152,82,0.55);
+  box-shadow:
+    0 0 0 4px rgba(201,152,82,0.12),
+    0 0 24px rgba(201,152,82,0.25);
+}
+
+.trace-item:hover .trace-dot {
+  background: rgba(201,152,82,0.9);
+  box-shadow:
+    0 0 0 6px rgba(201,152,82,0.18),
+    0 0 36px rgba(201,152,82,0.45);
+  transition:
+    background 0.4s ease,
+    box-shadow 0.4s ease;
+}
+
+.trace-item:hover .trace-content h3 {
+  color: rgba(236,224,200,0.95);
+}
+
+.trace-item:hover .trace-content p {
+  color: rgba(194,182,166,0.95);
+}
+
+.trace-content h3 {
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.trace-content p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(194,182,166,0.85);
+  max-width: 420px;
+}
+
+/* ===== TRACE TIMELINE — SCROLL REVEAL ===== */
+
+.trace-item {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+}
+
+.trace-item.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.trace-item.is-active {
+  opacity: 1;
+}
+
+.trace-item.is-past {
+  opacity: 0.55;
+}
+
+/* =====================================================
+   09. SCÈNE
+===================================================== */
+
+.scene-section {
+  min-height: 85vh;
+  background: url("assets/images/scene.png") center 70% / cover no-repeat;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+
+.scene-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(11,11,11,0.85),
+    transparent
+  );
+}
+
+.scene-text {
+  position: relative;
+  padding: 0 40px 24px;
+  max-width: 420px;
+}
+
+.scene-text p {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 22px;
+}
+
+
+/* =====================================================
+   10. MUSIQUE
+===================================================== */
+
+.section-musique {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.music-layout {
+  display: grid;
+  grid-template-columns: 1.4fr 1.1fr;
+  gap: 100px;
+  align-items: center;
+}
+
+.music-image {
+  position: relative;
+  margin-left: -150px;
+  overflow: hidden;
+}
+
+.music-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.music-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(201,152,82,0.32);
+  pointer-events: none;
+  box-shadow:
+    0 0 12px rgba(201,152,82,0.18),
+    inset 0 0 8px rgba(201,152,82,0.12);
+}
+
+.music-image::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border: 1px solid rgba(201,152,82,0.12);
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+.music-content {
+  max-width: 100%;
+  padding-right: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 80px;
+}
+
+.music-manifesto {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 23px;
+  line-height: 1.65;
+  max-width: 100%;
+  color: rgba(232,223,211,0.8);
+  margin-bottom: 56px;
+}
+
+.track-title {
+  font-size: 28px;
+  letter-spacing: 0.14em;
+  margin-bottom: 32px;
+}
+
+.music-cta {
+  position: relative;
+  display: inline-flex;
+  width: fit-content;
+  color: rgba(201,152,82,0.9);
+  letter-spacing: 0.14em;
+  text-decoration: none;
+}
+
+.music-cta::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: calc(100% - 0.28em);
+  height: 1px;
+  background: rgba(201,152,82,0.45);
+}
+
+
+/* =====================================================
+   11. VIDÉOS
+===================================================== */
+
+.videos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 48px;
+}
+
+.video-frame {
+  aspect-ratio: 16 / 9;
+}
+
+.video-frame iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.video-title {
+  margin-top: 12px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  opacity: 0.7;
+}
+
+
+/* =====================================================
+   12. CONTACT
+===================================================== */
+
+.section-contact {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.contact-intro {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 20px;
+  margin-bottom: 48px;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.contact-form textarea {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(201,152,82,0.25);
+  padding: 16px;
+  color: #c2b6a6;
+}
+
+.contact-send {
+  background: none;
+  border: none;
+  color: rgba(201,152,82,0.85);
+  letter-spacing: 0.14em;
+  cursor: pointer;
+}
+
+.contact-line {
+  margin-top: 64px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  opacity: 0.7;
+}
+
+.contact-line a {
+  display: inline-block;
+  margin-top: 10px;
+  font-family: Montserrat, sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.28em;
+  color: rgba(201,152,82,0.9);
+  text-decoration: none;
+}
+
+
+/* =====================================================
+   MANIFESTE — APPARITION DOUCE
+===================================================== */
+
+.manifeste-row {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 1.2s ease,
+    transform 1.2s ease;
+}
+
+.manifeste-row.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
+/* =====================================================
+   13. ANIMATIONS & EFFETS
+===================================================== */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 1.2s ease, transform 1.2s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cursor-light {
+  position: fixed;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(201,152,82,0.18),
+    rgba(201,152,82,0.08),
+    transparent 65%
+  );
+  filter: blur(20px);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+}
+
+body.on-image .cursor-light {
+  opacity: 0.18;
+  filter: blur(36px);
+}
+
+
+/* =====================================================
+   15. FOOTER
+===================================================== */
+
+.site-footer {
+  padding: 80px 40px 40px;
+  text-align: center;
+  opacity: 0.4;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+}
+
+/* ===== FOOTER — BASELINE ===== */
+
+.site-baseline {
+  margin-top: 22px;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  opacity: 0.55;
+}
+
+/* =========================================
+   AJUSTEMENT — CHALEUR MANIFESTE
+========================================= */
+
+.manifeste-text {
+  color: rgba(236,224,200,0.97);
+  text-shadow:
+    0 0 18px rgba(201,152,82,0.10),
+    0 0 36px rgba(201,152,82,0.06);
+}
+
+
+/* =====================================================
+   14. RESPONSIVE — MOBILE (CLEAN)
+===================================================== */
+
+@media (max-width: 768px) {
+
+  html, body {
+    overflow-x: hidden;
+  }
+
+  main {
+    padding-top: 56px;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  .main-nav {
+    position: fixed;
+    inset: 0;
+    background: #0b0b0b;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 32px;
+    transform: translateY(-100%);
+    transition: transform 0.4s ease;
+  }
+
+  .main-nav.open {
+    transform: translateY(0);
+  }
+
+  .main-nav a {
+    font-size: 20px;
+    letter-spacing: 0.3em;
+  }
+
+  .menu-back {
+    display: block;
+    position: absolute;
+    top: 28px;
+    left: 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .icon-home {
+    width: 22px;
+    height: 22px;
+    fill: rgba(201,152,82,0.9);
+    transition: opacity 0.2s ease;
+  }
+
+  .menu-back:hover .icon-home {
+    opacity: 0.75;
+  }
+
+  .hero {
+    min-height: 100vh;
+  }
+
+  .hero-media {
+    background-position: 40% 35%;
+  }
+
+  .hero-signature {
+    right: 25px;
+  }
+
+  .section-manifeste {
+    padding: 100px 24px;
+    text-align: center;
+  }
+
+  .manifeste-text {
+    max-width: 100%;
+  }
+
+  .manifeste-row .manifeste-text {
+    transform: none;
+  }
+
+  .regard-transition {
+    height: 36vh;
+  }
+
+  .section-trace {
+    padding: 96px 24px;
+    text-align: center;
+  }
+
+  .trace-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .trace-intro {
+    text-align: center;
+    max-width: 100%;
+    transform: none;
+  }
+
+  .trace-signature {
+    transform: none;
+  }
+
+  .trace-signature img {
+    width: 64px;
+    opacity: 0.4;
+  }
+
+  .trace-timeline {
+    max-width: 420px;
+    padding-left: 24px;
+    text-align: left;
+  }
+
+  .trace-timeline::before {
+    left: 6px;
+  }
+
+  .trace-item {
+    padding-left: 32px;
+  }
+
+  .music-layout {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+
+  .music-image {
+    margin-left: 0;
+  }
+
+  .music-content {
+    padding-left: 0;
+    padding-right: 0;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .music-cta::after {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+  }
+
+  .section-contact,
+  .contact-intro,
+  .contact-line {
+    text-align: center;
+  }
+
+  .contact-form {
+    align-items: center;
+  }
+
+  .contact-form textarea {
+    width: 100%;
+  }
+
+  .cursor-light {
+    display: none !important;
+  }
+}
+
+/* ===== MICRO TEXTURE ATMOSPHÉRIQUE (GLOBAL) ===== */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,0.008),
+      rgba(255,255,255,0.008) 1px,
+      transparent 1px,
+      transparent 2px
+    );
+
+  mix-blend-mode: overlay;
+  opacity: 0.35;
+}
+
+/* ===== MOBILE — RYTHME VERTICAL ===== */
+
+@media (max-width: 768px) {
+
+  .section-manifeste,
+  .section-trace,
+  .section-music,
+  .section-timeline {
+    padding-top: 80px;
+    padding-bottom: 80px;
+  }
+
+  /* sections très aérées → encore un peu resserrées */
+  .section-manifeste {
+    padding-top: 64px;
+    padding-bottom: 64px;
+  }
+
+}
+
+/* ===== MENU SITE NORMAL — LIEN EPK (AUTRE ESPACE) ===== */
+
+.main-nav a[href="epk.html"] {
+  color: rgba(201,152,82,0.9); /* doré, cohérent avec l’EPK */
+}
+
+.main-nav a[href="epk.html"]:hover {
+  color: rgba(232,223,211,0.95);
+}
+
+/* ===== MENU SITE NORMAL — LUMIÈRE CHAUDE HOVER (DESKTOP) ===== */
+
+.main-nav a {
+  position: relative;
+}
+
+.main-nav a::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  width: 115%;
+  height: 1em;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(201, 152, 82, 0.28),
+    rgba(201, 152, 82, 0.14) 45%,
+    transparent 72%
+  );
+  opacity: 0;
+  filter: blur(5px);
+  pointer-events: none;
+}
+
+.main-nav a:hover {
+  color: rgba(201, 152, 82, 1);
+}
+
+.main-nav a:hover::before {
+  opacity: 1;
+}
