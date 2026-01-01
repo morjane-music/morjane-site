@@ -935,7 +935,60 @@
   opacity: 1;
 }
 
+.socials {
+  display: flex;
+  justify-content: center;
+  gap: 26px;          /* un peu plus d’air */
+  margin-top: 40px;  /* plus visible en fin de page */
+}
+
+.socials a svg {
+  width: 22px;       /* + gros */
+  height: 22px;
+  fill: none;
+  stroke: #c8a96a;
+  stroke-width: 1.6; /* un peu plus présent */
+  opacity: 0.7;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    filter 0.25s ease;
+}
+
+.socials a:hover svg {
+  opacity: 1;
+  transform: translateY(-2px);
+  filter: drop-shadow(0 0 6px rgba(200, 169, 106, 0.55));
+}
+
+/* CORRECTION PLACEMENT ICÔNES — EPK */
+.epk-page .socials {
+  margin-top: 12px;
+}
+
+/* REMONTER LÉGÈREMENT LES ICÔNES — EPK SEULEMENT */
+.epk-page .socials {
+  margin-top: -34px;
+}
+
+/* CORRECTION HERO MOBILE — EPK */
+@media (max-width: 768px) {
+  .epk-hero {
+    height: auto;
+    min-height: unset;
+    aspect-ratio: 3 / 4;
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+}
 
 
 
-
+.epk-copyright {
+  margin-top: 18px;
+  padding-bottom: 32px; /* ← AIR EN BAS */
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  opacity: 0.45;
+  text-align: center;
+}

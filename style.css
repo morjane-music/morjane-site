@@ -735,7 +735,6 @@ body.on-image .cursor-light {
 .site-footer {
   padding: 80px 40px 40px;
   text-align: center;
-  opacity: 0.4;
   font-size: 12px;
   letter-spacing: 0.12em;
 }
@@ -748,7 +747,7 @@ body.on-image .cursor-light {
   font-style: italic;
   font-size: 13px;
   letter-spacing: 0.08em;
-  opacity: 0.55;
+  opacity: 0.7;
 }
 
 /* =========================================
@@ -1026,4 +1025,48 @@ body::before {
 
 .main-nav a:hover::before {
   opacity: 1;
+}
+
+.socials {
+  display: flex;
+  justify-content: center;
+  gap: 26px;          /* un peu plus d’air */
+  margin-top: 40px;  /* plus visible en fin de page */
+}
+
+.socials a svg {
+  width: 22px;       /* + gros */
+  height: 22px;
+  fill: none;
+  stroke: #c8a96a;
+  stroke-width: 1.6; /* un peu plus présent */
+  opacity: 0.7;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    filter 0.25s ease;
+}
+
+.socials a:hover svg {
+  opacity: 1;
+  transform: translateY(-2px);
+  filter: drop-shadow(0 0 6px rgba(200, 169, 106, 0.55));
+}
+
+/* CORRECTION HERO MOBILE — SITE NORMAL */
+@media (max-width: 768px) {
+  .hero {
+    height: auto;
+    min-height: unset;
+    aspect-ratio: 3 / 4;
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+}
+
+.site-copyright {
+  margin-top: 10px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  opacity: 0.45;
 }

@@ -92,3 +92,46 @@ if (burger && nav) {
     });
   });
 }
+
+const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+let cursorLight = null;
+
+if (!isMobile) {
+  cursorLight = document.createElement('div');
+  cursorLight.className = 'cursor-light';
+  document.body.appendChild(cursorLight);
+
+  let mouseX = 0;
+  let mouseY = 0;
+
+  document.addEventListener('mousemove', event => {
+    mouseX = event.clientX;
+    mouseY = event.clientY;
+    cursorLight.style.opacity = '1';
+  });
+
+  function followCursor() {
+    cursorLight.style.left = mouseX + 'px';
+    cursorLight.style.top = mouseY + 'px';
+    requestAnimationFrame(followCursor);
+  }
+
+  followCursor();
+
+  document.addEventListener('mouseleave', () => {
+    cursorLight.style.opacity = '0';
+  });
+}
+
+document
+   .querySelectorAll('img')
+  .forEach(zone => {
+    zone.addEventListener('mouseenter', () => {
+      document.body.classList.add('on-image');
+    });
+
+    zone.addEventListener('mouseleave', () => {
+      document.body.classList.remove('on-image');
+    });
+  });
