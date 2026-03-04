@@ -127,7 +127,7 @@ main {
 .hero-media {
   position: absolute;
   inset: 0;
-  background: url("assets/images/hero.png") center 35% / cover no-repeat;
+  background: url("assets/images/hero.jpg") center 35% / cover no-repeat;
   z-index: 1;
 }
 
@@ -464,7 +464,7 @@ main {
 
 .scene-section {
   min-height: 85vh;
-  background: url("assets/images/scene.png") center 70% / cover no-repeat;
+  background: url("assets/images/scene.jpg") center 70% / cover no-repeat;
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -725,6 +725,26 @@ main {
 body.on-image .cursor-light {
   opacity: 0.18;
   filter: blur(36px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal,
+  .manifeste-row,
+  .trace-item {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .cursor-light {
+    display: none !important;
+  }
 }
 
 
@@ -1069,4 +1089,87 @@ body::before {
   font-size: 11px;
   letter-spacing: 0.14em;
   opacity: 0.45;
+}
+
+/* ===== ATELIER GATE MODAL ===== */
+
+#atelierDoor {
+  cursor: pointer;
+}
+
+#atelierDoor:focus-visible {
+  outline: 2px solid rgba(57, 208, 255, 0.9);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.atelier-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 9999;
+}
+
+.atelier-modal.is-open {
+  display: block;
+}
+
+.atelier-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.atelier-modal__panel {
+  position: relative;
+  width: min(520px, calc(100vw - 32px));
+  margin: 13vh auto 0;
+  padding: 22px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0b0d10;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.55);
+}
+
+.atelier-modal__title {
+  font-family: Montserrat, sans-serif;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.atelier-modal__subtitle {
+  margin-top: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.atelier-modal__form {
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.atelier-modal__form input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.atelier-modal__form button {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(57, 208, 255, 0.38);
+  background: rgba(57, 208, 255, 0.14);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.atelier-modal__error {
+  min-height: 18px;
+  font-size: 12px;
+  color: rgba(255, 120, 120, 0.95);
 }

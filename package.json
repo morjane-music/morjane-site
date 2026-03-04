@@ -1,0 +1,9 @@
+{
+  "name": "morjane-site",
+  "private": true,
+  "version": "1.0.0",
+  "description": "morjane.re static site with Netlify Functions",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.4"
+  }
+}

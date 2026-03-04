@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Morjane - Atelier</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="atelier-wrap">
+    <header class="atelier-header">
+      <h1>L'Atelier</h1>
+      <p id="gateStatus">Verification de l'acces...</p>
+    </header>
+
+    <section id="authView" class="panel hidden">
+      <h2>Connexion membre</h2>
+      <p>Entrez votre email pour recevoir un lien de connexion.</p>
+      <form id="magicLinkForm" class="stack">
+        <input id="emailInput" type="email" placeholder="vous@email.com" required>
+        <button type="submit">Recevoir le lien</button>
+      </form>
+      <p id="authStatus" class="muted"></p>
+    </section>
+
+    <section id="memberView" class="panel hidden">
+      <div class="member-top">
+        <h2>Tracks actifs</h2>
+        <button id="logoutBtn" class="ghost">Se deconnecter</button>
+      </div>
+      <p id="memberMeta" class="muted"></p>
+      <ul id="trackList" class="track-list"></ul>
+      <p id="emptyTracks" class="muted hidden">Aucun track actif pour le moment.</p>
+    </section>
+
+    <section id="trackView" class="panel hidden">
+      <button id="backBtn" class="ghost">Retour liste</button>
+      <h2 id="trackTitle">Track</h2>
+      <audio id="player" controls preload="none"></audio>
+      <div class="vote-grid">
+        <button data-vote="develop">Develop</button>
+        <button data-vote="revise">Revise</button>
+        <button data-vote="leave">Leave</button>
+      </div>
+      <p id="voteStatus" class="muted"></p>
+      <form id="messageForm" class="stack">
+        <label for="privateMessage">Message prive pour l'admin</label>
+        <textarea id="privateMessage" rows="4" placeholder="Ton retour confidentiel"></textarea>
+        <button type="submit">Envoyer le message</button>
+      </form>
+      <p id="messageStatus" class="muted"></p>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

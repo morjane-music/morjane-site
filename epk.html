@@ -6,8 +6,26 @@
 
 
   <meta charset="UTF-8" />
-  <title>Morjane — EPK</title>
+  <title>Morjane | EPK officiel (bio, photos presse, live)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/favicon.png">
+  <link rel="canonical" href="https://morjane.re/epk.html" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta name="theme-color" content="#0b0b0b" />
+  <meta name="description" content="EPK officiel de Morjane : bio, infos artistiques, photos presse HD, vidéo live et contact booking/presse." />
+  <meta name="author" content="Morjane" />
+  <meta property="og:site_name" content="Morjane" />
+  <meta property="og:locale" content="fr_FR" />
+  <meta property="og:title" content="Morjane | EPK officiel" />
+  <meta property="og:description" content="Bio, photos presse, live et contact booking/presse." />
+  <meta property="og:image" content="https://morjane.re/assets/images/epk/epk-live-01.jpg" />
+  <meta property="og:url" content="https://morjane.re/epk.html" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Morjane | EPK officiel" />
+  <meta name="twitter:description" content="Bio, photos presse, live et contact booking/presse." />
+  <meta name="twitter:image" content="https://morjane.re/assets/images/epk/epk-live-01.jpg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,12 +34,30 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="epk.css" />
 
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-8J28XF5EQL"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-XXXXXXXXXX');
+    gtag('config', 'G-8J28XF5EQL');
+  </script>
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "MusicGroup",
+  "name": "Morjane",
+  "url": "https://morjane.re/epk.html",
+  "image": "https://morjane.re/assets/images/epk/epk-live-01.jpg",
+  "genre": ["Chanson", "Rap", "Pop urbaine"],
+  "sameAs": [
+    "https://www.instagram.com/morjane_music/",
+    "https://www.tiktok.com/@morjane_music",
+    "https://open.spotify.com/intl-fr/artist/0B5Ta7mUfgxXd8OlZ3C2Zw",
+    "https://www.youtube.com/@Morjane_music",
+    "https://www.facebook.com/people/Morjane-music/61559098903828/"
+  ]
+}
   </script>
 </head>
 
@@ -29,15 +65,15 @@
 
   <header class="site-header">
     <div class="brand">
-      <img src="assets/images/logo.png" alt="Logo Morjane" class="brand-mark">
+      <img src="assets/images/logo.png" alt="Logo Morjane" class="brand-mark" id="atelierDoor" role="button" tabindex="0" aria-label="Entrer dans l'Atelier">
       <span class="brand-name">MORJANE</span>
     </div>
 
-    <button class="epk-burger" aria-label="Ouvrir le menu">
+    <button class="epk-burger" aria-label="Ouvrir le menu" aria-controls="epk-nav" aria-expanded="false">
       ☰
     </button>
 
-    <nav class="epk-nav">
+    <nav class="epk-nav" id="epk-nav">
       <a href="index.html" class="epk-home" aria-label="Retour au site">⌂</a>
       <a href="#top" class="epk-back">← Retour EPK</a>
       <a href="#bio">Bio</a>
@@ -120,33 +156,33 @@
           <div class="epk-carousel-track">
 
             <figure class="epk-photo" data-type="portrait">
-              <img src="assets/images/epk/epk-portrait-02.png" alt="Morjane — portrait presse">
+              <img src="assets/images/epk/epk-portrait-02.jpg" alt="Morjane — portrait presse" loading="lazy" decoding="async">
               <figcaption class="epk-badge">Portrait</figcaption>
-              <a href="assets/images/epk/epk-portrait-02.png" download class="epk-download-photo">HD</a>
+              <a href="assets/images/epk/epk-portrait-02.jpg" download class="epk-download-photo">HD</a>
             </figure>
 
             <figure class="epk-photo" data-type="portrait">
-              <img src="assets/images/epk/epk-portrait-01.png" alt="Morjane — portrait presse">
+              <img src="assets/images/epk/epk-portrait-01.jpg" alt="Morjane — portrait presse" loading="lazy" decoding="async">
               <figcaption class="epk-badge">Portrait</figcaption>
-              <a href="assets/images/epk/epk-portrait-01.png" download class="epk-download-photo">HD</a>
+              <a href="assets/images/epk/epk-portrait-01.jpg" download class="epk-download-photo">HD</a>
             </figure>
 
             <figure class="epk-photo" data-type="live">
-              <img src="assets/images/epk/epk-live-04.png" alt="Morjane — scène">
+              <img src="assets/images/epk/epk-live-04.jpg" alt="Morjane — scène" loading="lazy" decoding="async">
               <figcaption class="epk-badge">Live</figcaption>
-              <a href="assets/images/epk/epk-live-04.png" download class="epk-download-photo">HD</a>
+              <a href="assets/images/epk/epk-live-04.jpg" download class="epk-download-photo">HD</a>
             </figure>
 
             <figure class="epk-photo" data-type="live">
-              <img src="assets/images/epk/epk-live-02.png" alt="Morjane — scène">
+              <img src="assets/images/epk/epk-live-02.jpg" alt="Morjane — scène" loading="lazy" decoding="async">
               <figcaption class="epk-badge">Live</figcaption>
-              <a href="assets/images/epk/epk-live-02.png" download class="epk-download-photo">HD</a>
+              <a href="assets/images/epk/epk-live-02.jpg" download class="epk-download-photo">HD</a>
             </figure>
 
             <figure class="epk-photo" data-type="live">
-              <img src="assets/images/epk/epk-live-03.png" alt="Morjane — scène">
+              <img src="assets/images/epk/epk-live-03.jpg" alt="Morjane — scène" loading="lazy" decoding="async">
               <figcaption class="epk-badge">Live</figcaption>
-              <a href="assets/images/epk/epk-live-03.png" download class="epk-download-photo">HD</a>
+              <a href="assets/images/epk/epk-live-03.jpg" download class="epk-download-photo">HD</a>
             </figure>
 
           </div>
@@ -162,6 +198,8 @@
         <iframe
           src="https://www.youtube.com/embed/Z_vmz-2XURI"
           title="Live — Restitution Volumes"
+          loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen>
         </iframe>
@@ -175,7 +213,7 @@
         <div class="epk-music-text">
           <span class="epk-label">Single</span>
           <h2 class="epk-title">Flamboyante</h2>
-          <a class="music-cta" href="https://open.spotify.com/..." target="_blank">
+          <a class="music-cta" href="https://open.spotify.com/intl-fr/track/4GDU8GSymO4hRBeG2wSyrR" target="_blank" rel="noopener noreferrer">
             Écouter sur Spotify
           </a>
         </div>
@@ -208,7 +246,7 @@
   <div class="socials">
 
   <!-- Instagram -->
-  <a href="https://www.instagram.com/morjane_music/" target="_blank" aria-label="Instagram">
+  <a href="https://www.instagram.com/morjane_music/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <rect x="3" y="3" width="18" height="18" rx="5" ry="5"/>
       <circle cx="12" cy="12" r="4"/>
@@ -217,7 +255,7 @@
   </a>
 
   <!-- TikTok -->
-  <a href="https://www.tiktok.com/@morjane_music?_r=1&_t=ZS-92hEcOFu6oT" target="_blank" aria-label="TikTok">
+  <a href="https://www.tiktok.com/@morjane_music?_r=1&_t=ZS-92hEcOFu6oT" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M14 4v9.2a3.2 3.2 0 1 1-2.3-3"/>
       <path d="M14 4c.7 1.8 2 3 4 3.4"/>
@@ -225,7 +263,7 @@
   </a>
 
   <!-- Spotify -->
-  <a href="https://open.spotify.com/intl-fr/artist/0B5Ta7mUfgxXd8OlZ3C2Zw?si=rn4_GbKzRgGsvfd9tIYLjw" target="_blank" aria-label="Spotify">
+  <a href="https://open.spotify.com/intl-fr/artist/0B5Ta7mUfgxXd8OlZ3C2Zw?si=rn4_GbKzRgGsvfd9tIYLjw" target="_blank" rel="noopener noreferrer" aria-label="Spotify">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="12" r="9"/>
       <path d="M8 10.5c3-1 5.5-.8 8 .4"/>
@@ -235,7 +273,7 @@
   </a>
 
 <!-- YouTube -->
-  <a href="https://www.youtube.com/@Morjane_music" target="_blank" aria-label="YouTube">
+  <a href="https://www.youtube.com/@Morjane_music" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <rect x="3" y="7" width="18" height="10" rx="3" ry="3"/>
       <polygon points="11,9 16,12 11,15"/>
@@ -245,6 +283,7 @@
   <!-- Facebook -->
 <a href="https://www.facebook.com/people/Morjane-music/61559098903828/"
    target="_blank"
+   rel="noopener noreferrer"
    aria-label="Facebook">
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M15 3h-2.2C10.7 3 9 4.7 9 6.8V9H7v3h2v9h3v-9h2.4l.6-3H12V7c0-.6.4-1 1-1h2V3z"/>
@@ -256,6 +295,19 @@
 <p class="epk-copyright">© Morjane</p>
 
 </footer>
+
+  <div id="atelierModal" class="atelier-modal" aria-hidden="true">
+    <div class="atelier-modal__backdrop" data-close="1"></div>
+    <div class="atelier-modal__panel" role="dialog" aria-modal="true" aria-label="Acces Atelier">
+      <p class="atelier-modal__title">Entrer dans l'Atelier</p>
+      <p class="atelier-modal__subtitle">Acces reserve.</p>
+      <form id="atelierForm" class="atelier-modal__form">
+        <input id="atelierPass" type="password" autocomplete="current-password" placeholder="Mot de passe" required>
+        <button type="submit">Entrer</button>
+        <p id="atelierError" class="atelier-modal__error" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
 
   <script src="epk.js" defer></script>
 

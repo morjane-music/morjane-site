@@ -3,16 +3,24 @@ const nav = document.querySelector('.main-nav');
 const links = document.querySelectorAll('.main-nav a');
 
 if (toggle && nav) {
+  toggle.setAttribute('aria-expanded', 'false');
+
   toggle.addEventListener('click', () => {
-    nav.classList.toggle('open');
-    document.body.classList.toggle('menu-open');
+    const isOpen = nav.classList.toggle('open');
+    document.body.classList.toggle('menu-open', isOpen);
+    toggle.setAttribute('aria-expanded', String(isOpen));
   });
 }
 
 links.forEach(link => {
   link.addEventListener('click', () => {
+    if (!nav) return;
     nav.classList.remove('open');
     document.body.classList.remove('menu-open');
+
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', 'false');
+    }
   });
 });
 
@@ -34,13 +42,16 @@ revealSections.forEach(section => {
 });
 
 const isMobile = window.matchMedia("(max-width: 768px)").matches;
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-let cursorLight = null;
+let cursorLight = document.querySelector('.cursor-light');
 
-if (!isMobile) {
-  cursorLight = document.createElement('div');
-  cursorLight.className = 'cursor-light';
-  document.body.appendChild(cursorLight);
+if (!isMobile && !prefersReducedMotion) {
+  if (!cursorLight) {
+    cursorLight = document.createElement('div');
+    cursorLight.className = 'cursor-light';
+    document.body.appendChild(cursorLight);
+  }
 
   let mouseX = 0;
   let mouseY = 0;
@@ -194,8 +205,16 @@ const backButton = document.querySelector('.menu-back');
 if (backButton) {
   backButton.addEventListener('click', () => {
     window.location.hash = '#accueil';
-    nav.classList.remove('open');
+
+    if (nav) {
+      nav.classList.remove('open');
+    }
+
     document.body.classList.remove('menu-open');
+
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', 'false');
+    }
   });
 }
 
@@ -213,3 +232,72 @@ function animateTrace() {
 if (traceTimeline) {
   animateTrace();
 }
+
+(function initAtelierDoor() {
+  const door = document.getElementById("atelierDoor");
+  const modal = document.getElementById("atelierModal");
+  const backdrop = modal ? modal.querySelector("[data-close='1']") : null;
+  const form = document.getElementById("atelierForm");
+  const input = document.getElementById("atelierPass");
+  const errorEl = document.getElementById("atelierError");
+
+  if (!door || !modal || !form || !input || !errorEl) {
+    return;
+  }
+
+  function openModal() {
+    modal.classList.add("is-open");
+    modal.setAttribute("aria-hidden", "false");
+    errorEl.textContent = "";
+    setTimeout(() => input.focus(), 50);
+  }
+
+  function closeModal() {
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+    input.value = "";
+  }
+
+  function openFromKeyboard(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openModal();
+    }
+  }
+
+  door.addEventListener("click", openModal);
+  door.addEventListener("keydown", openFromKeyboard);
+
+  if (backdrop) {
+    backdrop.addEventListener("click", closeModal);
+  }
+
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeModal();
+    }
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    errorEl.textContent = "";
+
+    try {
+      const res = await fetch("/.netlify/functions/check-atelier-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pass: input.value }),
+      });
+
+      if (!res.ok) {
+        errorEl.textContent = "Acces refuse.";
+        return;
+      }
+
+      closeModal();
+      window.location.href = "/atelier";
+    } catch (_) {
+      errorEl.textContent = "Erreur reseau.";
+    }
+  });
+})();
