@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Morjane - Atelier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@300;400;500&family=Cormorant+Garamond:ital@1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -11,6 +14,9 @@
     <header class="atelier-header">
       <h1>L'Atelier</h1>
       <p id="gateStatus">Verification de l'acces...</p>
+      <p class="atelier-quote">
+        Certaines portes ne s'ouvrent qu'a ceux qui regardent dans les fissures.
+      </p>
     </header>
 
     <section id="authView" class="panel hidden">
@@ -36,7 +42,7 @@
     <section id="trackView" class="panel hidden">
       <button id="backBtn" class="ghost">Retour liste</button>
       <h2 id="trackTitle">Titre</h2>
-      <audio id="player" controls controlslist="nodownload noplaybackrate" disablepictureinpicture preload="none"></audio>
+      <audio id="player" controls controlslist="nodownload noplaybackrate nofullscreen noremoteplayback" disableremoteplayback disablepictureinpicture preload="none"></audio>
       <div class="vote-grid">
         <button data-vote="develop">A developper</button>
         <button data-vote="revise">A retravailler</button>
