@@ -201,7 +201,13 @@ document
 
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
-        errorEl.textContent = payload.error === "missing_env" ? "Configuration serveur incomplete." : "Acces refuse.";
+        if (res.status === 404) {
+          errorEl.textContent = "Function Netlify introuvable.";
+        } else if (payload.error === "missing_env") {
+          errorEl.textContent = "Configuration serveur incomplete.";
+        } else {
+          errorEl.textContent = "Acces refuse.";
+        }
         return;
       }
 
