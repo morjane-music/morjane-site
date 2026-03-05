@@ -299,19 +299,48 @@ button.ghost {
     padding: 0 14px;
   }
 
+  .atelier-header h1 {
+    font-size: 46px;
+    letter-spacing: 0.06em;
+  }
+
+  #gateStatus {
+    font-size: 22px;
+  }
+
   .atelier-quote {
     margin-top: 18px;
-    font-size: clamp(20px, 5.8vw, 27px);
-    line-height: 1.45;
+    font-size: clamp(17px, 4.9vw, 22px);
+    line-height: 1.38;
   }
 
   .panel {
-    padding: 20px 16px;
+    padding: 16px 14px;
     margin-top: 16px;
   }
 
   .atelier-intro {
-    padding: 14px 13px;
+    padding: 11px 12px;
+  }
+
+  .atelier-intro p {
+    font-size: 16px;
+    line-height: 1.38;
+    margin: 5px 0;
+  }
+
+  .atelier-intro__badge {
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    padding: 5px 9px;
+  }
+
+  .atelier-intro__note {
+    font-size: 14px;
+  }
+
+  button {
+    padding: 8px 10px;
   }
 
   .vote-grid {
