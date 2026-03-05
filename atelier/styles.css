@@ -264,6 +264,47 @@ button.ghost {
   text-align: left;
 }
 
+.admin-panel {
+  margin-top: 14px;
+  border-top: 1px solid rgba(201, 152, 82, 0.2);
+  padding-top: 14px;
+}
+
+.admin-panel h3 {
+  margin: 0 0 6px;
+  font-family: "Montserrat", "Inter", sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+.admin-members-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.admin-member-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid rgba(201, 152, 82, 0.22);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(201, 152, 82, 0.04);
+}
+
+.admin-member-meta {
+  font-size: 13px;
+  color: rgba(232, 223, 211, 0.86);
+}
+
+.admin-member-item button {
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
 #player {
   width: 100%;
   margin-top: 12px;
@@ -375,5 +416,9 @@ button.ghost {
     grid-template-columns: 1fr;
     gap: 8px;
     margin-top: 10px;
+  }
+
+  .admin-member-item {
+    grid-template-columns: 1fr;
   }
 }

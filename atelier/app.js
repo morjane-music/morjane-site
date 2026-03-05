@@ -9,6 +9,8 @@ const memberMeta = document.getElementById("memberMeta");
 const circleCount = document.getElementById("circleCount");
 const trackList = document.getElementById("trackList");
 const emptyTracks = document.getElementById("emptyTracks");
+const adminPanel = document.getElementById("adminPanel");
+const adminMembersList = document.getElementById("adminMembersList");
 const trackTitle = document.getElementById("trackTitle");
 const player = document.getElementById("player");
 const trackWatermark = document.getElementById("trackWatermark");
@@ -83,6 +85,91 @@ function getAudienceStatusLabel(status) {
     return "membre du cercle privé";
   }
   return "accès limité";
+}
+
+function canManageMembers() {
+  return profile?.role === "admin";
+}
+
+function createAdminMemberRow(member) {
+  const row = document.createElement("div");
+  row.className = "admin-member-item";
+
+  const meta = document.createElement("div");
+  meta.className = "admin-member-meta";
+  meta.textContent = `${member.email || "email inconnu"} — ${member.member_status}`;
+  row.appendChild(meta);
+
+  const approveBtn = document.createElement("button");
+  approveBtn.type = "button";
+  approveBtn.textContent = "Valider";
+  approveBtn.addEventListener("click", () => updateMemberStatus(member.id, "approve"));
+  row.appendChild(approveBtn);
+
+  const revokeBtn = document.createElement("button");
+  revokeBtn.type = "button";
+  revokeBtn.textContent = "Retirer";
+  revokeBtn.addEventListener("click", () => updateMemberStatus(member.id, "revoke"));
+  row.appendChild(revokeBtn);
+
+  return row;
+}
+
+async function loadAdminMembers() {
+  if (!canManageMembers() || !session?.access_token || !adminPanel || !adminMembersList) {
+    return;
+  }
+
+  show(adminPanel);
+  adminMembersList.innerHTML = "<p class=\"muted\">Chargement...</p>";
+
+  try {
+    const res = await fetch("/.netlify/functions/admin-members", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      adminMembersList.innerHTML = `<p class="muted">Impossible de charger la liste (${data.error || res.status}).</p>`;
+      return;
+    }
+
+    adminMembersList.innerHTML = "";
+    const members = (data.members || []).filter((member) => member.email);
+    if (members.length === 0) {
+      adminMembersList.innerHTML = "<p class=\"muted\">Aucun membre trouvé.</p>";
+      return;
+    }
+
+    members.forEach((member) => {
+      adminMembersList.appendChild(createAdminMemberRow(member));
+    });
+  } catch (_) {
+    adminMembersList.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
+  }
+}
+
+async function updateMemberStatus(userId, action) {
+  if (!canManageMembers() || !session?.access_token) {
+    return;
+  }
+  try {
+    const res = await fetch("/.netlify/functions/admin-members", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ userId, action }),
+    });
+    if (!res.ok) {
+      return;
+    }
+    await loadAdminMembers();
+    await loadCircleCount();
+  } catch (_) {
+    // no-op
+  }
 }
 
 if (player) {
@@ -194,6 +281,9 @@ async function loadSessionAndProfile() {
     show(authView);
     hide(memberView);
     hide(trackView);
+    if (adminPanel) {
+      hide(adminPanel);
+    }
     authStatus.textContent = "Connectez-vous pour accéder aux titres.";
     return;
   }
@@ -204,6 +294,9 @@ async function loadSessionAndProfile() {
     hide(authView);
     show(memberView);
     hide(trackView);
+    if (adminPanel) {
+      hide(adminPanel);
+    }
     memberMeta.textContent = "Compte connecté mais sans accès membre. Contactez l'admin.";
     trackList.innerHTML = "";
     emptyTracks.classList.remove("hidden");
@@ -236,9 +329,9 @@ async function loadTracks() {
 
   if (tracks.length === 0) {
     emptyTracks.classList.remove("hidden");
-    return;
+  } else {
+    emptyTracks.classList.add("hidden");
   }
-  emptyTracks.classList.add("hidden");
 
   tracks.forEach((track) => {
     const li = document.createElement("li");
@@ -249,6 +342,12 @@ async function loadTracks() {
     li.appendChild(btn);
     trackList.appendChild(li);
   });
+
+  if (canManageMembers()) {
+    await loadAdminMembers();
+  } else if (adminPanel) {
+    hide(adminPanel);
+  }
 }
 
 async function selectTrack(trackId) {
