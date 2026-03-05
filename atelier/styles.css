@@ -12,6 +12,12 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   font-family: "Inter", "Segoe UI", sans-serif;
@@ -54,8 +60,9 @@ body.is-listening::before {
 }
 
 .atelier-wrap {
-  width: min(920px, calc(100vw - 32px));
+  width: min(920px, 100%);
   margin: 8vh auto 10vh;
+  padding: 0 16px;
   position: relative;
   z-index: 2;
 }
@@ -63,7 +70,7 @@ body.is-listening::before {
 .atelier-wrap::before {
   content: "";
   position: absolute;
-  inset: -6% -8%;
+  inset: -6% 0;
   background: radial-gradient(ellipse at center, rgba(201, 152, 82, 0.06), transparent 70%);
   pointer-events: none;
   z-index: -1;
@@ -288,7 +295,8 @@ button.ghost {
 
 @media (max-width: 720px) {
   .atelier-wrap {
-    margin-top: 6vh;
+    margin-top: 5vh;
+    padding: 0 14px;
   }
 
   .atelier-quote {
@@ -299,6 +307,7 @@ button.ghost {
 
   .panel {
     padding: 20px 16px;
+    margin-top: 16px;
   }
 
   .atelier-intro {
