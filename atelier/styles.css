@@ -296,6 +296,39 @@ button.ghost {
   margin-top: 10px;
 }
 
+.admin-inbox-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.admin-inbox-item {
+  border: 1px solid rgba(201, 152, 82, 0.22);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(201, 152, 82, 0.04);
+}
+
+.admin-inbox-head {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.admin-inbox-meta {
+  font-size: 12px;
+  color: rgba(232, 223, 211, 0.72);
+}
+
+.admin-inbox-body {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
 .admin-tools {
   display: grid;
   grid-template-columns: 1fr 1fr;

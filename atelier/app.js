@@ -11,7 +11,9 @@ const trackList = document.getElementById("trackList");
 const emptyTracks = document.getElementById("emptyTracks");
 const adminPanel = document.getElementById("adminPanel");
 const adminMembersList = document.getElementById("adminMembersList");
+const adminInboxList = document.getElementById("adminInboxList");
 const copyAtelierLinkBtn = document.getElementById("copyAtelierLinkBtn");
+const refreshInboxBtn = document.getElementById("refreshInboxBtn");
 const adminSearchInput = document.getElementById("adminSearchInput");
 const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
@@ -39,6 +41,7 @@ let trackPlayCounts = new Map();
 let playLoggedForCurrentTrack = false;
 let watermarkTimer = null;
 let adminMembersCache = [];
+let adminInboxCache = [];
 let adminViewMode = "pending";
 let magicLinkCooldownTimer = null;
 
@@ -202,6 +205,81 @@ function renderAdminMembers() {
   filtered.forEach((member) => {
     adminMembersList.appendChild(createAdminMemberRow(member));
   });
+}
+
+function formatInboxDate(iso) {
+  try {
+    return new Date(iso).toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch (_) {
+    return iso || "-";
+  }
+}
+
+function renderAdminInbox() {
+  if (!adminInboxList) {
+    return;
+  }
+
+  adminInboxList.innerHTML = "";
+  if (!adminInboxCache.length) {
+    adminInboxList.innerHTML = "<p class=\"muted\">Aucun message pour le moment.</p>";
+    return;
+  }
+
+  adminInboxCache.forEach((item) => {
+    const card = document.createElement("article");
+    card.className = "admin-inbox-item";
+
+    const head = document.createElement("div");
+    head.className = "admin-inbox-head";
+
+    const sender = document.createElement("strong");
+    sender.textContent = item.sender_email || "Email inconnu";
+    head.appendChild(sender);
+
+    const meta = document.createElement("span");
+    meta.className = "admin-inbox-meta";
+    meta.textContent = `${formatTrackTitle(item.track_title || "Maquette")} • ${formatInboxDate(item.created_at)}`;
+    head.appendChild(meta);
+
+    const body = document.createElement("p");
+    body.className = "admin-inbox-body";
+    body.textContent = item.content || "";
+
+    card.appendChild(head);
+    card.appendChild(body);
+    adminInboxList.appendChild(card);
+  });
+}
+
+async function loadAdminInbox() {
+  if (!canManageMembers() || !session?.access_token || !adminInboxList) {
+    return;
+  }
+
+  adminInboxList.innerHTML = "<p class=\"muted\">Chargement des messages...</p>";
+  try {
+    const res = await fetch("/.netlify/functions/admin-inbox", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      adminInboxList.innerHTML = `<p class="muted">Impossible de charger les messages (${data.error || res.status}).</p>`;
+      return;
+    }
+
+    adminInboxCache = Array.isArray(data.messages) ? data.messages : [];
+    renderAdminInbox();
+  } catch (_) {
+    adminInboxList.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
+  }
 }
 
 async function updateMemberStatus(userId, action) {
@@ -445,6 +523,7 @@ async function loadTracks() {
 
   if (canManageMembers()) {
     await loadAdminMembers();
+    await loadAdminInbox();
   } else if (adminPanel) {
     hide(adminPanel);
   }
@@ -709,6 +788,12 @@ if (copyAtelierLinkBtn) {
         copyAtelierLinkBtn.textContent = "Copier le lien Atelier";
       }, 1400);
     }
+  });
+}
+
+if (refreshInboxBtn) {
+  refreshInboxBtn.addEventListener("click", async () => {
+    await loadAdminInbox();
   });
 }
 
