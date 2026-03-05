@@ -28,6 +28,13 @@ let tracks = [];
 let selectedTrack = null;
 let watermarkTimer = null;
 
+function formatTrackTitle(rawTitle) {
+  if (rawTitle === "Track test 01") {
+    return "Maquette 01 - En bas - Morjane";
+  }
+  return rawTitle;
+}
+
 function show(el) {
   el.classList.remove("hidden");
 }
@@ -210,7 +217,7 @@ async function loadTracks() {
     const li = document.createElement("li");
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.textContent = track.title;
+    btn.textContent = formatTrackTitle(track.title);
     btn.addEventListener("click", () => selectTrack(track.id));
     li.appendChild(btn);
     trackList.appendChild(li);
@@ -223,7 +230,7 @@ async function selectTrack(trackId) {
     return;
   }
 
-  trackTitle.textContent = selectedTrack.title;
+  trackTitle.textContent = formatTrackTitle(selectedTrack.title);
   voteStatus.textContent = "";
   messageStatus.textContent = "";
   privateMessage.value = "";
