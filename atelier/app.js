@@ -6,6 +6,7 @@ const memberView = document.getElementById("memberView");
 const trackView = document.getElementById("trackView");
 const authStatus = document.getElementById("authStatus");
 const memberMeta = document.getElementById("memberMeta");
+const circleCount = document.getElementById("circleCount");
 const trackList = document.getElementById("trackList");
 const emptyTracks = document.getElementById("emptyTracks");
 const trackTitle = document.getElementById("trackTitle");
@@ -57,6 +58,24 @@ function setGateStatus(text) {
 
 function isMember(status) {
   return status === "member" || status === "founder";
+}
+
+async function loadCircleCount() {
+  if (!circleCount) {
+    return;
+  }
+  try {
+    const res = await fetch("/.netlify/functions/get-atelier-stats", { method: "GET" });
+    if (!res.ok) {
+      return;
+    }
+    const data = await res.json();
+    if (typeof data.members === "number") {
+      circleCount.textContent = `Membres du cercle : ${data.members}`;
+    }
+  } catch (_) {
+    // Keep default label if request fails.
+  }
 }
 
 function getAudienceStatusLabel(status) {
@@ -369,6 +388,8 @@ async function boot() {
   setTimeout(() => {
     document.body.classList.add("ritual-ready");
   }, 120);
+
+  await loadCircleCount();
 
   const gateOk = await checkGate();
   if (!gateOk) {

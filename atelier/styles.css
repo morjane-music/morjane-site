@@ -83,6 +83,14 @@ body.is-listening::before {
   text-transform: uppercase;
 }
 
+.circle-count {
+  margin: 4px 0 0;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(201, 152, 82, 0.84);
+}
+
 .atelier-quote {
   margin: 20px 0 0;
   max-width: 860px;
@@ -306,6 +314,11 @@ button.ghost {
 
   #gateStatus {
     font-size: 15px;
+  }
+
+  .circle-count {
+    font-size: 11px;
+    letter-spacing: 0.1em;
   }
 
   .atelier-quote {
