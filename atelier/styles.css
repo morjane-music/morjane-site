@@ -103,6 +103,39 @@ body.is-listening::before {
   white-space: nowrap;
 }
 
+.atelier-intro {
+  margin-top: 18px;
+  max-width: 760px;
+  padding: 14px 16px;
+  border: 1px solid rgba(201, 152, 82, 0.2);
+  border-radius: 12px;
+  background: rgba(201, 152, 82, 0.05);
+}
+
+.atelier-intro p {
+  margin: 8px 0;
+}
+
+.atelier-intro__badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(201, 152, 82, 0.92);
+  padding: 6px 10px;
+  border: 1px solid rgba(201, 152, 82, 0.4);
+  border-radius: 999px;
+  background: rgba(201, 152, 82, 0.08);
+}
+
+.atelier-intro__note {
+  margin-top: 10px;
+  font-size: 13px;
+  color: rgba(232, 223, 211, 0.82);
+}
+
 .panel {
   margin-top: 20px;
   border: 1px solid var(--line);
@@ -255,6 +288,10 @@ button.ghost {
 
   .panel {
     padding: 20px 16px;
+  }
+
+  .atelier-intro {
+    padding: 14px 13px;
   }
 
   .vote-grid {
