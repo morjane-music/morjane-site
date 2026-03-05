@@ -80,6 +80,7 @@ function stopWatermark() {
     trackWatermark.classList.remove("is-active");
     hide(trackWatermark);
   }
+  document.body.classList.remove("is-listening");
 }
 
 function startWatermark() {
@@ -93,6 +94,7 @@ function startWatermark() {
   if (watermarkTimer) {
     clearInterval(watermarkTimer);
   }
+  document.body.classList.add("is-listening");
   watermarkTimer = setInterval(() => {
     refreshWatermarkText();
     moveWatermark();
@@ -338,6 +340,10 @@ if (player) {
 }
 
 async function boot() {
+  setTimeout(() => {
+    document.body.classList.add("ritual-ready");
+  }, 120);
+
   const gateOk = await checkGate();
   if (!gateOk) {
     return;

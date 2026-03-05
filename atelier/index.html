@@ -14,12 +14,12 @@
     <header class="atelier-header">
       <h1>L'Atelier</h1>
       <p id="gateStatus">Verification de l'acces...</p>
-      <p class="atelier-quote">
-        Certaines portes ne s'ouvrent qu'a ceux qui regardent dans <span class="quote-lock">les fissures.</span>
+      <p class="atelier-quote ritual-reveal" data-ritual>
+        Certaines portes ne s’ouvrent qu’à ceux qui regardent dans <span class="quote-lock">les fissures.</span>
       </p>
     </header>
 
-    <section id="authView" class="panel hidden">
+    <section id="authView" class="panel hidden ritual-reveal" data-ritual>
       <h2>Connexion membre</h2>
       <p>Entrez votre email pour recevoir un lien de connexion.</p>
       <form id="magicLinkForm" class="stack">
@@ -29,7 +29,7 @@
       <p id="authStatus" class="muted"></p>
     </section>
 
-    <section id="memberView" class="panel hidden">
+    <section id="memberView" class="panel hidden ritual-reveal" data-ritual>
       <div class="member-top">
         <h2>Tracks actifs</h2>
         <button id="logoutBtn" class="ghost">Se deconnecter</button>
@@ -39,7 +39,7 @@
       <p id="emptyTracks" class="muted hidden">Aucun track actif pour le moment.</p>
     </section>
 
-    <section id="trackView" class="panel hidden">
+    <section id="trackView" class="panel hidden ritual-reveal" data-ritual>
       <button id="backBtn" class="ghost">Retour liste</button>
       <h2 id="trackTitle">Titre</h2>
       <div id="trackWatermark" class="track-watermark hidden" aria-hidden="true"></div>
