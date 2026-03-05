@@ -200,7 +200,8 @@ document
       });
 
       if (!res.ok) {
-        errorEl.textContent = "Acces refuse.";
+        const payload = await res.json().catch(() => ({}));
+        errorEl.textContent = payload.error === "missing_env" ? "Configuration serveur incomplete." : "Acces refuse.";
         return;
       }
 

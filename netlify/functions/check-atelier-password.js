@@ -43,11 +43,14 @@ exports.handler = async (event) => {
     pass = "";
   }
 
-  if (!safeEqual(pass, expectedPassword)) {
+  const normalizedPass = String(pass).trim();
+  const normalizedExpected = String(expectedPassword).trim();
+
+  if (!safeEqual(normalizedPass, normalizedExpected)) {
     return {
       statusCode: 401,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ok: false }),
+      body: JSON.stringify({ ok: false, error: "wrong_password" }),
     };
   }
 
