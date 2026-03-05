@@ -70,7 +70,7 @@ exports.handler = async (event) => {
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
   const { data: profile, error: profileError } = await adminClient
-    .from("profiles")
+    .from("atelier_profiles")
     .select("member_status")
     .eq("id", userId)
     .maybeSingle();
@@ -84,7 +84,7 @@ exports.handler = async (event) => {
   }
 
   const { data: track, error: trackError } = await adminClient
-    .from("tracks")
+    .from("atelier_tracks")
     .select("id, storage_path, status")
     .eq("id", trackId)
     .maybeSingle();

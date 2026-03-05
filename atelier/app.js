@@ -42,6 +42,28 @@ function isMember(status) {
   return status === "member" || status === "founder";
 }
 
+async function ensureAtelierProfile() {
+  if (!session?.user) {
+    return null;
+  }
+
+  await supabase.from("atelier_profiles").upsert(
+    {
+      id: session.user.id,
+      email: session.user.email || null,
+    },
+    { onConflict: "id" }
+  );
+
+  const { data } = await supabase
+    .from("atelier_profiles")
+    .select("id, email, role, member_status")
+    .eq("id", session.user.id)
+    .maybeSingle();
+
+  return data || null;
+}
+
 async function fetchPublicConfig() {
   const res = await fetch("/.netlify/functions/get-public-config");
   if (!res.ok) {
@@ -76,13 +98,7 @@ async function loadSessionAndProfile() {
     return;
   }
 
-  const { data: profileRow } = await supabase
-    .from("profiles")
-    .select("id, email, role, member_status")
-    .eq("id", session.user.id)
-    .maybeSingle();
-
-  profile = profileRow || null;
+  profile = await ensureAtelierProfile();
 
   if (!profile || !isMember(profile.member_status)) {
     hide(authView);
@@ -99,7 +115,7 @@ async function loadSessionAndProfile() {
 
 async function loadTracks() {
   const { data, error } = await supabase
-    .from("tracks")
+    .from("atelier_tracks")
     .select("id, title, status, season_id")
     .eq("status", "active")
     .order("id", { ascending: false })
@@ -180,7 +196,7 @@ async function submitVote(choice) {
     choice,
   };
 
-  const { error } = await supabase.from("votes").upsert(payload, { onConflict: "track_id,user_id" });
+  const { error } = await supabase.from("atelier_votes").upsert(payload, { onConflict: "track_id,user_id" });
   voteStatus.textContent = error ? "Vote refuse." : "Vote enregistre.";
 }
 
@@ -189,7 +205,7 @@ async function submitMessage(content) {
     return;
   }
 
-  const { error } = await supabase.from("messages").insert({
+  const { error } = await supabase.from("atelier_messages").insert({
     track_id: selectedTrack.id,
     user_id: profile.id,
     content,

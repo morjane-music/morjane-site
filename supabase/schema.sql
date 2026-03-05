@@ -1,8 +1,6 @@
--- Extensions
 create extension if not exists pgcrypto;
 
--- Core tables
-create table if not exists public.profiles (
+create table if not exists public.atelier_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   role text not null default 'member' check (role in ('member', 'founder', 'admin')),
@@ -11,16 +9,16 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.seasons (
+create table if not exists public.atelier_seasons (
   id bigserial primary key,
   slug text not null unique,
   status text not null default 'draft' check (status in ('draft', 'active', 'archived')),
   created_at timestamptz not null default now()
 );
 
-create table if not exists public.tracks (
+create table if not exists public.atelier_tracks (
   id uuid primary key default gen_random_uuid(),
-  season_id bigint not null references public.seasons(id) on delete cascade,
+  season_id bigint not null references public.atelier_seasons(id) on delete cascade,
   title text not null,
   storage_path text not null,
   status text not null default 'draft' check (status in ('draft', 'active', 'archived')),
@@ -28,25 +26,24 @@ create table if not exists public.tracks (
   created_at timestamptz not null default now()
 );
 
-create table if not exists public.votes (
+create table if not exists public.atelier_votes (
   id uuid primary key default gen_random_uuid(),
-  track_id uuid not null references public.tracks(id) on delete cascade,
+  track_id uuid not null references public.atelier_tracks(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   choice text not null check (choice in ('develop', 'revise', 'leave')),
   created_at timestamptz not null default now(),
   unique (track_id, user_id)
 );
 
-create table if not exists public.messages (
+create table if not exists public.atelier_messages (
   id uuid primary key default gen_random_uuid(),
-  track_id uuid not null references public.tracks(id) on delete cascade,
+  track_id uuid not null references public.atelier_tracks(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   content text not null,
   created_at timestamptz not null default now()
 );
 
--- Helpers
-create or replace function public.set_updated_at()
+create or replace function public.atelier_set_updated_at()
 returns trigger
 language plpgsql
 as $$
@@ -56,31 +53,20 @@ begin
 end;
 $$;
 
-drop trigger if exists profiles_set_updated_at on public.profiles;
-create trigger profiles_set_updated_at
-before update on public.profiles
-for each row execute function public.set_updated_at();
-
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
+do $$
 begin
-  insert into public.profiles (id, email)
-  values (new.id, new.email)
-  on conflict (id) do nothing;
-  return new;
-end;
+  if not exists (
+    select 1 from pg_trigger
+    where tgname = 'atelier_profiles_set_updated_at'
+  ) then
+    create trigger atelier_profiles_set_updated_at
+    before update on public.atelier_profiles
+    for each row execute function public.atelier_set_updated_at();
+  end if;
+end
 $$;
 
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-after insert on auth.users
-for each row execute function public.handle_new_user();
-
-create or replace function public.is_member(uid uuid)
+create or replace function public.atelier_is_member(uid uuid)
 returns boolean
 language sql
 stable
@@ -89,13 +75,12 @@ set search_path = public
 as $$
   select exists (
     select 1
-    from public.profiles p
-    where p.id = uid
-      and p.member_status in ('member', 'founder')
+    from public.atelier_profiles p
+    where p.id = uid and p.member_status in ('member', 'founder')
   );
 $$;
 
-create or replace function public.is_admin(uid uuid)
+create or replace function public.atelier_is_admin(uid uuid)
 returns boolean
 language sql
 stable
@@ -104,94 +89,162 @@ set search_path = public
 as $$
   select exists (
     select 1
-    from public.profiles p
-    where p.id = uid
-      and p.role = 'admin'
+    from public.atelier_profiles p
+    where p.id = uid and p.role = 'admin'
   );
 $$;
 
--- RLS
-alter table public.profiles enable row level security;
-alter table public.seasons enable row level security;
-alter table public.tracks enable row level security;
-alter table public.votes enable row level security;
-alter table public.messages enable row level security;
+alter table public.atelier_profiles enable row level security;
+alter table public.atelier_seasons enable row level security;
+alter table public.atelier_tracks enable row level security;
+alter table public.atelier_votes enable row level security;
+alter table public.atelier_messages enable row level security;
 
--- profiles policies
-drop policy if exists "profiles_select_own_or_admin" on public.profiles;
-create policy "profiles_select_own_or_admin"
-on public.profiles
-for select
-to authenticated
-using (auth.uid() = id or public.is_admin(auth.uid()));
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_profiles' and policyname = 'atelier_profiles_select_own_or_admin'
+  ) then
+    create policy atelier_profiles_select_own_or_admin
+    on public.atelier_profiles
+    for select to authenticated
+    using (auth.uid() = id or public.atelier_is_admin(auth.uid()));
+  end if;
+end
+$$;
 
-drop policy if exists "profiles_update_own" on public.profiles;
-create policy "profiles_update_own"
-on public.profiles
-for update
-to authenticated
-using (auth.uid() = id)
-with check (auth.uid() = id);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_profiles' and policyname = 'atelier_profiles_insert_own'
+  ) then
+    create policy atelier_profiles_insert_own
+    on public.atelier_profiles
+    for insert to authenticated
+    with check (auth.uid() = id);
+  end if;
+end
+$$;
 
--- seasons policies
-drop policy if exists "seasons_select_members" on public.seasons;
-create policy "seasons_select_members"
-on public.seasons
-for select
-to authenticated
-using (public.is_member(auth.uid()));
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_profiles' and policyname = 'atelier_profiles_update_own'
+  ) then
+    create policy atelier_profiles_update_own
+    on public.atelier_profiles
+    for update to authenticated
+    using (auth.uid() = id)
+    with check (auth.uid() = id);
+  end if;
+end
+$$;
 
--- tracks policies
-drop policy if exists "tracks_select_members_active" on public.tracks;
-create policy "tracks_select_members_active"
-on public.tracks
-for select
-to authenticated
-using (
-  public.is_member(auth.uid())
-  and status = 'active'
-  and exists (
-    select 1
-    from public.seasons s
-    where s.id = tracks.season_id
-      and s.status = 'active'
-  )
-);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_seasons' and policyname = 'atelier_seasons_select_members'
+  ) then
+    create policy atelier_seasons_select_members
+    on public.atelier_seasons
+    for select to authenticated
+    using (public.atelier_is_member(auth.uid()));
+  end if;
+end
+$$;
 
--- votes policies
-drop policy if exists "votes_select_own" on public.votes;
-create policy "votes_select_own"
-on public.votes
-for select
-to authenticated
-using (auth.uid() = user_id and public.is_member(auth.uid()));
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_tracks' and policyname = 'atelier_tracks_select_members_active'
+  ) then
+    create policy atelier_tracks_select_members_active
+    on public.atelier_tracks
+    for select to authenticated
+    using (
+      public.atelier_is_member(auth.uid())
+      and status = 'active'
+      and exists (
+        select 1 from public.atelier_seasons s
+        where s.id = atelier_tracks.season_id and s.status = 'active'
+      )
+    );
+  end if;
+end
+$$;
 
-drop policy if exists "votes_insert_own" on public.votes;
-create policy "votes_insert_own"
-on public.votes
-for insert
-to authenticated
-with check (auth.uid() = user_id and public.is_member(auth.uid()));
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_votes' and policyname = 'atelier_votes_select_own'
+  ) then
+    create policy atelier_votes_select_own
+    on public.atelier_votes
+    for select to authenticated
+    using (auth.uid() = user_id and public.atelier_is_member(auth.uid()));
+  end if;
+end
+$$;
 
-drop policy if exists "votes_update_own" on public.votes;
-create policy "votes_update_own"
-on public.votes
-for update
-to authenticated
-using (auth.uid() = user_id and public.is_member(auth.uid()))
-with check (auth.uid() = user_id and public.is_member(auth.uid()));
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_votes' and policyname = 'atelier_votes_insert_own'
+  ) then
+    create policy atelier_votes_insert_own
+    on public.atelier_votes
+    for insert to authenticated
+    with check (auth.uid() = user_id and public.atelier_is_member(auth.uid()));
+  end if;
+end
+$$;
 
--- messages policies
-drop policy if exists "messages_insert_member_own" on public.messages;
-create policy "messages_insert_member_own"
-on public.messages
-for insert
-to authenticated
-with check (auth.uid() = user_id and public.is_member(auth.uid()));
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_votes' and policyname = 'atelier_votes_update_own'
+  ) then
+    create policy atelier_votes_update_own
+    on public.atelier_votes
+    for update to authenticated
+    using (auth.uid() = user_id and public.atelier_is_member(auth.uid()))
+    with check (auth.uid() = user_id and public.atelier_is_member(auth.uid()));
+  end if;
+end
+$$;
 
-drop policy if exists "messages_select_admin_only" on public.messages;
-create policy "messages_select_admin_only"
-on public.messages
-for select
-to authenticated
-using (public.is_admin(auth.uid()));
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_messages' and policyname = 'atelier_messages_insert_member_own'
+  ) then
+    create policy atelier_messages_insert_member_own
+    on public.atelier_messages
+    for insert to authenticated
+    with check (auth.uid() = user_id and public.atelier_is_member(auth.uid()));
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_messages' and policyname = 'atelier_messages_select_admin_only'
+  ) then
+    create policy atelier_messages_select_admin_only
+    on public.atelier_messages
+    for select to authenticated
+    using (public.atelier_is_admin(auth.uid()));
+  end if;
+end
+$$;

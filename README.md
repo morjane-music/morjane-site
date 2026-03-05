@@ -18,7 +18,7 @@
 - Protected audio via Netlify `get-audio-url` generating a signed Storage URL (300s) from private bucket `atelier-audio`.
 
 ## Required setup
-1. Run SQL from `supabase/schema.sql`.
+1. Run SQL from `supabase/schema.sql` (creates isolated `atelier_*` tables).
 2. Create Supabase Storage bucket `atelier-audio` as private.
 3. Ensure one active season and up to 3 active tracks with valid `storage_path`.
 4. Install dependencies:
