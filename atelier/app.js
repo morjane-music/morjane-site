@@ -10,6 +10,7 @@ const trackList = document.getElementById("trackList");
 const emptyTracks = document.getElementById("emptyTracks");
 const trackTitle = document.getElementById("trackTitle");
 const player = document.getElementById("player");
+const trackWatermark = document.getElementById("trackWatermark");
 const voteStatus = document.getElementById("voteStatus");
 const messageStatus = document.getElementById("messageStatus");
 const privateMessage = document.getElementById("privateMessage");
@@ -25,6 +26,7 @@ let session = null;
 let profile = null;
 let tracks = [];
 let selectedTrack = null;
+let watermarkTimer = null;
 
 function show(el) {
   el.classList.remove("hidden");
@@ -46,6 +48,55 @@ if (player) {
   player.controlsList = "nodownload noplaybackrate";
   player.disablePictureInPicture = true;
   player.addEventListener("contextmenu", (event) => event.preventDefault());
+}
+
+function formatWatermarkDate(date) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function moveWatermark() {
+  if (!trackWatermark) {
+    return;
+  }
+  const x = Math.round(10 + Math.random() * 65);
+  const y = Math.round(18 + Math.random() * 45);
+  trackWatermark.style.transform = `translate(${x}%, ${y}%)`;
+}
+
+function refreshWatermarkText() {
+  if (!trackWatermark || !profile?.email) {
+    return;
+  }
+  trackWatermark.textContent = `${profile.email}  •  ${formatWatermarkDate(new Date())}`;
+}
+
+function stopWatermark() {
+  if (watermarkTimer) {
+    clearInterval(watermarkTimer);
+    watermarkTimer = null;
+  }
+  if (trackWatermark) {
+    trackWatermark.classList.remove("is-active");
+    hide(trackWatermark);
+  }
+}
+
+function startWatermark() {
+  if (!trackWatermark || !profile?.email) {
+    return;
+  }
+  show(trackWatermark);
+  trackWatermark.classList.add("is-active");
+  refreshWatermarkText();
+  moveWatermark();
+  if (watermarkTimer) {
+    clearInterval(watermarkTimer);
+  }
+  watermarkTimer = setInterval(() => {
+    refreshWatermarkText();
+    moveWatermark();
+  }, 5000);
 }
 
 async function ensureAtelierProfile() {
@@ -184,9 +235,10 @@ async function selectTrack(trackId) {
       return;
     }
 
-    player.src = data.url;
+  player.src = data.url;
     show(trackView);
     hide(memberView);
+    stopWatermark();
   } catch (_) {
     voteStatus.textContent = "Erreur reseau.";
   }
@@ -264,6 +316,7 @@ logoutBtn.addEventListener("click", async () => {
   session = null;
   profile = null;
   selectedTrack = null;
+  stopWatermark();
   player.removeAttribute("src");
   player.load();
   await loadSessionAndProfile();
@@ -271,11 +324,18 @@ logoutBtn.addEventListener("click", async () => {
 
 backBtn.addEventListener("click", () => {
   player.pause();
+  stopWatermark();
   player.removeAttribute("src");
   player.load();
   hide(trackView);
   show(memberView);
 });
+
+if (player) {
+  player.addEventListener("play", startWatermark);
+  player.addEventListener("pause", stopWatermark);
+  player.addEventListener("ended", stopWatermark);
+}
 
 async function boot() {
   const gateOk = await checkGate();
