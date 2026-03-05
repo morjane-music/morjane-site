@@ -13,9 +13,6 @@ function normalizePass(value) {
   return String(value || "")
     .normalize("NFKC")
     .replace(/[\u200B-\u200D\uFEFF]/g, "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9]/g, "")
     .toLowerCase()
     .trim();
 }

@@ -297,7 +297,7 @@ if (traceTimeline) {
         } else if (payload.error === "missing_env") {
           errorEl.textContent = "Configuration serveur incomplete.";
         } else {
-          errorEl.textContent = `Acces refuse (${payload.error || res.status}).`;
+          errorEl.textContent = `Accès refusé (${payload.error || res.status}).`;
         }
         return;
       }

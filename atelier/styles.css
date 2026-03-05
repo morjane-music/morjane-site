@@ -331,6 +331,7 @@ button.ghost {
   .panel {
     padding: 12px 11px;
     margin-top: 12px;
+    border-radius: 12px;
   }
 
   .atelier-intro {
@@ -356,6 +357,12 @@ button.ghost {
 
   button {
     padding: 7px 9px;
+    font-size: 14px;
+  }
+
+  input,
+  textarea {
+    padding: 9px 10px;
     font-size: 14px;
   }
 
