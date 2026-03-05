@@ -9,6 +9,10 @@ function safeEqual(a, b) {
   return crypto.timingSafeEqual(aBuffer, bBuffer);
 }
 
+function normalizePass(value) {
+  return String(value || "").normalize("NFKC").trim();
+}
+
 function signToken(payload, secret) {
   const payloadB64 = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
   const signature = crypto.createHmac("sha256", secret).update(payloadB64).digest("base64url");
@@ -43,8 +47,8 @@ exports.handler = async (event) => {
     pass = "";
   }
 
-  const normalizedPass = String(pass).trim();
-  const normalizedExpected = String(expectedPassword).trim();
+  const normalizedPass = normalizePass(pass);
+  const normalizedExpected = normalizePass(expectedPassword);
   const isMainMatch = safeEqual(normalizedPass, normalizedExpected);
   if (!isMainMatch) {
     return {
