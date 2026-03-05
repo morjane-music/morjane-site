@@ -295,55 +295,65 @@ button.ghost {
 
 @media (max-width: 720px) {
   .atelier-wrap {
-    margin-top: 5vh;
-    padding: 0 14px;
+    margin-top: 4vh;
+    padding: 0 12px;
   }
 
   .atelier-header h1 {
-    font-size: 46px;
-    letter-spacing: 0.06em;
+    font-size: 34px;
+    letter-spacing: 0.05em;
   }
 
   #gateStatus {
-    font-size: 22px;
+    font-size: 15px;
   }
 
   .atelier-quote {
-    margin-top: 18px;
-    font-size: clamp(17px, 4.9vw, 22px);
-    line-height: 1.38;
+    margin-top: 12px;
+    font-size: clamp(15px, 4.4vw, 18px);
+    line-height: 1.34;
+    padding-bottom: 10px;
   }
 
   .panel {
-    padding: 16px 14px;
-    margin-top: 16px;
+    padding: 12px 11px;
+    margin-top: 12px;
   }
 
   .atelier-intro {
-    padding: 11px 12px;
+    padding: 9px 10px;
+    margin-top: 12px;
   }
 
   .atelier-intro p {
-    font-size: 16px;
-    line-height: 1.38;
-    margin: 5px 0;
+    font-size: 14px;
+    line-height: 1.32;
+    margin: 4px 0;
   }
 
   .atelier-intro__badge {
-    font-size: 10px;
-    letter-spacing: 0.24em;
-    padding: 5px 9px;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    padding: 4px 7px;
   }
 
   .atelier-intro__note {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   button {
-    padding: 8px 10px;
+    padding: 7px 9px;
+    font-size: 14px;
+  }
+
+  #trackTitle {
+    font-size: 28px;
+    letter-spacing: 0.05em;
   }
 
   .vote-grid {
     grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 10px;
   }
 }
