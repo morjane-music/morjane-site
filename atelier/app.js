@@ -11,6 +11,10 @@ const trackList = document.getElementById("trackList");
 const emptyTracks = document.getElementById("emptyTracks");
 const adminPanel = document.getElementById("adminPanel");
 const adminMembersList = document.getElementById("adminMembersList");
+const copyAtelierLinkBtn = document.getElementById("copyAtelierLinkBtn");
+const adminSearchInput = document.getElementById("adminSearchInput");
+const tabPendingBtn = document.getElementById("tabPendingBtn");
+const tabMembersBtn = document.getElementById("tabMembersBtn");
 const trackTitle = document.getElementById("trackTitle");
 const player = document.getElementById("player");
 const trackWatermark = document.getElementById("trackWatermark");
@@ -30,6 +34,8 @@ let profile = null;
 let tracks = [];
 let selectedTrack = null;
 let watermarkTimer = null;
+let adminMembersCache = [];
+let adminViewMode = "pending";
 
 function formatTrackTitle(rawTitle) {
   const title = String(rawTitle || "").trim();
@@ -134,19 +140,37 @@ async function loadAdminMembers() {
       return;
     }
 
-    adminMembersList.innerHTML = "";
-    const members = (data.members || []).filter((member) => member.email);
-    if (members.length === 0) {
-      adminMembersList.innerHTML = "<p class=\"muted\">Aucun membre trouvé.</p>";
-      return;
-    }
-
-    members.forEach((member) => {
-      adminMembersList.appendChild(createAdminMemberRow(member));
-    });
+    adminMembersCache = (data.members || []).filter((member) => member.email);
+    renderAdminMembers();
   } catch (_) {
     adminMembersList.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
   }
+}
+
+function renderAdminMembers() {
+  if (!adminMembersList) {
+    return;
+  }
+  const term = String(adminSearchInput?.value || "").trim().toLowerCase();
+  const wanted = adminViewMode === "pending"
+    ? ["none"]
+    : ["member", "founder", "admin"];
+
+  const filtered = adminMembersCache.filter((member) => {
+    const statusOk = wanted.includes(member.member_status) || (adminViewMode === "members" && member.role === "admin");
+    const searchOk = !term || String(member.email || "").toLowerCase().includes(term);
+    return statusOk && searchOk;
+  });
+
+  adminMembersList.innerHTML = "";
+  if (filtered.length === 0) {
+    adminMembersList.innerHTML = "<p class=\"muted\">Aucun profil dans cette vue.</p>";
+    return;
+  }
+
+  filtered.forEach((member) => {
+    adminMembersList.appendChild(createAdminMemberRow(member));
+  });
 }
 
 async function updateMemberStatus(userId, action) {
@@ -481,6 +505,45 @@ if (player) {
   player.addEventListener("play", startWatermark);
   player.addEventListener("pause", stopWatermark);
   player.addEventListener("ended", stopWatermark);
+}
+
+if (tabPendingBtn && tabMembersBtn) {
+  tabPendingBtn.addEventListener("click", () => {
+    adminViewMode = "pending";
+    tabPendingBtn.classList.add("is-active");
+    tabMembersBtn.classList.remove("is-active");
+    renderAdminMembers();
+  });
+  tabMembersBtn.addEventListener("click", () => {
+    adminViewMode = "members";
+    tabMembersBtn.classList.add("is-active");
+    tabPendingBtn.classList.remove("is-active");
+    renderAdminMembers();
+  });
+}
+
+if (adminSearchInput) {
+  adminSearchInput.addEventListener("input", () => {
+    renderAdminMembers();
+  });
+}
+
+if (copyAtelierLinkBtn) {
+  copyAtelierLinkBtn.addEventListener("click", async () => {
+    const atelierUrl = `${window.location.origin}/atelier`;
+    try {
+      await navigator.clipboard.writeText(atelierUrl);
+      copyAtelierLinkBtn.textContent = "Lien copié";
+      setTimeout(() => {
+        copyAtelierLinkBtn.textContent = "Copier le lien Atelier";
+      }, 1400);
+    } catch (_) {
+      copyAtelierLinkBtn.textContent = "Copie impossible";
+      setTimeout(() => {
+        copyAtelierLinkBtn.textContent = "Copier le lien Atelier";
+      }, 1400);
+    }
+  });
 }
 
 async function boot() {

@@ -61,6 +61,14 @@
       <section id="adminPanel" class="admin-panel hidden">
         <h3>Gestion du cercle</h3>
         <p class="muted">Valider ou retirer des accès sans passer par Supabase.</p>
+        <div class="admin-tools">
+          <button type="button" id="copyAtelierLinkBtn" class="ghost">Copier le lien Atelier</button>
+          <input id="adminSearchInput" type="search" placeholder="Rechercher un email">
+        </div>
+        <div class="admin-tabs">
+          <button type="button" id="tabPendingBtn" class="admin-tab is-active">En attente</button>
+          <button type="button" id="tabMembersBtn" class="admin-tab">Membres</button>
+        </div>
         <div id="adminMembersList" class="admin-members-list"></div>
       </section>
     </section>

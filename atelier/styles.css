@@ -284,6 +284,34 @@ button.ghost {
   margin-top: 10px;
 }
 
+.admin-tools {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.admin-tools input {
+  padding: 8px 10px;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.admin-tab {
+  flex: 1;
+  padding: 7px 9px;
+  font-size: 12px;
+}
+
+.admin-tab.is-active {
+  background: rgba(201, 152, 82, 0.25);
+  border-color: rgba(201, 152, 82, 0.75);
+}
+
 .admin-member-item {
   display: grid;
   grid-template-columns: 1fr auto auto;
@@ -419,6 +447,10 @@ button.ghost {
   }
 
   .admin-member-item {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-tools {
     grid-template-columns: 1fr;
   }
 }
