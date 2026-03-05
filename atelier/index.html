@@ -35,12 +35,12 @@
 
     <section id="trackView" class="panel hidden">
       <button id="backBtn" class="ghost">Retour liste</button>
-      <h2 id="trackTitle">Track</h2>
-      <audio id="player" controls preload="none"></audio>
+      <h2 id="trackTitle">Titre</h2>
+      <audio id="player" controls controlslist="nodownload noplaybackrate" disablepictureinpicture preload="none"></audio>
       <div class="vote-grid">
-        <button data-vote="develop">Develop</button>
-        <button data-vote="revise">Revise</button>
-        <button data-vote="leave">Leave</button>
+        <button data-vote="develop">A developper</button>
+        <button data-vote="revise">A retravailler</button>
+        <button data-vote="leave">A laisser</button>
       </div>
       <p id="voteStatus" class="muted"></p>
       <form id="messageForm" class="stack">

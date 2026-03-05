@@ -42,6 +42,12 @@ function isMember(status) {
   return status === "member" || status === "founder";
 }
 
+if (player) {
+  player.controlsList = "nodownload noplaybackrate";
+  player.disablePictureInPicture = true;
+  player.addEventListener("contextmenu", (event) => event.preventDefault());
+}
+
 async function ensureAtelierProfile() {
   if (!session?.user) {
     return null;

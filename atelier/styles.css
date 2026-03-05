@@ -1,10 +1,11 @@
 :root {
-  --bg: #090b10;
-  --panel: #0f141a;
-  --ink: #f5f8fb;
-  --muted: #9ba8b4;
-  --line: rgba(255, 255, 255, 0.12);
-  --accent: #39d0ff;
+  --bg: #0b0b0b;
+  --panel: #101010;
+  --ink: #e8dfd3;
+  --muted: rgba(194, 182, 166, 0.7);
+  --line: rgba(201, 152, 82, 0.28);
+  --accent: #c99852;
+  --accent-soft: rgba(201, 152, 82, 0.12);
 }
 
 * {
@@ -15,8 +16,8 @@ body {
   margin: 0;
   font-family: "Inter", "Segoe UI", sans-serif;
   background:
-    radial-gradient(1400px 500px at 20% -10%, rgba(57, 208, 255, 0.18), transparent 60%),
-    radial-gradient(1200px 400px at 110% 10%, rgba(57, 208, 255, 0.08), transparent 55%),
+    radial-gradient(1200px 500px at 15% -10%, rgba(201, 152, 82, 0.2), transparent 58%),
+    radial-gradient(1000px 450px at 110% 15%, rgba(201, 152, 82, 0.08), transparent 58%),
     var(--bg);
   color: var(--ink);
 }
@@ -28,6 +29,7 @@ body {
 
 .atelier-header h1 {
   margin: 0 0 8px;
+  font-family: "Montserrat", "Inter", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -36,8 +38,9 @@ body {
   margin-top: 20px;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 30%), var(--panel);
+  background: linear-gradient(180deg, rgba(201, 152, 82, 0.05), transparent 32%), var(--panel);
   padding: 18px;
+  box-shadow: inset 0 0 0 1px rgba(201, 152, 82, 0.08);
 }
 
 .hidden {
@@ -60,18 +63,24 @@ textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.02);
   color: var(--ink);
   padding: 11px 12px;
 }
 
 button {
-  border: 1px solid rgba(57, 208, 255, 0.5);
+  border: 1px solid rgba(201, 152, 82, 0.45);
   border-radius: 10px;
-  background: rgba(57, 208, 255, 0.12);
+  background: var(--accent-soft);
   color: var(--ink);
   padding: 10px 12px;
   cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+button:hover {
+  background: rgba(201, 152, 82, 0.18);
+  border-color: rgba(201, 152, 82, 0.65);
 }
 
 button.ghost {
@@ -107,6 +116,8 @@ button.ghost {
 #player {
   width: 100%;
   margin-top: 12px;
+  border-radius: 999px;
+  outline: 1px solid rgba(201, 152, 82, 0.2);
 }
 
 .vote-grid {
