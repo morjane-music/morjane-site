@@ -44,6 +44,13 @@ function isMember(status) {
   return status === "member" || status === "founder";
 }
 
+function getAudienceStatusLabel(status) {
+  if (status === "member" || status === "founder") {
+    return "membre du cercle privé";
+  }
+  return "accès limité";
+}
+
 if (player) {
   player.controlsList = "nodownload noplaybackrate";
   player.disablePictureInPicture = true;
@@ -191,7 +198,7 @@ async function loadTracks() {
   hide(trackView);
   trackList.innerHTML = "";
 
-  memberMeta.textContent = `${profile.email} - statut ${profile.member_status}`;
+  memberMeta.textContent = `${profile.email} - ${getAudienceStatusLabel(profile.member_status)}`;
 
   if (tracks.length === 0) {
     emptyTracks.classList.remove("hidden");
