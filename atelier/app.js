@@ -141,7 +141,7 @@ async function checkGate() {
     window.location.href = "/";
     return false;
   }
-  setGateStatus("Acces confirme.");
+  setGateStatus("Accès confirmé.");
   return true;
 }
 
@@ -153,7 +153,7 @@ async function loadSessionAndProfile() {
     show(authView);
     hide(memberView);
     hide(trackView);
-    authStatus.textContent = "Connectez-vous pour acceder aux tracks.";
+    authStatus.textContent = "Connectez-vous pour accéder aux titres.";
     return;
   }
 
@@ -163,7 +163,7 @@ async function loadSessionAndProfile() {
     hide(authView);
     show(memberView);
     hide(trackView);
-    memberMeta.textContent = "Compte connecte mais sans acces membre. Contactez l'admin.";
+    memberMeta.textContent = "Compte connecté mais sans accès membre. Contactez l'admin.";
     trackList.innerHTML = "";
     emptyTracks.classList.remove("hidden");
     return;
@@ -181,7 +181,7 @@ async function loadTracks() {
     .limit(3);
 
   if (error) {
-    memberMeta.textContent = "Impossible de charger les tracks.";
+    memberMeta.textContent = "Impossible de charger les titres.";
     return;
   }
 
@@ -237,19 +237,21 @@ async function selectTrack(trackId) {
       return;
     }
 
-  player.src = data.url;
+    player.src = data.url;
     show(trackView);
     hide(memberView);
     stopWatermark();
   } catch (_) {
-    voteStatus.textContent = "Erreur reseau.";
+    voteStatus.textContent = "Erreur réseau.";
   }
 }
 
 async function submitVote(choice) {
   if (!selectedTrack || !profile) {
+    voteStatus.textContent = "Sélectionne un titre avant de voter.";
     return;
   }
+
   const payload = {
     track_id: selectedTrack.id,
     user_id: profile.id,
@@ -257,11 +259,12 @@ async function submitVote(choice) {
   };
 
   const { error } = await supabase.from("atelier_votes").upsert(payload, { onConflict: "track_id,user_id" });
-  voteStatus.textContent = error ? "Vote refuse." : "Vote enregistre.";
+  voteStatus.textContent = error ? `Vote refusé. ${error.message || ""}`.trim() : "Vote enregistré.";
 }
 
 async function submitMessage(content) {
   if (!selectedTrack || !profile) {
+    messageStatus.textContent = "Sélectionne un titre avant d'envoyer un message.";
     return;
   }
 
@@ -272,10 +275,11 @@ async function submitMessage(content) {
   });
 
   if (error) {
-    messageStatus.textContent = "Message refuse.";
+    messageStatus.textContent = `Message refusé. ${error.message || ""}`.trim();
     return;
   }
-  messageStatus.textContent = "Message envoye a l'admin.";
+
+  messageStatus.textContent = "Message envoyé à l'admin.";
   privateMessage.value = "";
 }
 
@@ -296,7 +300,7 @@ magicLinkForm.addEventListener("submit", async (event) => {
     },
   });
 
-  authStatus.textContent = error ? "Impossible d'envoyer le lien." : "Lien envoye. Verifiez votre boite mail.";
+  authStatus.textContent = error ? "Impossible d'envoyer le lien." : "Lien envoyé. Vérifie ta boîte mail.";
 });
 
 document.querySelectorAll("[data-vote]").forEach((btn) => {
