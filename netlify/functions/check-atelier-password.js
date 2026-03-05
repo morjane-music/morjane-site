@@ -10,7 +10,12 @@ function safeEqual(a, b) {
 }
 
 function normalizePass(value) {
-  return String(value || "").normalize("NFKC").trim();
+  return String(value || "")
+    .normalize("NFKC")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/\s+/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 function signToken(payload, secret) {
