@@ -343,24 +343,24 @@ button.ghost {
 .track-watermark {
   position: absolute;
   left: 22px;
-  top: 110px;
+  top: 150px;
   z-index: 3;
   pointer-events: none;
   font-family: "Montserrat", "Inter", sans-serif;
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  color: rgba(201, 152, 82, 0.5);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: rgba(201, 152, 82, 0.38);
   text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(201, 152, 82, 0.28);
+  text-shadow: 0 0 8px rgba(201, 152, 82, 0.2);
   mix-blend-mode: screen;
   user-select: none;
-  transition: transform 0.9s ease, opacity 0.6s ease;
-  max-width: 90%;
+  transition: opacity 0.6s ease;
+  max-width: calc(100% - 28px);
   overflow-wrap: anywhere;
 }
 
 .track-watermark.is-active {
-  opacity: 0.85;
+  opacity: 0.55;
 }
 
 .vote-grid {
@@ -444,6 +444,16 @@ button.ghost {
     grid-template-columns: 1fr;
     gap: 8px;
     margin-top: 10px;
+  }
+
+  .track-watermark {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    max-width: calc(100% - 22px);
+  }
+
+  .track-watermark.is-active {
+    opacity: 0.42;
   }
 
   .admin-member-item {

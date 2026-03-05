@@ -239,9 +239,24 @@ function moveWatermark() {
   if (!trackWatermark) {
     return;
   }
-  const x = Math.round(10 + Math.random() * 65);
-  const y = Math.round(18 + Math.random() * 45);
-  trackWatermark.style.transform = `translate(${x}%, ${y}%)`;
+  const trackPanel = document.getElementById("trackView");
+  if (!trackPanel) {
+    return;
+  }
+
+  const isMobile = window.matchMedia("(max-width: 720px)").matches;
+  const horizontalPadding = 14;
+  const minTop = isMobile ? 220 : 150;
+  const maxTop = Math.max(minTop, trackPanel.clientHeight - 70);
+  const maxLeft = Math.max(horizontalPadding, trackPanel.clientWidth - trackWatermark.offsetWidth - horizontalPadding);
+
+  const randomBetween = (min, max) => Math.round(min + Math.random() * Math.max(0, max - min));
+  const left = randomBetween(horizontalPadding, maxLeft);
+  const top = randomBetween(minTop, maxTop);
+
+  trackWatermark.style.left = `${left}px`;
+  trackWatermark.style.top = `${top}px`;
+  trackWatermark.style.transform = "none";
 }
 
 function refreshWatermarkText() {
