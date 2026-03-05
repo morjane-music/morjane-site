@@ -239,6 +239,7 @@ if (traceTimeline) {
   const backdrop = modal ? modal.querySelector("[data-close='1']") : null;
   const form = document.getElementById("atelierForm");
   const input = document.getElementById("atelierPass");
+  const passToggle = document.getElementById("atelierPassToggle");
   const errorEl = document.getElementById("atelierError");
 
   if (!door || !modal || !form || !input || !errorEl) {
@@ -296,7 +297,7 @@ if (traceTimeline) {
         } else if (payload.error === "missing_env") {
           errorEl.textContent = "Configuration serveur incomplete.";
         } else {
-          errorEl.textContent = "Acces refuse.";
+          errorEl.textContent = `Acces refuse (${payload.error || res.status}).`;
         }
         return;
       }
@@ -307,4 +308,12 @@ if (traceTimeline) {
       errorEl.textContent = "Erreur reseau.";
     }
   });
+
+  if (passToggle) {
+    passToggle.addEventListener("click", () => {
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      passToggle.textContent = show ? "Masquer" : "Afficher";
+    });
+  }
 })();

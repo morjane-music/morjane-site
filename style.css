@@ -1168,6 +1168,12 @@ body::before {
   cursor: pointer;
 }
 
+.atelier-pass-toggle {
+  background: transparent !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
 .atelier-modal__error {
   min-height: 18px;
   font-size: 12px;
