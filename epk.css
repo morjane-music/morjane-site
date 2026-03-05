@@ -524,6 +524,24 @@
   to { transform: rotate(360deg); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .epk-page .epk-vinyl {
+    animation: none !important;
+  }
+}
+
 /* ===============================
    EPK — PHOTOS PRESSE (RESTAURÉ)
 ================================ */
@@ -767,7 +785,7 @@
   height: 100vh;
   margin-left: calc(-50vw + 50%);
   margin-right: calc(-50vw + 50%);
-  background-image: url("assets/images/epk/epk-live-01.png");
+  background-image: url("assets/images/epk/epk-live-01.jpg");
   background-size: 100%;
   background-position: 84% 7%;
   background-repeat: no-repeat;
