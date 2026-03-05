@@ -289,12 +289,51 @@ async function fetchPublicConfig() {
 
 async function checkGate() {
   const res = await fetch("/.netlify/functions/check-atelier-gate", { method: "GET" });
-  if (!res.ok) {
-    window.location.href = "/";
-    return false;
+  return res.ok;
+}
+
+async function hydrateSessionFromUrl() {
+  const currentUrl = new URL(window.location.href);
+  const hasCode = currentUrl.searchParams.get("code");
+
+  if (hasCode) {
+    await supabase.auth.exchangeCodeForSession(hasCode);
+    currentUrl.searchParams.delete("code");
+    currentUrl.searchParams.delete("type");
+    currentUrl.searchParams.delete("error");
+    currentUrl.searchParams.delete("error_code");
+    currentUrl.searchParams.delete("error_description");
+    const next = `${currentUrl.pathname}${currentUrl.search ? `?${currentUrl.searchParams.toString()}` : ""}`;
+    window.history.replaceState({}, "", next);
+    return;
   }
-  setGateStatus("Accès confirmé.");
-  return true;
+
+  if (window.location.hash.includes("access_token=")) {
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const accessToken = hash.get("access_token");
+    const refreshToken = hash.get("refresh_token");
+    if (accessToken && refreshToken) {
+      await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      window.history.replaceState({}, "", `${currentUrl.pathname}${currentUrl.search}`);
+    }
+  }
+}
+
+async function ensureAtelierAccess() {
+  const gateOk = await checkGate();
+  if (gateOk) {
+    setGateStatus("Accès confirmé.");
+    return true;
+  }
+
+  const sessionResult = await supabase.auth.getSession();
+  if (sessionResult.data.session) {
+    setGateStatus("Accès membre confirmé.");
+    return true;
+  }
+
+  window.location.href = "/";
+  return false;
 }
 
 async function loadSessionAndProfile() {
@@ -464,7 +503,11 @@ magicLinkForm.addEventListener("submit", async (event) => {
     },
   });
 
-  authStatus.textContent = error ? "Impossible d'envoyer le lien." : "Lien envoyé. Vérifie ta boîte mail.";
+  if (error) {
+    authStatus.textContent = `Impossible d'envoyer le lien. (${error.message})`;
+    return;
+  }
+  authStatus.textContent = "Lien envoyé. Vérifie ta boîte mail.";
 });
 
 document.querySelectorAll("[data-vote]").forEach((btn) => {
@@ -553,13 +596,14 @@ async function boot() {
 
   await loadCircleCount();
 
-  const gateOk = await checkGate();
-  if (!gateOk) {
-    return;
-  }
-
   const { supabaseUrl, supabaseAnonKey } = await fetchPublicConfig();
   supabase = createClient(supabaseUrl, supabaseAnonKey);
+  await hydrateSessionFromUrl();
+
+  const canEnter = await ensureAtelierAccess();
+  if (!canEnter) {
+    return;
+  }
 
   await loadSessionAndProfile();
   supabase.auth.onAuthStateChange(async () => {
