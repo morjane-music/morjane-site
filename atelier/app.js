@@ -24,6 +24,7 @@ const privateMessage = document.getElementById("privateMessage");
 
 const magicLinkForm = document.getElementById("magicLinkForm");
 const emailInput = document.getElementById("emailInput");
+const magicLinkSubmitBtn = magicLinkForm ? magicLinkForm.querySelector("button[type='submit']") : null;
 const messageForm = document.getElementById("messageForm");
 const logoutBtn = document.getElementById("logoutBtn");
 const backBtn = document.getElementById("backBtn");
@@ -36,6 +37,7 @@ let selectedTrack = null;
 let watermarkTimer = null;
 let adminMembersCache = [];
 let adminViewMode = "pending";
+let magicLinkCooldownTimer = null;
 
 function formatTrackTitle(rawTitle) {
   const title = String(rawTitle || "").trim();
@@ -91,6 +93,32 @@ function getAudienceStatusLabel(status) {
     return "membre du cercle privé";
   }
   return "accès limité";
+}
+
+function startMagicLinkCooldown(seconds = 60) {
+  if (!magicLinkSubmitBtn) {
+    return;
+  }
+  if (magicLinkCooldownTimer) {
+    clearInterval(magicLinkCooldownTimer);
+    magicLinkCooldownTimer = null;
+  }
+
+  let remaining = seconds;
+  magicLinkSubmitBtn.disabled = true;
+  magicLinkSubmitBtn.textContent = `Réessayer dans ${remaining}s`;
+
+  magicLinkCooldownTimer = setInterval(() => {
+    remaining -= 1;
+    if (remaining <= 0) {
+      clearInterval(magicLinkCooldownTimer);
+      magicLinkCooldownTimer = null;
+      magicLinkSubmitBtn.disabled = false;
+      magicLinkSubmitBtn.textContent = "Recevoir le lien";
+      return;
+    }
+    magicLinkSubmitBtn.textContent = `Réessayer dans ${remaining}s`;
+  }, 1000);
 }
 
 function canManageMembers() {
@@ -488,6 +516,9 @@ async function submitMessage(content) {
 
 magicLinkForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (magicLinkSubmitBtn?.disabled) {
+    return;
+  }
   authStatus.textContent = "Envoi du lien...";
 
   const email = emailInput.value.trim();
@@ -505,9 +536,13 @@ magicLinkForm.addEventListener("submit", async (event) => {
 
   if (error) {
     authStatus.textContent = `Impossible d'envoyer le lien. (${error.message})`;
+    if (String(error.message || "").toLowerCase().includes("rate limit")) {
+      startMagicLinkCooldown(60);
+    }
     return;
   }
   authStatus.textContent = "Lien envoyé. Vérifie ta boîte mail.";
+  startMagicLinkCooldown(60);
 });
 
 document.querySelectorAll("[data-vote]").forEach((btn) => {
