@@ -16,6 +16,7 @@ const adminSearchInput = document.getElementById("adminSearchInput");
 const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
 const trackTitle = document.getElementById("trackTitle");
+const trackPlayCount = document.getElementById("trackPlayCount");
 const player = document.getElementById("player");
 const trackWatermark = document.getElementById("trackWatermark");
 const voteStatus = document.getElementById("voteStatus");
@@ -34,6 +35,8 @@ let session = null;
 let profile = null;
 let tracks = [];
 let selectedTrack = null;
+let trackPlayCounts = new Map();
+let playLoggedForCurrentTrack = false;
 let watermarkTimer = null;
 let adminMembersCache = [];
 let adminViewMode = "pending";
@@ -426,10 +429,11 @@ async function loadTracks() {
   }
 
   tracks = data || [];
+  trackPlayCounts = await loadTrackPlayCounts(tracks.map((track) => track.id));
   hide(authView);
   show(memberView);
   hide(trackView);
-  trackList.innerHTML = "";
+  renderTrackList();
 
   memberMeta.textContent = `${profile.email} - ${getAudienceStatusLabel(profile.member_status)}`;
 
@@ -439,21 +443,60 @@ async function loadTracks() {
     emptyTracks.classList.add("hidden");
   }
 
-  tracks.forEach((track) => {
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = formatTrackTitle(track.title);
-    btn.addEventListener("click", () => selectTrack(track.id));
-    li.appendChild(btn);
-    trackList.appendChild(li);
-  });
-
   if (canManageMembers()) {
     await loadAdminMembers();
   } else if (adminPanel) {
     hide(adminPanel);
   }
+}
+
+async function loadTrackPlayCounts(trackIds) {
+  const counts = new Map();
+  if (!trackIds || trackIds.length === 0) {
+    return counts;
+  }
+
+  const { data, error } = await supabase
+    .from("atelier_track_play_counts")
+    .select("track_id, play_count")
+    .in("track_id", trackIds);
+
+  if (error || !data) {
+    return counts;
+  }
+
+  data.forEach((row) => {
+    counts.set(row.track_id, Number(row.play_count || 0));
+  });
+
+  return counts;
+}
+
+function getTrackPlayCount(trackId) {
+  return Number(trackPlayCounts.get(trackId) || 0);
+}
+
+function renderTrackList() {
+  trackList.innerHTML = "";
+  tracks.forEach((track) => {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.addEventListener("click", () => selectTrack(track.id));
+
+    const title = document.createElement("span");
+    title.className = "track-list__title";
+    title.textContent = formatTrackTitle(track.title);
+
+    const meta = document.createElement("span");
+    meta.className = "track-list__meta";
+    meta.textContent = `Écoutes du cercle : ${getTrackPlayCount(track.id)}`;
+
+    btn.appendChild(title);
+    btn.appendChild(meta);
+    li.appendChild(btn);
+    trackList.appendChild(li);
+  });
 }
 
 async function selectTrack(trackId) {
@@ -463,9 +506,13 @@ async function selectTrack(trackId) {
   }
 
   trackTitle.textContent = formatTrackTitle(selectedTrack.title);
+  if (trackPlayCount) {
+    trackPlayCount.textContent = `Écoutes du cercle : ${getTrackPlayCount(selectedTrack.id)}`;
+  }
   voteStatus.textContent = "";
   messageStatus.textContent = "";
   privateMessage.value = "";
+  playLoggedForCurrentTrack = false;
 
   try {
     const res = await fetch("/.netlify/functions/get-audio-url", {
@@ -490,6 +537,31 @@ async function selectTrack(trackId) {
   } catch (_) {
     voteStatus.textContent = "Erreur réseau.";
   }
+}
+
+async function logQualifiedPlay() {
+  if (!selectedTrack || !profile || playLoggedForCurrentTrack || !player || player.currentTime < 30) {
+    return;
+  }
+
+  playLoggedForCurrentTrack = true;
+
+  const { error } = await supabase.from("atelier_track_plays").insert({
+    track_id: selectedTrack.id,
+    user_id: profile.id,
+  });
+
+  if (error) {
+    playLoggedForCurrentTrack = false;
+    return;
+  }
+
+  const next = getTrackPlayCount(selectedTrack.id) + 1;
+  trackPlayCounts.set(selectedTrack.id, next);
+  if (trackPlayCount) {
+    trackPlayCount.textContent = `Écoutes du cercle : ${next}`;
+  }
+  renderTrackList();
 }
 
 async function submitVote(choice) {
@@ -598,6 +670,7 @@ if (player) {
   player.addEventListener("play", startWatermark);
   player.addEventListener("pause", stopWatermark);
   player.addEventListener("ended", stopWatermark);
+  player.addEventListener("timeupdate", logQualifiedPlay);
 }
 
 if (tabPendingBtn && tabMembersBtn) {
