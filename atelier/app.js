@@ -30,6 +30,8 @@ const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
 const trackTitle = document.getElementById("trackTitle");
 const trackPlayCount = document.getElementById("trackPlayCount");
+const trackLikeCount = document.getElementById("trackLikeCount");
+const trackLikeBtn = document.getElementById("trackLikeBtn");
 const player = document.getElementById("player");
 const trackWatermark = document.getElementById("trackWatermark");
 const voteStatus = document.getElementById("voteStatus");
@@ -50,6 +52,8 @@ let profile = null;
 let tracks = [];
 let selectedTrack = null;
 let trackPlayCounts = new Map();
+let trackLikeCounts = new Map();
+let userLikedTrackIds = new Set();
 let playLoggedForCurrentTrack = false;
 let watermarkTimer = null;
 let adminMembersCache = [];
@@ -879,6 +883,8 @@ async function loadTracks() {
 
   tracks = data || [];
   trackPlayCounts = await loadTrackPlayCounts(tracks.map((track) => track.id));
+  trackLikeCounts = await loadTrackLikeCounts(tracks.map((track) => track.id));
+  userLikedTrackIds = await loadUserLikes(tracks.map((track) => track.id));
   hide(authView);
   show(memberView);
   hide(trackView);
@@ -930,8 +936,71 @@ async function loadTrackPlayCounts(trackIds) {
   return counts;
 }
 
+async function loadTrackLikeCounts(trackIds) {
+  const counts = new Map();
+  if (!trackIds || trackIds.length === 0) {
+    return counts;
+  }
+
+  const { data, error } = await supabase
+    .from("atelier_track_like_counts")
+    .select("track_id, like_count")
+    .in("track_id", trackIds);
+
+  if (error || !data) {
+    return counts;
+  }
+
+  data.forEach((row) => {
+    counts.set(row.track_id, Number(row.like_count || 0));
+  });
+
+  return counts;
+}
+
+async function loadUserLikes(trackIds) {
+  const likes = new Set();
+  if (!profile?.id || !trackIds || trackIds.length === 0) {
+    return likes;
+  }
+
+  const { data, error } = await supabase
+    .from("atelier_track_likes")
+    .select("track_id")
+    .eq("user_id", profile.id)
+    .in("track_id", trackIds);
+
+  if (error || !data) {
+    return likes;
+  }
+
+  data.forEach((row) => {
+    if (row.track_id) {
+      likes.add(row.track_id);
+    }
+  });
+
+  return likes;
+}
+
 function getTrackPlayCount(trackId) {
   return Number(trackPlayCounts.get(trackId) || 0);
+}
+
+function getTrackLikeCount(trackId) {
+  return Number(trackLikeCounts.get(trackId) || 0);
+}
+
+function renderTrackLikeState() {
+  if (!selectedTrack || !trackLikeBtn) {
+    return;
+  }
+  const isLiked = userLikedTrackIds.has(selectedTrack.id);
+  trackLikeBtn.classList.toggle("is-active", isLiked);
+  trackLikeBtn.textContent = isLiked ? "♥ J'aime" : "♡ J'aime";
+  if (trackLikeCount) {
+    trackLikeCount.textContent = `J'aime du cercle : ${getTrackLikeCount(selectedTrack.id)}`;
+  }
 }
 
 function renderTrackList() {
@@ -948,7 +1017,7 @@ function renderTrackList() {
 
     const meta = document.createElement("span");
     meta.className = "track-list__meta";
-    meta.textContent = `Écoutes du cercle : ${getTrackPlayCount(track.id)}`;
+    meta.textContent = `Écoutes : ${getTrackPlayCount(track.id)} · J'aime : ${getTrackLikeCount(track.id)}`;
 
     btn.appendChild(title);
     btn.appendChild(meta);
@@ -967,6 +1036,7 @@ async function selectTrack(trackId) {
   if (trackPlayCount) {
     trackPlayCount.textContent = `Écoutes du cercle : ${getTrackPlayCount(selectedTrack.id)}`;
   }
+  renderTrackLikeState();
   voteStatus.textContent = "";
   messageStatus.textContent = "";
   privateMessage.value = "";
@@ -1035,6 +1105,39 @@ async function logQualifiedPlay() {
   if (trackPlayCount) {
     trackPlayCount.textContent = `Écoutes du cercle : ${next}`;
   }
+  renderTrackList();
+}
+
+async function toggleTrackLike() {
+  if (!selectedTrack || !profile) {
+    return;
+  }
+
+  const isLiked = userLikedTrackIds.has(selectedTrack.id);
+  if (isLiked) {
+    const { error } = await supabase
+      .from("atelier_track_likes")
+      .delete()
+      .eq("track_id", selectedTrack.id)
+      .eq("user_id", profile.id);
+    if (error) {
+      return;
+    }
+    userLikedTrackIds.delete(selectedTrack.id);
+    trackLikeCounts.set(selectedTrack.id, Math.max(0, getTrackLikeCount(selectedTrack.id) - 1));
+  } else {
+    const { error } = await supabase.from("atelier_track_likes").insert({
+      track_id: selectedTrack.id,
+      user_id: profile.id,
+    });
+    if (error) {
+      return;
+    }
+    userLikedTrackIds.add(selectedTrack.id);
+    trackLikeCounts.set(selectedTrack.id, getTrackLikeCount(selectedTrack.id) + 1);
+  }
+
+  renderTrackLikeState();
   renderTrackList();
 }
 
@@ -1269,6 +1372,12 @@ if (toggleUnreadOnlyBtn) {
     toggleUnreadOnlyBtn.textContent = adminInboxUnreadOnly ? "Tous les messages" : "Non lus seulement";
     toggleUnreadOnlyBtn.classList.toggle("is-active", adminInboxUnreadOnly);
     renderAdminInbox();
+  });
+}
+
+if (trackLikeBtn) {
+  trackLikeBtn.addEventListener("click", async () => {
+    await toggleTrackLike();
   });
 }
 

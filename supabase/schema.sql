@@ -35,6 +35,14 @@ create table if not exists public.atelier_votes (
   unique (track_id, user_id)
 );
 
+create table if not exists public.atelier_track_likes (
+  id uuid primary key default gen_random_uuid(),
+  track_id uuid not null references public.atelier_tracks(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (track_id, user_id)
+);
+
 create table if not exists public.atelier_messages (
   id uuid primary key default gen_random_uuid(),
   track_id uuid not null references public.atelier_tracks(id) on delete cascade,
@@ -79,7 +87,9 @@ create index if not exists idx_atelier_track_plays_track_created
 create index if not exists idx_atelier_track_plays_user_track_created
   on public.atelier_track_plays(user_id, track_id, created_at desc);
 
-create or replace view public.atelier_track_play_counts as
+drop view if exists public.atelier_track_play_counts;
+
+create view public.atelier_track_play_counts as
 select track_id, count(*)::bigint as play_count
 from public.atelier_track_plays
 group by track_id;
@@ -242,6 +252,7 @@ alter table public.atelier_profiles enable row level security;
 alter table public.atelier_seasons enable row level security;
 alter table public.atelier_tracks enable row level security;
 alter table public.atelier_votes enable row level security;
+alter table public.atelier_track_likes enable row level security;
 alter table public.atelier_messages enable row level security;
 
 do $$
@@ -257,6 +268,55 @@ begin
   end if;
 end
 $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_track_likes' and policyname = 'atelier_track_likes_select_members'
+  ) then
+    create policy atelier_track_likes_select_members
+    on public.atelier_track_likes
+    for select to authenticated
+    using (public.atelier_is_member(auth.uid()));
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_track_likes' and policyname = 'atelier_track_likes_insert_own'
+  ) then
+    create policy atelier_track_likes_insert_own
+    on public.atelier_track_likes
+    for insert to authenticated
+    with check (auth.uid() = user_id and public.atelier_is_member(auth.uid()));
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_track_likes' and policyname = 'atelier_track_likes_delete_own'
+  ) then
+    create policy atelier_track_likes_delete_own
+    on public.atelier_track_likes
+    for delete to authenticated
+    using (auth.uid() = user_id and public.atelier_is_member(auth.uid()));
+  end if;
+end
+$$;
+
+drop view if exists public.atelier_track_like_counts;
+
+create view public.atelier_track_like_counts as
+select track_id, count(*)::bigint as like_count
+from public.atelier_track_likes
+group by track_id;
 
 do $$
 begin

@@ -525,6 +525,16 @@ button.ghost {
   outline: 1px solid rgba(201, 152, 82, 0.2);
 }
 
+#trackLikeBtn {
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
+#trackLikeBtn.is-active {
+  background: rgba(201, 152, 82, 0.22);
+  border-color: rgba(201, 152, 82, 0.78);
+}
+
 .track-watermark {
   position: absolute;
   left: 22px;
