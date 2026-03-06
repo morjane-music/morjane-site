@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <a href="/" class="legal-back" aria-label="Retour au site">← Retour</a>
   <main class="section-simple" style="max-width: 900px; margin: 96px auto 48px; padding: 0 24px;">
     <h1 style="font-family: Montserrat, sans-serif; letter-spacing: 0.08em;">Confidentialité</h1>
     <p style="margin-top: 16px;">Dernière mise à jour : 6 mars 2026</p>
@@ -45,6 +46,31 @@
     <h2 style="margin-top: 28px;">6. Sous-traitants techniques</h2>
     <p>Le site s’appuie notamment sur Netlify (hébergement), Supabase (authentification/base de données) et Formspree (formulaire de contact).</p>
   </main>
+
+  <style>
+    .legal-back {
+      position: fixed;
+      top: 22px;
+      left: 22px;
+      z-index: 20;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 13px;
+      border: 1px solid rgba(201, 152, 82, 0.55);
+      border-radius: 999px;
+      background: rgba(11, 11, 11, 0.85);
+      color: rgba(232, 223, 211, 0.94);
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      font-size: 12px;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .legal-back:hover {
+      background: rgba(201, 152, 82, 0.16);
+      border-color: rgba(201, 152, 82, 0.78);
+    }
+  </style>
 </body>
 </html>
-
