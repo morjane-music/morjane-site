@@ -244,6 +244,27 @@ button.ghost {
   margin-top: 10px;
 }
 
+.access-steps {
+  margin: 10px 0 12px;
+  padding-left: 18px;
+  color: rgba(232, 223, 211, 0.8);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.access-steps li.is-done {
+  color: rgba(201, 152, 82, 0.72);
+}
+
+.access-steps li.is-current {
+  color: rgba(201, 152, 82, 0.98);
+}
+
+.auth-help {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
 .member-top {
   display: flex;
   align-items: center;
@@ -274,6 +295,16 @@ button.ghost {
   font-size: 12px;
   color: rgba(201, 152, 82, 0.82);
   letter-spacing: 0.03em;
+}
+
+.member-pending-help {
+  margin-top: 6px;
+  padding: 10px;
+  border: 1px solid rgba(201, 152, 82, 0.22);
+  border-radius: 10px;
+  background: rgba(201, 152, 82, 0.05);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .admin-panel {
@@ -379,6 +410,11 @@ button.ghost {
   padding: 8px 10px;
 }
 
+.admin-tools .ghost.is-active {
+  background: rgba(201, 152, 82, 0.2);
+  border-color: rgba(201, 152, 82, 0.7);
+}
+
 .admin-tabs {
   display: flex;
   gap: 8px;
@@ -445,6 +481,13 @@ button.ghost {
 
 .track-watermark.is-active {
   opacity: 0.55;
+}
+
+.track-confidential-note {
+  margin: 8px 0 10px;
+  font-size: 12px;
+  color: rgba(201, 152, 82, 0.88);
+  letter-spacing: 0.02em;
 }
 
 .vote-grid {

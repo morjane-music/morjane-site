@@ -41,12 +41,18 @@
 
     <section id="authView" class="panel hidden ritual-reveal" data-ritual>
       <h2>Connexion membre</h2>
+      <ol class="access-steps" aria-label="Étapes d'accès">
+        <li class="is-done">Porte secrète validée</li>
+        <li class="is-current">Connexion email en cours</li>
+        <li>Validation membre du cercle</li>
+      </ol>
       <p>Entrez votre email pour recevoir un lien de connexion.</p>
       <form id="magicLinkForm" class="stack">
         <input id="emailInput" type="email" placeholder="vous@email.com" required>
         <button type="submit">Recevoir le lien</button>
       </form>
       <p id="authStatus" class="muted"></p>
+      <p class="auth-help muted">Si le lien n'arrive pas, vérifiez vos spams puis réessayez après 60 secondes.</p>
     </section>
 
     <section id="memberView" class="panel hidden ritual-reveal" data-ritual>
@@ -55,6 +61,7 @@
         <button id="logoutBtn" class="ghost">Se déconnecter</button>
       </div>
       <p id="memberMeta" class="muted"></p>
+      <p id="memberPendingHelp" class="member-pending-help hidden">Vous êtes bien connectée. Votre accès membre est en attente de validation par l'admin. Vous recevrez l'accès dès validation.</p>
       <ul id="trackList" class="track-list"></ul>
       <p id="emptyTracks" class="muted hidden">Aucun track actif pour le moment.</p>
 
@@ -70,14 +77,20 @@
           <button type="button" id="tabMembersBtn" class="admin-tab">Membres</button>
         </div>
         <div id="adminMembersList" class="admin-members-list"></div>
-        <h3>R�sum� 7 jours</h3>
+
+        <h3>Résumé 7 jours</h3>
         <div id="adminWeeklyStats" class="admin-weekly-stats">
           <p class="muted">Chargement des indicateurs...</p>
         </div>
+
         <h3>Messages reçus</h3>
         <div class="admin-tools">
           <button type="button" id="refreshInboxBtn" class="ghost">Actualiser les messages</button>
           <button type="button" id="markInboxReadBtn" class="ghost">Tout marquer lu</button>
+        </div>
+        <div class="admin-tools">
+          <input id="adminInboxSearch" type="search" placeholder="Filtrer les messages">
+          <button type="button" id="toggleUnreadOnlyBtn" class="ghost">Non lus seulement</button>
         </div>
         <p id="adminInboxUnread" class="muted"></p>
         <div id="adminInboxList" class="admin-inbox-list"></div>
@@ -88,6 +101,7 @@
       <button id="backBtn" class="ghost">Retour liste</button>
       <h2 id="trackTitle">Titre</h2>
       <p id="trackPlayCount" class="muted">Écoutes du cercle : -</p>
+      <p class="track-confidential-note">Écoute confidentielle du cercle privé. Merci de ne pas partager ce contenu.</p>
       <div id="trackWatermark" class="track-watermark hidden" aria-hidden="true"></div>
       <audio id="player" controls controlslist="nodownload noplaybackrate nofullscreen noremoteplayback" disableremoteplayback disablepictureinpicture preload="none"></audio>
       <div class="vote-grid">
@@ -103,7 +117,8 @@
       </form>
       <p id="messageStatus" class="muted"></p>
     </section>
-      <footer class="atelier-footer-credit">
+
+    <footer class="atelier-footer-credit">
       <p class="atelier-copyright">© Morjane</p>
       <p class="atelier-credit">Créé avec <a href="https://horscadrestudio.re" target="_blank" rel="noopener noreferrer">Hors Cadre Studio</a></p>
     </footer>
@@ -112,4 +127,3 @@
   <script type="module" src="./app.js"></script>
 </body>
 </html>
-

@@ -9,6 +9,7 @@ const memberMeta = document.getElementById("memberMeta");
 const circleCount = document.getElementById("circleCount");
 const trackList = document.getElementById("trackList");
 const emptyTracks = document.getElementById("emptyTracks");
+const memberPendingHelp = document.getElementById("memberPendingHelp");
 const adminPanel = document.getElementById("adminPanel");
 const adminMembersList = document.getElementById("adminMembersList");
 const adminWeeklyStats = document.getElementById("adminWeeklyStats");
@@ -17,6 +18,8 @@ const adminInboxUnread = document.getElementById("adminInboxUnread");
 const copyAtelierLinkBtn = document.getElementById("copyAtelierLinkBtn");
 const refreshInboxBtn = document.getElementById("refreshInboxBtn");
 const markInboxReadBtn = document.getElementById("markInboxReadBtn");
+const adminInboxSearch = document.getElementById("adminInboxSearch");
+const toggleUnreadOnlyBtn = document.getElementById("toggleUnreadOnlyBtn");
 const adminSearchInput = document.getElementById("adminSearchInput");
 const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
@@ -47,6 +50,7 @@ let watermarkTimer = null;
 let adminMembersCache = [];
 let adminInboxCache = [];
 let adminLastSeenIso = null;
+let adminInboxUnreadOnly = false;
 let adminViewMode = "pending";
 let magicLinkCooldownTimer = null;
 let voteCooldownUntil = 0;
@@ -308,6 +312,7 @@ function renderAdminInbox() {
     return;
   }
 
+  const term = String(adminInboxSearch?.value || "").trim().toLowerCase();
   adminInboxList.innerHTML = "";
   let unreadCount = 0;
   if (!adminInboxCache.length) {
@@ -318,7 +323,19 @@ function renderAdminInbox() {
     return;
   }
 
-  adminInboxCache.forEach((item) => {
+  const filteredMessages = adminInboxCache.filter((item) => {
+    const unread = isInboxMessageNew(item.created_at);
+    const content = `${item.sender_email || ""} ${item.track_title || ""} ${item.content || ""}`.toLowerCase();
+    const matchSearch = !term || content.includes(term);
+    const matchUnread = !adminInboxUnreadOnly || unread;
+    return matchSearch && matchUnread;
+  });
+
+  if (filteredMessages.length === 0) {
+    adminInboxList.innerHTML = "<p class=\"muted\">Aucun message dans ce filtre.</p>";
+  }
+
+  filteredMessages.forEach((item) => {
     const card = document.createElement("article");
     card.className = "admin-inbox-item";
 
@@ -574,6 +591,9 @@ async function loadSessionAndProfile() {
     show(authView);
     hide(memberView);
     hide(trackView);
+    if (memberPendingHelp) {
+      hide(memberPendingHelp);
+    }
     if (adminPanel) {
       hide(adminPanel);
     }
@@ -587,6 +607,9 @@ async function loadSessionAndProfile() {
     hide(authView);
     show(memberView);
     hide(trackView);
+    if (memberPendingHelp) {
+      show(memberPendingHelp);
+    }
     if (adminPanel) {
       hide(adminPanel);
     }
@@ -617,6 +640,9 @@ async function loadTracks() {
   hide(authView);
   show(memberView);
   hide(trackView);
+  if (memberPendingHelp) {
+    hide(memberPendingHelp);
+  }
   renderTrackList();
 
   memberMeta.textContent = `${profile.email} - ${getAudienceStatusLabel(profile.member_status)}`;
@@ -826,9 +852,15 @@ magicLinkForm.addEventListener("submit", async (event) => {
   });
 
   if (error) {
-    authStatus.textContent = `Impossible d'envoyer le lien. (${error.message})`;
-    if (String(error.message || "").toLowerCase().includes("rate limit")) {
+    const raw = String(error.message || "");
+    const lower = raw.toLowerCase();
+    if (lower.includes("rate limit")) {
+      authStatus.textContent = "Trop de tentatives. Réessayez dans 60 secondes.";
       startMagicLinkCooldown(60);
+    } else if (lower.includes("invalid")) {
+      authStatus.textContent = "Email invalide. Vérifiez l'adresse puis réessayez.";
+    } else {
+      authStatus.textContent = `Impossible d'envoyer le lien. (${raw})`;
     }
     return;
   }
@@ -871,9 +903,22 @@ backBtn.addEventListener("click", () => {
 });
 
 if (player) {
-  player.addEventListener("play", startWatermark);
+  player.addEventListener("play", () => {
+    if (player.currentTime < 2) {
+      playLoggedForCurrentTrack = false;
+    }
+    startWatermark();
+  });
   player.addEventListener("pause", stopWatermark);
-  player.addEventListener("ended", stopWatermark);
+  player.addEventListener("ended", () => {
+    stopWatermark();
+    playLoggedForCurrentTrack = false;
+  });
+  player.addEventListener("seeked", () => {
+    if (player.currentTime < 2) {
+      playLoggedForCurrentTrack = false;
+    }
+  });
   player.addEventListener("timeupdate", logQualifiedPlay);
 }
 
@@ -925,6 +970,21 @@ if (refreshInboxBtn) {
 if (markInboxReadBtn) {
   markInboxReadBtn.addEventListener("click", () => {
     markInboxAsRead();
+  });
+}
+
+if (adminInboxSearch) {
+  adminInboxSearch.addEventListener("input", () => {
+    renderAdminInbox();
+  });
+}
+
+if (toggleUnreadOnlyBtn) {
+  toggleUnreadOnlyBtn.addEventListener("click", () => {
+    adminInboxUnreadOnly = !adminInboxUnreadOnly;
+    toggleUnreadOnlyBtn.textContent = adminInboxUnreadOnly ? "Tous les messages" : "Non lus seulement";
+    toggleUnreadOnlyBtn.classList.toggle("is-active", adminInboxUnreadOnly);
+    renderAdminInbox();
   });
 }
 
