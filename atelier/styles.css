@@ -325,6 +325,15 @@ button.ghost {
   font-size: 14px;
 }
 
+#adminUnlockForm {
+  margin-top: 10px;
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid rgba(201, 152, 82, 0.2);
+  border-radius: 10px;
+  background: rgba(201, 152, 82, 0.04);
+}
+
 .admin-members-list {
   display: grid;
   gap: 8px;

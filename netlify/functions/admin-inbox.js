@@ -1,5 +1,6 @@
 const { createClient } = require("@supabase/supabase-js");
 const { trackFunctionEvent } = require("./_lib/atelier-observability");
+const { hasValidAdminGate } = require("./_lib/admin-gate");
 
 function getBearerToken(header) {
   if (!header) {
@@ -35,7 +36,12 @@ async function authenticateAdmin(event, supabaseUrl, anonKey, serviceRoleKey) {
     return { ok: false, statusCode: 403, error: "forbidden" };
   }
 
-  return { ok: true, adminClient };
+  const cookieSecret = process.env.ATELIER_COOKIE_SECRET || "";
+  if (!cookieSecret || !hasValidAdminGate(event, cookieSecret, userResult.data.user.id)) {
+    return { ok: false, statusCode: 401, error: "admin_gate_required" };
+  }
+
+  return { ok: true, adminClient, adminUserId: userResult.data.user.id };
 }
 
 exports.handler = async (event) => {
@@ -69,9 +75,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const adminUser = await createClient(supabaseUrl, anonKey)
-    .auth
-    .getUser(getBearerToken(event.headers.authorization || event.headers.Authorization));
+  const adminUserId = auth.adminUserId || null;
 
   if (event.httpMethod === "POST") {
     let payload = {};
@@ -99,7 +103,7 @@ exports.handler = async (event) => {
     }
 
     const isProcessed = action === "mark_processed";
-    const adminId = adminUser?.data?.user?.id || null;
+    const adminId = adminUserId;
 
     const updatePayload = isProcessed
       ? { admin_status: "processed", processed_at: new Date().toISOString(), processed_by: adminId }

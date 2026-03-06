@@ -1,5 +1,6 @@
 const { createClient } = require("@supabase/supabase-js");
 const { trackFunctionEvent } = require("./_lib/atelier-observability");
+const { hasValidAdminGate } = require("./_lib/admin-gate");
 
 function getBearerToken(header) {
   if (!header) return "";
@@ -27,6 +28,11 @@ async function authenticateAdmin(event, supabaseUrl, anonKey, serviceRoleKey) {
 
   if (profileResult.error || !profileResult.data || profileResult.data.role !== "admin") {
     return { ok: false, statusCode: 403, error: "forbidden" };
+  }
+
+  const cookieSecret = process.env.ATELIER_COOKIE_SECRET || "";
+  if (!cookieSecret || !hasValidAdminGate(event, cookieSecret, userResult.data.user.id)) {
+    return { ok: false, statusCode: 401, error: "admin_gate_required" };
   }
 
   return { ok: true, adminClient };
@@ -167,4 +173,3 @@ exports.handler = async (event) => {
     }),
   };
 };
-

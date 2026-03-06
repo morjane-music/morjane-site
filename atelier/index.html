@@ -74,6 +74,14 @@
       <section id="adminPanel" class="admin-panel hidden">
         <h3>Gestion du cercle</h3>
         <p class="muted">Valider ou retirer des accès sans passer par Supabase.</p>
+        <form id="adminUnlockForm" class="stack">
+          <label for="adminPinInput">Code admin personnel</label>
+          <input id="adminPinInput" type="password" autocomplete="one-time-code" placeholder="Code admin" required>
+          <button type="submit">Déverrouiller l'admin</button>
+          <p id="adminUnlockStatus" class="muted"></p>
+        </form>
+
+        <div id="adminSecureContent" class="hidden">
         <div class="admin-tools">
           <button type="button" id="copyAtelierLinkBtn" class="ghost">Copier le lien Atelier</button>
           <input id="adminSearchInput" type="search" placeholder="Rechercher un email">
@@ -122,6 +130,7 @@
         <h3>Journal admin</h3>
         <div id="adminAuditLog" class="admin-audit-log">
           <p class="muted">Chargement du journal...</p>
+        </div>
         </div>
       </section>
     </section>

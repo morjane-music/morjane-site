@@ -9,6 +9,7 @@
 ### Secret (Functions only)
 - `ATELIER_PASSWORD`
 - `ATELIER_COOKIE_SECRET`
+- `ATELIER_ADMIN_PIN`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
 ## What is implemented

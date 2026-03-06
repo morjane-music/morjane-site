@@ -11,6 +11,10 @@ const trackList = document.getElementById("trackList");
 const emptyTracks = document.getElementById("emptyTracks");
 const memberPendingHelp = document.getElementById("memberPendingHelp");
 const adminPanel = document.getElementById("adminPanel");
+const adminUnlockForm = document.getElementById("adminUnlockForm");
+const adminPinInput = document.getElementById("adminPinInput");
+const adminUnlockStatus = document.getElementById("adminUnlockStatus");
+const adminSecureContent = document.getElementById("adminSecureContent");
 const adminMembersList = document.getElementById("adminMembersList");
 const adminWeeklyStats = document.getElementById("adminWeeklyStats");
 const adminInboxList = document.getElementById("adminInboxList");
@@ -63,6 +67,7 @@ let adminInboxUnreadOnly = false;
 let adminViewMode = "pending";
 let magicLinkCooldownTimer = null;
 let voteCooldownUntil = 0;
+let adminUnlocked = false;
 
 function formatTrackTitle(rawTitle) {
   const title = String(rawTitle || "").trim();
@@ -150,6 +155,53 @@ function canManageMembers() {
   return profile?.role === "admin";
 }
 
+function renderAdminLockState() {
+  if (!canManageMembers() || !adminUnlockForm || !adminSecureContent) {
+    return;
+  }
+  if (adminUnlocked) {
+    hide(adminUnlockForm);
+    show(adminSecureContent);
+  } else {
+    show(adminUnlockForm);
+    hide(adminSecureContent);
+  }
+}
+
+async function checkAdminGate() {
+  if (!canManageMembers() || !session?.access_token) {
+    return false;
+  }
+  try {
+    const res = await fetch("/.netlify/functions/check-admin-gate", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    return res.ok;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function unlockAdminWithPin(pin) {
+  if (!canManageMembers() || !session?.access_token) {
+    return false;
+  }
+  try {
+    const res = await fetch("/.netlify/functions/unlock-admin", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ pin }),
+    });
+    return res.ok;
+  } catch (_) {
+    return false;
+  }
+}
+
 function getInboxLastSeenStorageKey() {
   const id = profile?.id || "anon";
   return `atelier_inbox_last_seen_${id}`;
@@ -206,7 +258,7 @@ function renderAdminWeeklyStats(data) {
 }
 
 async function loadAdminWeeklyStats() {
-  if (!canManageMembers() || !session?.access_token || !adminWeeklyStats) {
+  if (!canManageMembers() || !session?.access_token || !adminWeeklyStats || !adminUnlocked) {
     return;
   }
   adminWeeklyStats.innerHTML = "<p class=\"muted\">Chargement des indicateurs...</p>";
@@ -251,7 +303,7 @@ function createAdminMemberRow(member) {
 }
 
 async function loadAdminMembers() {
-  if (!canManageMembers() || !session?.access_token || !adminPanel || !adminMembersList) {
+  if (!canManageMembers() || !session?.access_token || !adminPanel || !adminMembersList || !adminUnlocked) {
     return;
   }
 
@@ -473,7 +525,7 @@ async function updateMessageStatus(messageId, action) {
 }
 
 async function loadAdminInbox() {
-  if (!canManageMembers() || !session?.access_token || !adminInboxList) {
+  if (!canManageMembers() || !session?.access_token || !adminInboxList || !adminUnlocked) {
     return;
   }
 
@@ -519,7 +571,7 @@ function renderAdminVotesSummary(summary = []) {
 }
 
 async function loadAdminVotesSummary() {
-  if (!canManageMembers() || !session?.access_token || !adminVotesSummary) {
+  if (!canManageMembers() || !session?.access_token || !adminVotesSummary || !adminUnlocked) {
     return;
   }
   adminVotesSummary.innerHTML = "<p class=\"muted\">Chargement des votes...</p>";
@@ -571,7 +623,7 @@ function renderAdminStatus(data) {
 }
 
 async function loadAdminStatus() {
-  if (!canManageMembers() || !session?.access_token || !adminStatusPanel) {
+  if (!canManageMembers() || !session?.access_token || !adminStatusPanel || !adminUnlocked) {
     return;
   }
   adminStatusPanel.innerHTML = "<p class=\"muted\">Chargement du statut...</p>";
@@ -621,7 +673,7 @@ function renderAdminAuditLog(logs = []) {
 }
 
 async function loadAdminAuditLog() {
-  if (!canManageMembers() || !session?.access_token || !adminAuditLog) {
+  if (!canManageMembers() || !session?.access_token || !adminAuditLog || !adminUnlocked) {
     return;
   }
   adminAuditLog.innerHTML = "<p class=\"muted\">Chargement du journal...</p>";
@@ -902,13 +954,20 @@ async function loadTracks() {
   }
 
   if (canManageMembers()) {
+    if (adminPanel) {
+      show(adminPanel);
+    }
     loadInboxLastSeen();
-    await loadAdminMembers();
-    await loadAdminWeeklyStats();
-    await loadAdminInbox();
-    await loadAdminVotesSummary();
-    await loadAdminStatus();
-    await loadAdminAuditLog();
+    adminUnlocked = await checkAdminGate();
+    renderAdminLockState();
+    if (adminUnlocked) {
+      await loadAdminMembers();
+      await loadAdminWeeklyStats();
+      await loadAdminInbox();
+      await loadAdminVotesSummary();
+      await loadAdminStatus();
+      await loadAdminAuditLog();
+    }
   } else if (adminPanel) {
     hide(adminPanel);
   }
@@ -1275,6 +1334,7 @@ logoutBtn.addEventListener("click", async () => {
   session = null;
   profile = null;
   selectedTrack = null;
+  adminUnlocked = false;
   stopWatermark();
   player.removeAttribute("src");
   player.load();
@@ -1386,6 +1446,34 @@ if (toggleUnreadOnlyBtn) {
     toggleUnreadOnlyBtn.textContent = adminInboxUnreadOnly ? "Tous les messages" : "Non lus seulement";
     toggleUnreadOnlyBtn.classList.toggle("is-active", adminInboxUnreadOnly);
     renderAdminInbox();
+  });
+}
+
+if (adminUnlockForm) {
+  adminUnlockForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!adminPinInput?.value) {
+      if (adminUnlockStatus) adminUnlockStatus.textContent = "Code requis.";
+      return;
+    }
+
+    if (adminUnlockStatus) adminUnlockStatus.textContent = "Vérification...";
+    const ok = await unlockAdminWithPin(adminPinInput.value.trim());
+    if (!ok) {
+      if (adminUnlockStatus) adminUnlockStatus.textContent = "Code invalide.";
+      return;
+    }
+
+    adminUnlocked = true;
+    if (adminUnlockStatus) adminUnlockStatus.textContent = "Admin déverrouillé.";
+    if (adminPinInput) adminPinInput.value = "";
+    renderAdminLockState();
+    await loadAdminMembers();
+    await loadAdminWeeklyStats();
+    await loadAdminInbox();
+    await loadAdminVotesSummary();
+    await loadAdminStatus();
+    await loadAdminAuditLog();
   });
 }
 
