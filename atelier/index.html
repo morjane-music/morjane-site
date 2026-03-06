@@ -70,10 +70,16 @@
           <button type="button" id="tabMembersBtn" class="admin-tab">Membres</button>
         </div>
         <div id="adminMembersList" class="admin-members-list"></div>
+        <h3>Résumé 7 jours</h3>
+        <div id="adminWeeklyStats" class="admin-weekly-stats">
+          <p class="muted">Chargement des indicateurs...</p>
+        </div>
         <h3>Messages reÃ§us</h3>
         <div class="admin-tools">
           <button type="button" id="refreshInboxBtn" class="ghost">Actualiser les messages</button>
+          <button type="button" id="markInboxReadBtn" class="ghost">Tout marquer lu</button>
         </div>
+        <p id="adminInboxUnread" class="muted"></p>
         <div id="adminInboxList" class="admin-inbox-list"></div>
       </section>
     </section>
@@ -102,3 +108,4 @@
   <script type="module" src="./app.js"></script>
 </body>
 </html>
+

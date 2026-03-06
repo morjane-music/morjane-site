@@ -11,9 +11,12 @@ const trackList = document.getElementById("trackList");
 const emptyTracks = document.getElementById("emptyTracks");
 const adminPanel = document.getElementById("adminPanel");
 const adminMembersList = document.getElementById("adminMembersList");
+const adminWeeklyStats = document.getElementById("adminWeeklyStats");
 const adminInboxList = document.getElementById("adminInboxList");
+const adminInboxUnread = document.getElementById("adminInboxUnread");
 const copyAtelierLinkBtn = document.getElementById("copyAtelierLinkBtn");
 const refreshInboxBtn = document.getElementById("refreshInboxBtn");
+const markInboxReadBtn = document.getElementById("markInboxReadBtn");
 const adminSearchInput = document.getElementById("adminSearchInput");
 const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
@@ -31,6 +34,7 @@ const magicLinkSubmitBtn = magicLinkForm ? magicLinkForm.querySelector("button[t
 const messageForm = document.getElementById("messageForm");
 const logoutBtn = document.getElementById("logoutBtn");
 const backBtn = document.getElementById("backBtn");
+const voteButtons = Array.from(document.querySelectorAll("[data-vote]"));
 
 let supabase = null;
 let session = null;
@@ -42,8 +46,10 @@ let playLoggedForCurrentTrack = false;
 let watermarkTimer = null;
 let adminMembersCache = [];
 let adminInboxCache = [];
+let adminLastSeenIso = null;
 let adminViewMode = "pending";
 let magicLinkCooldownTimer = null;
+let voteCooldownUntil = 0;
 
 function formatTrackTitle(rawTitle) {
   const title = String(rawTitle || "").trim();
@@ -129,6 +135,82 @@ function startMagicLinkCooldown(seconds = 60) {
 
 function canManageMembers() {
   return profile?.role === "admin";
+}
+
+function getInboxLastSeenStorageKey() {
+  const id = profile?.id || "anon";
+  return `atelier_inbox_last_seen_${id}`;
+}
+
+function loadInboxLastSeen() {
+  try {
+    adminLastSeenIso = localStorage.getItem(getInboxLastSeenStorageKey());
+  } catch (_) {
+    adminLastSeenIso = null;
+  }
+}
+
+function saveInboxLastSeen(iso) {
+  adminLastSeenIso = iso;
+  try {
+    localStorage.setItem(getInboxLastSeenStorageKey(), iso);
+  } catch (_) {
+    // ignore storage errors
+  }
+}
+
+function isInboxMessageNew(createdAt) {
+  if (!createdAt) {
+    return false;
+  }
+  if (!adminLastSeenIso) {
+    return true;
+  }
+  return Date.parse(createdAt) > Date.parse(adminLastSeenIso);
+}
+
+function renderAdminWeeklyStats(data) {
+  if (!adminWeeklyStats) {
+    return;
+  }
+  const members = Number(data?.new_members || 0);
+  const plays = Number(data?.plays || 0);
+  const messages = Number(data?.messages || 0);
+  adminWeeklyStats.innerHTML = `
+    <article class="admin-weekly-card">
+      <p class="admin-weekly-label">Nouveaux membres</p>
+      <p class="admin-weekly-value">${members}</p>
+    </article>
+    <article class="admin-weekly-card">
+      <p class="admin-weekly-label">Ecoutes qualifiees</p>
+      <p class="admin-weekly-value">${plays}</p>
+    </article>
+    <article class="admin-weekly-card">
+      <p class="admin-weekly-label">Messages recus</p>
+      <p class="admin-weekly-value">${messages}</p>
+    </article>
+  `;
+}
+
+async function loadAdminWeeklyStats() {
+  if (!canManageMembers() || !session?.access_token || !adminWeeklyStats) {
+    return;
+  }
+  adminWeeklyStats.innerHTML = "<p class=\"muted\">Chargement des indicateurs...</p>";
+  try {
+    const res = await fetch("/.netlify/functions/admin-weekly-stats", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      adminWeeklyStats.innerHTML = `<p class="muted">Impossible de charger les indicateurs (${data.error || res.status}).</p>`;
+      return;
+    }
+    renderAdminWeeklyStats(data);
+  } catch (_) {
+    adminWeeklyStats.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
+  }
 }
 
 function createAdminMemberRow(member) {
@@ -227,8 +309,12 @@ function renderAdminInbox() {
   }
 
   adminInboxList.innerHTML = "";
+  let unreadCount = 0;
   if (!adminInboxCache.length) {
     adminInboxList.innerHTML = "<p class=\"muted\">Aucun message pour le moment.</p>";
+    if (adminInboxUnread) {
+      adminInboxUnread.textContent = "Nouveaux messages : 0";
+    }
     return;
   }
 
@@ -245,8 +331,16 @@ function renderAdminInbox() {
 
     const meta = document.createElement("span");
     meta.className = "admin-inbox-meta";
-    meta.textContent = `${formatTrackTitle(item.track_title || "Maquette")} • ${formatInboxDate(item.created_at)}`;
+    meta.textContent = `${formatTrackTitle(item.track_title || "Maquette")} - ${formatInboxDate(item.created_at)}`;
     head.appendChild(meta);
+
+    if (isInboxMessageNew(item.created_at)) {
+      unreadCount += 1;
+      const badge = document.createElement("span");
+      badge.className = "admin-inbox-badge";
+      badge.textContent = "Nouveau";
+      head.appendChild(badge);
+    }
 
     const body = document.createElement("p");
     body.className = "admin-inbox-body";
@@ -256,6 +350,10 @@ function renderAdminInbox() {
     card.appendChild(body);
     adminInboxList.appendChild(card);
   });
+
+  if (adminInboxUnread) {
+    adminInboxUnread.textContent = `Nouveaux messages : ${unreadCount}`;
+  }
 }
 
 async function loadAdminInbox() {
@@ -278,8 +376,16 @@ async function loadAdminInbox() {
     adminInboxCache = Array.isArray(data.messages) ? data.messages : [];
     renderAdminInbox();
   } catch (_) {
-    adminInboxList.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
+    adminInboxList.innerHTML = "<p class=\"muted\">Erreur reseau.</p>";
   }
+}
+
+function markInboxAsRead() {
+  const latestIso = adminInboxCache.length > 0
+    ? adminInboxCache[0].created_at
+    : new Date().toISOString();
+  saveInboxLastSeen(latestIso);
+  renderAdminInbox();
 }
 
 async function updateMemberStatus(userId, action) {
@@ -522,7 +628,9 @@ async function loadTracks() {
   }
 
   if (canManageMembers()) {
+    loadInboxLastSeen();
     await loadAdminMembers();
+    await loadAdminWeeklyStats();
     await loadAdminInbox();
   } else if (adminPanel) {
     hide(adminPanel);
@@ -645,9 +753,26 @@ async function logQualifiedPlay() {
 
 async function submitVote(choice) {
   if (!selectedTrack || !profile) {
-    voteStatus.textContent = "Sélectionne un titre avant de voter.";
+    voteStatus.textContent = "Selectionne un titre avant de voter.";
     return;
   }
+
+  const now = Date.now();
+  if (now < voteCooldownUntil) {
+    const remaining = Math.ceil((voteCooldownUntil - now) / 1000);
+    voteStatus.textContent = `Patiente ${remaining}s avant un nouveau vote.`;
+    return;
+  }
+
+  voteCooldownUntil = now + 2500;
+  voteButtons.forEach((button) => {
+    button.disabled = true;
+  });
+  setTimeout(() => {
+    voteButtons.forEach((button) => {
+      button.disabled = false;
+    });
+  }, 2500);
 
   const payload = {
     track_id: selectedTrack.id,
@@ -656,7 +781,7 @@ async function submitVote(choice) {
   };
 
   const { error } = await supabase.from("atelier_votes").upsert(payload, { onConflict: "track_id,user_id" });
-  voteStatus.textContent = error ? `Vote refusé. ${error.message || ""}`.trim() : "Vote enregistré.";
+  voteStatus.textContent = error ? `Vote refuse. ${error.message || ""}`.trim() : "Vote enregistre.";
 }
 
 async function submitMessage(content) {
@@ -711,7 +836,7 @@ magicLinkForm.addEventListener("submit", async (event) => {
   startMagicLinkCooldown(60);
 });
 
-document.querySelectorAll("[data-vote]").forEach((btn) => {
+voteButtons.forEach((btn) => {
   btn.addEventListener("click", () => submitVote(btn.dataset.vote));
 });
 
@@ -797,6 +922,12 @@ if (refreshInboxBtn) {
   });
 }
 
+if (markInboxReadBtn) {
+  markInboxReadBtn.addEventListener("click", () => {
+    markInboxAsRead();
+  });
+}
+
 async function boot() {
   setTimeout(() => {
     document.body.classList.add("ritual-ready");
@@ -822,3 +953,7 @@ async function boot() {
 boot().catch(() => {
   setGateStatus("Erreur de configuration Atelier.");
 });
+
+
+
+
