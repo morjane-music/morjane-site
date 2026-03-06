@@ -20,12 +20,17 @@
   <meta property="og:title" content="Morjane | EPK officiel" />
   <meta property="og:description" content="Bio, photos presse, live et contact booking/presse." />
   <meta property="og:image" content="https://morjane.re/assets/images/epk/epk-live-01.jpg" />
+  <meta property="og:image:alt" content="Morjane en live - visuel EPK officiel." />
   <meta property="og:url" content="https://morjane.re/epk.html" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Morjane | EPK officiel" />
   <meta name="twitter:description" content="Bio, photos presse, live et contact booking/presse." />
   <meta name="twitter:image" content="https://morjane.re/assets/images/epk/epk-live-01.jpg" />
+  <meta name="twitter:image:alt" content="Morjane en live - EPK." />
+  <meta name="twitter:site" content="@morjane_music" />
+  <link rel="preload" as="image" href="assets/images/logo.png" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/images/epk/epk-live-01.avif" type="image/avif" fetchpriority="high">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,17 +50,28 @@
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "MusicGroup",
-  "name": "Morjane",
-  "url": "https://morjane.re/epk.html",
-  "image": "https://morjane.re/assets/images/epk/epk-live-01.jpg",
-  "genre": ["Chanson", "Rap", "Pop urbaine"],
-  "sameAs": [
-    "https://www.instagram.com/morjane_music/",
-    "https://www.tiktok.com/@morjane_music",
-    "https://open.spotify.com/intl-fr/artist/0B5Ta7mUfgxXd8OlZ3C2Zw",
-    "https://www.youtube.com/@Morjane_music",
-    "https://www.facebook.com/people/Morjane-music/61559098903828/"
+  "@graph": [
+    {
+      "@type": "ProfilePage",
+      "@id": "https://morjane.re/epk.html#page",
+      "url": "https://morjane.re/epk.html",
+      "name": "Morjane | EPK officiel"
+    },
+    {
+      "@type": "MusicGroup",
+      "@id": "https://morjane.re/#artist",
+      "name": "Morjane",
+      "url": "https://morjane.re/",
+      "image": "https://morjane.re/assets/images/epk/epk-live-01.jpg",
+      "genre": ["Chanson", "Rap", "Pop urbaine"],
+      "sameAs": [
+        "https://www.instagram.com/morjane_music/",
+        "https://www.tiktok.com/@morjane_music",
+        "https://open.spotify.com/intl-fr/artist/0B5Ta7mUfgxXd8OlZ3C2Zw",
+        "https://www.youtube.com/@Morjane_music",
+        "https://www.facebook.com/people/Morjane-music/61559098903828/"
+      ]
+    }
   ]
 }
   </script>
@@ -90,6 +106,7 @@
   <main>
 
     <section class="epk-hero"></section>
+    <a class="epk-mobile-booking" href="mailto:booking@morjane.re">Booking / Presse</a>
 
     <section class="epk-intro reveal">
       <h1 class="epk-name">Morjane</h1>
@@ -294,6 +311,7 @@
 
 <p class="epk-copyright">© Morjane</p>
 <p class="epk-credit">Créé avec <a href="https://horscadrestudio.re" target="_blank" rel="noopener noreferrer">Hors Cadre Studio</a></p>
+<p class="epk-credit"><a href="/confidentialite.html">Confidentialité</a> · <a href="/cookies.html">Cookies</a></p>
 
 </footer>
 

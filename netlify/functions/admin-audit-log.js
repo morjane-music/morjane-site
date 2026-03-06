@@ -45,7 +45,6 @@ exports.handler = async (event) => {
   const supabaseUrl = process.env.SUPABASE_URL;
   const anonKey = process.env.SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
   if (!supabaseUrl || !anonKey || !serviceRoleKey) {
     return {
       statusCode: 500,
@@ -57,7 +56,7 @@ exports.handler = async (event) => {
   const auth = await authenticateAdmin(event, supabaseUrl, anonKey, serviceRoleKey);
   if (!auth.ok) {
     await trackFunctionEvent(createClient(supabaseUrl, serviceRoleKey), {
-      function_name: "admin-weekly-stats",
+      function_name: "admin-audit-log",
       status: "error",
       error_code: auth.error,
       latency_ms: Date.now() - startedAt,
@@ -70,28 +69,15 @@ exports.handler = async (event) => {
     };
   }
 
-  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const supabase = auth.adminClient;
+  const logsRes = await auth.adminClient
+    .from("atelier_admin_audit_logs")
+    .select("id, action, target_type, target_id, details, created_at, admin_user_id")
+    .order("created_at", { ascending: false })
+    .limit(100);
 
-  const [membersRes, playsRes, messagesRes] = await Promise.all([
-    supabase
-      .from("atelier_profiles")
-      .select("id", { count: "exact", head: true })
-      .in("member_status", ["member", "founder"])
-      .gte("created_at", since),
-    supabase
-      .from("atelier_track_plays")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", since),
-    supabase
-      .from("atelier_messages")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", since),
-  ]);
-
-  if (membersRes.error || playsRes.error || messagesRes.error) {
-    await trackFunctionEvent(supabase, {
-      function_name: "admin-weekly-stats",
+  if (logsRes.error) {
+    await trackFunctionEvent(auth.adminClient, {
+      function_name: "admin-audit-log",
       status: "error",
       error_code: "query_failed",
       latency_ms: Date.now() - startedAt,
@@ -104,11 +90,24 @@ exports.handler = async (event) => {
     };
   }
 
-  await trackFunctionEvent(supabase, {
-    function_name: "admin-weekly-stats",
+  const adminIds = [...new Set((logsRes.data || []).map((row) => row.admin_user_id).filter(Boolean))];
+  let profileById = new Map();
+
+  if (adminIds.length > 0) {
+    const profilesRes = await auth.adminClient
+      .from("atelier_profiles")
+      .select("id, email")
+      .in("id", adminIds);
+    if (!profilesRes.error) {
+      profileById = new Map((profilesRes.data || []).map((p) => [p.id, p]));
+    }
+  }
+
+  await trackFunctionEvent(auth.adminClient, {
+    function_name: "admin-audit-log",
     status: "ok",
     latency_ms: Date.now() - startedAt,
-    meta: { members: membersRes.count || 0, plays: playsRes.count || 0, messages: messagesRes.count || 0 },
+    meta: { count: (logsRes.data || []).length },
   });
 
   return {
@@ -116,10 +115,16 @@ exports.handler = async (event) => {
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
     body: JSON.stringify({
       ok: true,
-      new_members: membersRes.count || 0,
-      plays: playsRes.count || 0,
-      messages: messagesRes.count || 0,
-      since,
+      logs: (logsRes.data || []).map((row) => ({
+        id: row.id,
+        action: row.action,
+        target_type: row.target_type,
+        target_id: row.target_id,
+        details: row.details || {},
+        created_at: row.created_at,
+        admin_email: profileById.get(row.admin_user_id)?.email || "admin",
+      })),
     }),
   };
 };
+

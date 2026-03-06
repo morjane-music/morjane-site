@@ -2,13 +2,9 @@ const { createClient } = require("@supabase/supabase-js");
 const { trackFunctionEvent } = require("./_lib/atelier-observability");
 
 function getBearerToken(authHeader) {
-  if (!authHeader) {
-    return "";
-  }
+  if (!authHeader) return "";
   const [scheme, token] = authHeader.split(" ");
-  if (scheme !== "Bearer" || !token) {
-    return "";
-  }
+  if (scheme !== "Bearer" || !token) return "";
   return token;
 }
 
@@ -71,15 +67,15 @@ exports.handler = async (event) => {
   const userId = userResult.data.user.id;
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-  const { data: profile, error: profileError } = await adminClient
+  const { data: profile } = await adminClient
     .from("atelier_profiles")
     .select("member_status")
     .eq("id", userId)
     .maybeSingle();
 
-  if (profileError || !profile || !["member", "founder"].includes(profile.member_status)) {
+  if (!profile || !["member", "founder"].includes(profile.member_status)) {
     await trackFunctionEvent(adminClient, {
-      function_name: "get-audio-url",
+      function_name: "log-track-play",
       status: "error",
       error_code: "forbidden",
       latency_ms: Date.now() - startedAt,
@@ -92,15 +88,15 @@ exports.handler = async (event) => {
     };
   }
 
-  const { data: track, error: trackError } = await adminClient
+  const trackRes = await adminClient
     .from("atelier_tracks")
-    .select("id, storage_path, status")
+    .select("id, status")
     .eq("id", trackId)
     .maybeSingle();
 
-  if (trackError || !track || track.status !== "active") {
+  if (trackRes.error || !trackRes.data || trackRes.data.status !== "active") {
     await trackFunctionEvent(adminClient, {
-      function_name: "get-audio-url",
+      function_name: "log-track-play",
       status: "error",
       error_code: "track_not_found",
       latency_ms: Date.now() - startedAt,
@@ -113,35 +109,74 @@ exports.handler = async (event) => {
     };
   }
 
-  const signed = await adminClient.storage.from("atelier-audio").createSignedUrl(track.storage_path, 300);
-  if (signed.error || !signed.data?.signedUrl) {
+  const recent = await adminClient
+    .from("atelier_track_plays")
+    .select("id, created_at")
+    .eq("track_id", trackId)
+    .eq("user_id", userId)
+    .gte("created_at", new Date(Date.now() - 30 * 60 * 1000).toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (recent.error) {
     await trackFunctionEvent(adminClient, {
-      function_name: "get-audio-url",
+      function_name: "log-track-play",
       status: "error",
-      error_code: "signed_url_failed",
+      error_code: "query_failed",
       latency_ms: Date.now() - startedAt,
       meta: { track_id: trackId },
     });
     return {
       statusCode: 500,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ok: false, error: "signed_url_failed" }),
+      body: JSON.stringify({ ok: false, error: "query_failed" }),
+    };
+  }
+
+  if ((recent.data || []).length > 0) {
+    await trackFunctionEvent(adminClient, {
+      function_name: "log-track-play",
+      status: "ok",
+      latency_ms: Date.now() - startedAt,
+      meta: { track_id: trackId, dedup: true },
+    });
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+      body: JSON.stringify({ ok: true, counted: false, dedup_minutes: 30 }),
+    };
+  }
+
+  const insertResult = await adminClient.from("atelier_track_plays").insert({
+    track_id: trackId,
+    user_id: userId,
+  });
+
+  if (insertResult.error) {
+    await trackFunctionEvent(adminClient, {
+      function_name: "log-track-play",
+      status: "error",
+      error_code: "insert_failed",
+      latency_ms: Date.now() - startedAt,
+      meta: { track_id: trackId },
+    });
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ok: false, error: "insert_failed" }),
     };
   }
 
   await trackFunctionEvent(adminClient, {
-    function_name: "get-audio-url",
+    function_name: "log-track-play",
     status: "ok",
     latency_ms: Date.now() - startedAt,
-    meta: { track_id: trackId },
+    meta: { track_id: trackId, counted: true },
   });
 
   return {
     statusCode: 200,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store",
-    },
-    body: JSON.stringify({ ok: true, url: signed.data.signedUrl }),
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    body: JSON.stringify({ ok: true, counted: true }),
   };
 };

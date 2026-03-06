@@ -66,6 +66,150 @@ begin
 end
 $$;
 
+create table if not exists public.atelier_track_plays (
+  id bigserial primary key,
+  track_id uuid not null references public.atelier_tracks(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_atelier_track_plays_track_created
+  on public.atelier_track_plays(track_id, created_at desc);
+
+create index if not exists idx_atelier_track_plays_user_track_created
+  on public.atelier_track_plays(user_id, track_id, created_at desc);
+
+create or replace view public.atelier_track_play_counts as
+select track_id, count(*)::bigint as play_count
+from public.atelier_track_plays
+group by track_id;
+
+alter table public.atelier_track_plays enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_track_plays' and policyname = 'atelier_track_plays_insert_member_own'
+  ) then
+    create policy atelier_track_plays_insert_member_own
+    on public.atelier_track_plays
+    for insert to authenticated
+    with check (auth.uid() = user_id and public.atelier_is_member(auth.uid()));
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_track_plays' and policyname = 'atelier_track_plays_select_member'
+  ) then
+    create policy atelier_track_plays_select_member
+    on public.atelier_track_plays
+    for select to authenticated
+    using (public.atelier_is_member(auth.uid()));
+  end if;
+end
+$$;
+
+alter table public.atelier_messages
+  add column if not exists admin_status text not null default 'new' check (admin_status in ('new', 'processed')),
+  add column if not exists processed_at timestamptz,
+  add column if not exists processed_by uuid references auth.users(id) on delete set null;
+
+create index if not exists idx_atelier_messages_status_created
+  on public.atelier_messages(admin_status, created_at desc);
+
+create table if not exists public.atelier_admin_audit_logs (
+  id bigserial primary key,
+  admin_user_id uuid not null references auth.users(id) on delete cascade,
+  action text not null,
+  target_type text not null,
+  target_id text,
+  details jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_atelier_admin_audit_logs_created
+  on public.atelier_admin_audit_logs(created_at desc);
+
+alter table public.atelier_admin_audit_logs enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_admin_audit_logs' and policyname = 'atelier_admin_audit_logs_select_admin'
+  ) then
+    create policy atelier_admin_audit_logs_select_admin
+    on public.atelier_admin_audit_logs
+    for select to authenticated
+    using (public.atelier_is_admin(auth.uid()));
+  end if;
+end
+$$;
+
+create table if not exists public.atelier_function_events (
+  id bigserial primary key,
+  function_name text not null,
+  status text not null check (status in ('ok', 'error')),
+  error_code text,
+  latency_ms integer,
+  meta jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_atelier_function_events_created
+  on public.atelier_function_events(created_at desc);
+
+create index if not exists idx_atelier_function_events_name_created
+  on public.atelier_function_events(function_name, created_at desc);
+
+alter table public.atelier_function_events enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_function_events' and policyname = 'atelier_function_events_select_admin'
+  ) then
+    create policy atelier_function_events_select_admin
+    on public.atelier_function_events
+    for select to authenticated
+    using (public.atelier_is_admin(auth.uid()));
+  end if;
+end
+$$;
+
+create table if not exists public.atelier_magic_link_events (
+  id bigserial primary key,
+  email text,
+  result text not null check (result in ('sent', 'error')),
+  error_code text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_atelier_magic_link_events_created
+  on public.atelier_magic_link_events(created_at desc);
+
+alter table public.atelier_magic_link_events enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_magic_link_events' and policyname = 'atelier_magic_link_events_select_admin'
+  ) then
+    create policy atelier_magic_link_events_select_admin
+    on public.atelier_magic_link_events
+    for select to authenticated
+    using (public.atelier_is_admin(auth.uid()));
+  end if;
+end
+$$;
+
 create or replace function public.atelier_is_member(uid uuid)
 returns boolean
 language sql

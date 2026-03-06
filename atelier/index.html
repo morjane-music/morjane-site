@@ -10,11 +10,17 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#0b0b0b">
   <meta name="description" content="Atelier maquettes privé de Morjane. Écoute, retours et votes dans un cercle restreint.">
+  <meta property="og:locale" content="fr_FR">
   <meta property="og:title" content="L'Atelier Maquettes - Morjane">
   <meta property="og:description" content="Cercle privé: morceaux en cours, retours confidentiels, versions fragiles.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://morjane.re/atelier">
   <meta property="og:image" content="https://morjane.re/assets/images/atelier/atelier-bg-fissure.png">
+  <meta property="og:image:alt" content="Fond fissure orangée de l'Atelier Maquettes.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="L'Atelier Maquettes - Morjane">
+  <meta name="twitter:description" content="Espace privé d'écoute, votes et retours confidentiels.">
+  <meta name="twitter:image" content="https://morjane.re/assets/images/atelier/atelier-bg-fissure.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@300;400;500&family=Cormorant+Garamond:ital@1&display=swap" rel="stylesheet">
@@ -92,8 +98,31 @@
           <input id="adminInboxSearch" type="search" placeholder="Filtrer les messages">
           <button type="button" id="toggleUnreadOnlyBtn" class="ghost">Non lus seulement</button>
         </div>
+        <div class="admin-tools">
+          <select id="adminInboxTrackFilter" aria-label="Filtrer par maquette">
+            <option value="">Toutes les maquettes</option>
+          </select>
+          <select id="adminInboxSenderFilter" aria-label="Filtrer par expéditeur">
+            <option value="">Tous les expéditeurs</option>
+          </select>
+        </div>
         <p id="adminInboxUnread" class="muted"></p>
         <div id="adminInboxList" class="admin-inbox-list"></div>
+
+        <h3>Votes agrégés</h3>
+        <div id="adminVotesSummary" class="admin-votes-summary">
+          <p class="muted">Chargement des votes...</p>
+        </div>
+
+        <h3>Statut technique</h3>
+        <div id="adminStatusPanel" class="admin-status-panel">
+          <p class="muted">Chargement du statut...</p>
+        </div>
+
+        <h3>Journal admin</h3>
+        <div id="adminAuditLog" class="admin-audit-log">
+          <p class="muted">Chargement du journal...</p>
+        </div>
       </section>
     </section>
 
@@ -121,6 +150,7 @@
     <footer class="atelier-footer-credit">
       <p class="atelier-copyright">© Morjane</p>
       <p class="atelier-credit">Créé avec <a href="https://horscadrestudio.re" target="_blank" rel="noopener noreferrer">Hors Cadre Studio</a></p>
+      <p class="atelier-credit"><a href="/confidentialite.html">Confidentialité</a> · <a href="/cookies.html">Cookies</a></p>
     </footer>
   </main>
 

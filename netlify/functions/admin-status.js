@@ -45,7 +45,6 @@ exports.handler = async (event) => {
   const supabaseUrl = process.env.SUPABASE_URL;
   const anonKey = process.env.SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
   if (!supabaseUrl || !anonKey || !serviceRoleKey) {
     return {
       statusCode: 500,
@@ -57,7 +56,7 @@ exports.handler = async (event) => {
   const auth = await authenticateAdmin(event, supabaseUrl, anonKey, serviceRoleKey);
   if (!auth.ok) {
     await trackFunctionEvent(createClient(supabaseUrl, serviceRoleKey), {
-      function_name: "admin-weekly-stats",
+      function_name: "admin-status",
       status: "error",
       error_code: auth.error,
       latency_ms: Date.now() - startedAt,
@@ -70,28 +69,35 @@ exports.handler = async (event) => {
     };
   }
 
-  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const supabase = auth.adminClient;
 
-  const [membersRes, playsRes, messagesRes] = await Promise.all([
+  const [events24hRes, events7dRes, magicRes, pendingRes] = await Promise.all([
     supabase
-      .from("atelier_profiles")
-      .select("id", { count: "exact", head: true })
-      .in("member_status", ["member", "founder"])
-      .gte("created_at", since),
+      .from("atelier_function_events")
+      .select("function_name, status", { count: "exact" })
+      .gte("created_at", since24h)
+      .limit(3000),
     supabase
-      .from("atelier_track_plays")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", since),
+      .from("atelier_function_events")
+      .select("function_name, status", { count: "exact" })
+      .gte("created_at", since7d)
+      .limit(7000),
+    supabase
+      .from("atelier_magic_link_events")
+      .select("result", { count: "exact" })
+      .gte("created_at", since7d)
+      .limit(3000),
     supabase
       .from("atelier_messages")
       .select("id", { count: "exact", head: true })
-      .gte("created_at", since),
+      .eq("admin_status", "new"),
   ]);
 
-  if (membersRes.error || playsRes.error || messagesRes.error) {
+  if (events24hRes.error || events7dRes.error || magicRes.error || pendingRes.error) {
     await trackFunctionEvent(supabase, {
-      function_name: "admin-weekly-stats",
+      function_name: "admin-status",
       status: "error",
       error_code: "query_failed",
       latency_ms: Date.now() - startedAt,
@@ -104,11 +110,37 @@ exports.handler = async (event) => {
     };
   }
 
+  const events24h = events24hRes.data || [];
+  const events7d = events7dRes.data || [];
+  const magicEvents = magicRes.data || [];
+
+  const byFunction = new Map();
+  for (const row of events24h) {
+    if (!byFunction.has(row.function_name)) {
+      byFunction.set(row.function_name, { function_name: row.function_name, ok: 0, error: 0, total: 0 });
+    }
+    const agg = byFunction.get(row.function_name);
+    agg.total += 1;
+    if (row.status === "error") agg.error += 1;
+    else agg.ok += 1;
+  }
+
+  const summaryByFunction = [...byFunction.values()]
+    .map((row) => ({ ...row, error_rate: row.total > 0 ? Number((row.error / row.total).toFixed(3)) : 0 }))
+    .sort((a, b) => b.total - a.total);
+
+  const total24h = events24h.length;
+  const errors24h = events24h.filter((e) => e.status === "error").length;
+  const total7d = events7d.length;
+  const errors7d = events7d.filter((e) => e.status === "error").length;
+  const linksSent7d = magicEvents.filter((e) => e.result === "sent").length;
+  const linksError7d = magicEvents.filter((e) => e.result === "error").length;
+
   await trackFunctionEvent(supabase, {
-    function_name: "admin-weekly-stats",
+    function_name: "admin-status",
     status: "ok",
     latency_ms: Date.now() - startedAt,
-    meta: { members: membersRes.count || 0, plays: playsRes.count || 0, messages: messagesRes.count || 0 },
+    meta: { total24h, total7d },
   });
 
   return {
@@ -116,10 +148,23 @@ exports.handler = async (event) => {
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
     body: JSON.stringify({
       ok: true,
-      new_members: membersRes.count || 0,
-      plays: playsRes.count || 0,
-      messages: messagesRes.count || 0,
-      since,
+      uptime: {
+        since24h,
+        total24h,
+        errors24h,
+        failureRate24h: total24h > 0 ? Number((errors24h / total24h).toFixed(3)) : 0,
+        total7d,
+        errors7d,
+        failureRate7d: total7d > 0 ? Number((errors7d / total7d).toFixed(3)) : 0,
+      },
+      magicLinks: {
+        since7d,
+        sent: linksSent7d,
+        error: linksError7d,
+      },
+      pendingMessages: pendingRes.count || 0,
+      functions: summaryByFunction,
     }),
   };
 };
+

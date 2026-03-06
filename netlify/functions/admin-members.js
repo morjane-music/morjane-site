@@ -1,4 +1,5 @@
 const { createClient } = require("@supabase/supabase-js");
+const { trackFunctionEvent } = require("./_lib/atelier-observability");
 
 function getBearerToken(header) {
   if (!header) {
@@ -38,6 +39,7 @@ async function authenticateAdmin(event, supabaseUrl, anonKey, serviceRoleKey) {
 }
 
 exports.handler = async (event) => {
+  const startedAt = Date.now();
   const supabaseUrl = process.env.SUPABASE_URL;
   const anonKey = process.env.SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -52,6 +54,13 @@ exports.handler = async (event) => {
 
   const auth = await authenticateAdmin(event, supabaseUrl, anonKey, serviceRoleKey);
   if (!auth.ok) {
+    await trackFunctionEvent(createClient(supabaseUrl, serviceRoleKey), {
+      function_name: "admin-members",
+      status: "error",
+      error_code: auth.error,
+      latency_ms: Date.now() - startedAt,
+      meta: { method: event.httpMethod },
+    });
     return {
       statusCode: auth.statusCode,
       headers: { "Content-Type": "application/json" },
@@ -60,6 +69,9 @@ exports.handler = async (event) => {
   }
 
   const supabase = auth.adminClient;
+  const adminUser = await createClient(supabaseUrl, anonKey)
+    .auth
+    .getUser(getBearerToken(event.headers.authorization || event.headers.Authorization));
 
   if (event.httpMethod === "GET") {
     const result = await supabase
@@ -69,12 +81,26 @@ exports.handler = async (event) => {
       .limit(100);
 
     if (result.error) {
+      await trackFunctionEvent(supabase, {
+        function_name: "admin-members",
+        status: "error",
+        error_code: "query_failed",
+        latency_ms: Date.now() - startedAt,
+        meta: { method: "GET" },
+      });
       return {
         statusCode: 500,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ok: false, error: "query_failed" }),
       };
     }
+
+    await trackFunctionEvent(supabase, {
+      function_name: "admin-members",
+      status: "ok",
+      latency_ms: Date.now() - startedAt,
+      meta: { method: "GET", count: (result.data || []).length },
+    });
 
     return {
       statusCode: 200,
@@ -94,6 +120,13 @@ exports.handler = async (event) => {
     const userId = payload.userId;
     const action = payload.action;
     if (!userId || !["approve", "revoke"].includes(action)) {
+      await trackFunctionEvent(supabase, {
+        function_name: "admin-members",
+        status: "error",
+        error_code: "bad_request",
+        latency_ms: Date.now() - startedAt,
+        meta: { method: "POST" },
+      });
       return {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
@@ -113,6 +146,13 @@ exports.handler = async (event) => {
       .maybeSingle();
 
     if (result.error) {
+      await trackFunctionEvent(supabase, {
+        function_name: "admin-members",
+        status: "error",
+        error_code: "update_failed",
+        latency_ms: Date.now() - startedAt,
+        meta: { method: "POST", action },
+      });
       return {
         statusCode: 500,
         headers: { "Content-Type": "application/json" },
@@ -120,12 +160,38 @@ exports.handler = async (event) => {
       };
     }
 
+    const adminId = adminUser?.data?.user?.id || null;
+    if (adminId) {
+      await supabase.from("atelier_admin_audit_logs").insert({
+        admin_user_id: adminId,
+        action: action === "approve" ? "member_approved" : "member_revoked",
+        target_type: "atelier_profile",
+        target_id: userId,
+        details: { action },
+      });
+    }
+
+    await trackFunctionEvent(supabase, {
+      function_name: "admin-members",
+      status: "ok",
+      latency_ms: Date.now() - startedAt,
+      meta: { method: "POST", action },
+    });
+
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
       body: JSON.stringify({ ok: true }),
     };
   }
+
+  await trackFunctionEvent(supabase, {
+    function_name: "admin-members",
+    status: "error",
+    error_code: "method_not_allowed",
+    latency_ms: Date.now() - startedAt,
+    meta: { method: event.httpMethod },
+  });
 
   return {
     statusCode: 405,

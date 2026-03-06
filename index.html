@@ -23,6 +23,7 @@ content="Morjane est une artiste réunionnaise, autrice-compositrice-interprète
   <meta property="og:description"
         content="Artiste réunionnaise. Une écriture brute, une présence scénique, un univers clair-obscur." />
   <meta property="og:image" content="https://morjane.re/assets/images/hero.jpg" />
+  <meta property="og:image:alt" content="Portrait scénique de Morjane dans un univers clair-obscur." />
   <meta property="og:url" content="https://morjane.re" />
   <meta property="og:type" content="website" />
 
@@ -30,8 +31,12 @@ content="Morjane est une artiste réunionnaise, autrice-compositrice-interprète
   <meta name="twitter:title" content="Morjane" />
   <meta name="twitter:description" content="Une voix, une scène, une trace." />
   <meta name="twitter:image" content="https://morjane.re/assets/images/hero.jpg" />
+  <meta name="twitter:image:alt" content="Portrait scénique de Morjane." />
+  <meta name="twitter:site" content="@morjane_music" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preload" as="image" href="assets/images/logo.png" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/images/hero.avif" type="image/avif" fetchpriority="high">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -55,24 +60,48 @@ content="Morjane est une artiste réunionnaise, autrice-compositrice-interprète
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "MusicGroup",
-  "name": "Morjane",
-  "url": "https://morjane.re",
-  "image": "https://morjane.re/assets/images/hero.jpg",
-  "genre": ["Chanson", "Rap"],
-  "sameAs": [
-    "https://www.instagram.com/morjane_music/",
-    "https://www.tiktok.com/@morjane_music",
-    "https://open.spotify.com/intl-fr/artist/0B5Ta7mUfgxXd8OlZ3C2Zw",
-    "https://www.youtube.com/@Morjane_music",
-    "https://www.facebook.com/people/Morjane-music/61559098903828/"
-  ],
-  "foundingLocation": {
-    "@type": "Place",
-    "name": "La Réunion"
-  }
+  "@graph": [
+    {
+      "@type": "MusicGroup",
+      "@id": "https://morjane.re/#artist",
+      "name": "Morjane",
+      "url": "https://morjane.re/",
+      "image": "https://morjane.re/assets/images/hero.jpg",
+      "description": "Artiste réunionnaise, autrice-compositrice-interprète.",
+      "genre": ["Chanson", "Rap", "Pop urbaine"],
+      "sameAs": [
+        "https://www.instagram.com/morjane_music/",
+        "https://www.tiktok.com/@morjane_music",
+        "https://open.spotify.com/intl-fr/artist/0B5Ta7mUfgxXd8OlZ3C2Zw",
+        "https://www.youtube.com/@Morjane_music",
+        "https://www.facebook.com/people/Morjane-music/61559098903828/"
+      ],
+      "foundingLocation": {
+        "@type": "Place",
+        "name": "La Réunion"
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://morjane.re/#organization",
+      "name": "Morjane",
+      "url": "https://morjane.re/",
+      "logo": "https://morjane.re/assets/images/logo.png",
+      "sameAs": [
+        "https://www.instagram.com/morjane_music/",
+        "https://www.youtube.com/@Morjane_music"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://morjane.re/#website",
+      "url": "https://morjane.re/",
+      "name": "Morjane",
+      "inLanguage": "fr"
+    }
+  ]
 }
-</script>
+  </script>
 
 </head>
 
@@ -149,7 +178,11 @@ content="Morjane est une artiste réunionnaise, autrice-compositrice-interprète
     </section>
 
     <section class="regard-transition reveal">
-      <img src="assets/images/yeux.jpg" alt="Regard Morjane" loading="lazy" decoding="async">
+      <picture>
+        <source srcset="assets/images/yeux.avif" type="image/avif">
+        <source srcset="assets/images/yeux.webp" type="image/webp">
+        <img src="assets/images/yeux.jpg" alt="Regard Morjane" loading="lazy" decoding="async">
+      </picture>
     </section>
 
     <section class="silent-interlude reveal"></section>
@@ -224,7 +257,11 @@ content="Morjane est une artiste réunionnaise, autrice-compositrice-interprète
       <div class="music-layout">
 
         <div class="music-image">
-          <img src="assets/images/guitare.jpg" alt="Morjane à la guitare" loading="lazy" decoding="async">
+          <picture>
+            <source srcset="assets/images/guitare.avif" type="image/avif">
+            <source srcset="assets/images/guitare.webp" type="image/webp">
+            <img src="assets/images/guitare.jpg" alt="Morjane à la guitare" loading="lazy" decoding="async">
+          </picture>
         </div>
 
         <div class="music-content">
@@ -313,6 +350,7 @@ content="Morjane est une artiste réunionnaise, autrice-compositrice-interprète
 
       <p class="contact-privacy-note">
         Vos messages restent privés et sont utilisés uniquement pour vous répondre.
+        <a href="/confidentialite.html">Confidentialité</a> · <a href="/cookies.html">Cookies</a>
       </p>
 
       <p class="contact-line">
@@ -379,6 +417,7 @@ content="Morjane est une artiste réunionnaise, autrice-compositrice-interprète
 
   <p class="site-copyright">© Morjane</p>
   <p class="site-credit">Créé avec <a href="https://horscadrestudio.re" target="_blank" rel="noopener noreferrer">Hors Cadre Studio</a></p>
+  <p class="site-credit"><a href="/confidentialite.html">Confidentialité</a> · <a href="/cookies.html">Cookies</a></p>
   
 </footer>
 

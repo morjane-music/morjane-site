@@ -57,7 +57,7 @@ exports.handler = async (event) => {
   const auth = await authenticateAdmin(event, supabaseUrl, anonKey, serviceRoleKey);
   if (!auth.ok) {
     await trackFunctionEvent(createClient(supabaseUrl, serviceRoleKey), {
-      function_name: "admin-weekly-stats",
+      function_name: "admin-votes-summary",
       status: "error",
       error_code: auth.error,
       latency_ms: Date.now() - startedAt,
@@ -70,28 +70,14 @@ exports.handler = async (event) => {
     };
   }
 
-  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const supabase = auth.adminClient;
-
-  const [membersRes, playsRes, messagesRes] = await Promise.all([
-    supabase
-      .from("atelier_profiles")
-      .select("id", { count: "exact", head: true })
-      .in("member_status", ["member", "founder"])
-      .gte("created_at", since),
-    supabase
-      .from("atelier_track_plays")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", since),
-    supabase
-      .from("atelier_messages")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", since),
+  const [tracksRes, votesRes] = await Promise.all([
+    auth.adminClient.from("atelier_tracks").select("id, title").order("created_at", { ascending: false }).limit(20),
+    auth.adminClient.from("atelier_votes").select("track_id, choice"),
   ]);
 
-  if (membersRes.error || playsRes.error || messagesRes.error) {
-    await trackFunctionEvent(supabase, {
-      function_name: "admin-weekly-stats",
+  if (tracksRes.error || votesRes.error) {
+    await trackFunctionEvent(auth.adminClient, {
+      function_name: "admin-votes-summary",
       status: "error",
       error_code: "query_failed",
       latency_ms: Date.now() - startedAt,
@@ -104,22 +90,40 @@ exports.handler = async (event) => {
     };
   }
 
-  await trackFunctionEvent(supabase, {
-    function_name: "admin-weekly-stats",
+  const byTrack = new Map();
+  for (const track of tracksRes.data || []) {
+    byTrack.set(track.id, {
+      track_id: track.id,
+      track_title: track.title || "Maquette",
+      total: 0,
+      keep: 0,
+      revise: 0,
+      discard: 0,
+    });
+  }
+
+  for (const vote of votesRes.data || []) {
+    if (!byTrack.has(vote.track_id)) continue;
+    const row = byTrack.get(vote.track_id);
+    row.total += 1;
+    if (vote.choice === "develop") row.keep += 1;
+    if (vote.choice === "revise") row.revise += 1;
+    if (vote.choice === "leave") row.discard += 1;
+  }
+
+  const summary = [...byTrack.values()].sort((a, b) => b.total - a.total);
+
+  await trackFunctionEvent(auth.adminClient, {
+    function_name: "admin-votes-summary",
     status: "ok",
     latency_ms: Date.now() - startedAt,
-    meta: { members: membersRes.count || 0, plays: playsRes.count || 0, messages: messagesRes.count || 0 },
+    meta: { tracks: summary.length },
   });
 
   return {
     statusCode: 200,
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-    body: JSON.stringify({
-      ok: true,
-      new_members: membersRes.count || 0,
-      plays: playsRes.count || 0,
-      messages: messagesRes.count || 0,
-      since,
-    }),
+    body: JSON.stringify({ ok: true, summary }),
   };
 };
+

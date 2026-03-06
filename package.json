@@ -5,5 +5,8 @@
   "description": "morjane.re static site with Netlify Functions",
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
   }
 }

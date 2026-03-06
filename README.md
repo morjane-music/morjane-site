@@ -16,6 +16,8 @@
 - `/atelier` route guarded by `check-atelier-gate`.
 - V1.1 base: Supabase magic-link login, member-only tracks, vote upsert, private admin message insert.
 - Protected audio via Netlify `get-audio-url` generating a signed Storage URL (300s) from private bucket `atelier-audio`.
+- Admin Atelier: validation membres, inbox messages (non lus + traité), votes agrégés, journal admin.
+- Monitoring Atelier: événements techniques de functions + statut admin (taux d’échec 24h/7j, liens magic envoyés).
 
 ## Required setup
 1. Run SQL from `supabase/schema.sql` (creates isolated `atelier_*` tables).
@@ -30,6 +32,11 @@
 - `netlify/functions/check-atelier-gate.js`
 - `netlify/functions/get-public-config.js`
 - `netlify/functions/get-audio-url.js`
+- `netlify/functions/log-track-play.js`
+- `netlify/functions/log-magic-link-event.js`
+- `netlify/functions/admin-votes-summary.js`
+- `netlify/functions/admin-status.js`
+- `netlify/functions/admin-audit-log.js`
 - `atelier/index.html`
 - `atelier/styles.css`
 - `atelier/app.js`

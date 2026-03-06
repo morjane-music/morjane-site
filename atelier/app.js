@@ -15,11 +15,16 @@ const adminMembersList = document.getElementById("adminMembersList");
 const adminWeeklyStats = document.getElementById("adminWeeklyStats");
 const adminInboxList = document.getElementById("adminInboxList");
 const adminInboxUnread = document.getElementById("adminInboxUnread");
+const adminInboxTrackFilter = document.getElementById("adminInboxTrackFilter");
+const adminInboxSenderFilter = document.getElementById("adminInboxSenderFilter");
 const copyAtelierLinkBtn = document.getElementById("copyAtelierLinkBtn");
 const refreshInboxBtn = document.getElementById("refreshInboxBtn");
 const markInboxReadBtn = document.getElementById("markInboxReadBtn");
 const adminInboxSearch = document.getElementById("adminInboxSearch");
 const toggleUnreadOnlyBtn = document.getElementById("toggleUnreadOnlyBtn");
+const adminVotesSummary = document.getElementById("adminVotesSummary");
+const adminStatusPanel = document.getElementById("adminStatusPanel");
+const adminAuditLog = document.getElementById("adminAuditLog");
 const adminSearchInput = document.getElementById("adminSearchInput");
 const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
@@ -307,12 +312,58 @@ function formatInboxDate(iso) {
   }
 }
 
+function populateInboxFilters() {
+  if (!adminInboxTrackFilter || !adminInboxSenderFilter) {
+    return;
+  }
+
+  const tracks = [...new Set(adminInboxCache.map((item) => item.track_title).filter(Boolean))].sort();
+  const senders = [...new Set(adminInboxCache.map((item) => item.sender_email).filter(Boolean))].sort();
+
+  const currentTrack = adminInboxTrackFilter.value;
+  const currentSender = adminInboxSenderFilter.value;
+
+  adminInboxTrackFilter.innerHTML = "<option value=\"\">Toutes les maquettes</option>";
+  tracks.forEach((title) => {
+    const option = document.createElement("option");
+    option.value = title;
+    option.textContent = formatTrackTitle(title);
+    adminInboxTrackFilter.appendChild(option);
+  });
+
+  adminInboxSenderFilter.innerHTML = "<option value=\"\">Tous les expéditeurs</option>";
+  senders.forEach((email) => {
+    const option = document.createElement("option");
+    option.value = email;
+    option.textContent = email;
+    adminInboxSenderFilter.appendChild(option);
+  });
+
+  if (tracks.includes(currentTrack)) {
+    adminInboxTrackFilter.value = currentTrack;
+  }
+  if (senders.includes(currentSender)) {
+    adminInboxSenderFilter.value = currentSender;
+  }
+}
+
+function formatProcessedState(item) {
+  if (item.admin_status !== "processed") {
+    return "Statut : non traité";
+  }
+  const who = item.processed_by_email ? ` par ${item.processed_by_email}` : "";
+  const when = item.processed_at ? ` le ${formatInboxDate(item.processed_at)}` : "";
+  return `Statut : traité${who}${when}`;
+}
+
 function renderAdminInbox() {
   if (!adminInboxList) {
     return;
   }
 
   const term = String(adminInboxSearch?.value || "").trim().toLowerCase();
+  const selectedTrack = String(adminInboxTrackFilter?.value || "");
+  const selectedSender = String(adminInboxSenderFilter?.value || "");
   adminInboxList.innerHTML = "";
   let unreadCount = 0;
   if (!adminInboxCache.length) {
@@ -328,7 +379,9 @@ function renderAdminInbox() {
     const content = `${item.sender_email || ""} ${item.track_title || ""} ${item.content || ""}`.toLowerCase();
     const matchSearch = !term || content.includes(term);
     const matchUnread = !adminInboxUnreadOnly || unread;
-    return matchSearch && matchUnread;
+    const matchTrack = !selectedTrack || item.track_title === selectedTrack;
+    const matchSender = !selectedSender || item.sender_email === selectedSender;
+    return matchSearch && matchUnread && matchTrack && matchSender;
   });
 
   if (filteredMessages.length === 0) {
@@ -363,13 +416,55 @@ function renderAdminInbox() {
     body.className = "admin-inbox-body";
     body.textContent = item.content || "";
 
+    const state = document.createElement("p");
+    state.className = "admin-inbox-state";
+    state.textContent = formatProcessedState(item);
+
+    const actions = document.createElement("div");
+    actions.className = "admin-inbox-actions";
+    const actionBtn = document.createElement("button");
+    actionBtn.type = "button";
+    actionBtn.className = "ghost";
+    actionBtn.textContent = item.admin_status === "processed" ? "Remettre non traité" : "Marquer traité";
+    actionBtn.addEventListener("click", async () => {
+      await updateMessageStatus(item.id, item.admin_status === "processed" ? "mark_new" : "mark_processed");
+    });
+    actions.appendChild(actionBtn);
+
     card.appendChild(head);
     card.appendChild(body);
+    card.appendChild(state);
+    card.appendChild(actions);
     adminInboxList.appendChild(card);
   });
 
   if (adminInboxUnread) {
     adminInboxUnread.textContent = `Nouveaux messages : ${unreadCount}`;
+  }
+}
+
+async function updateMessageStatus(messageId, action) {
+  if (!canManageMembers() || !session?.access_token || !messageId) {
+    return;
+  }
+
+  try {
+    const res = await fetch("/.netlify/functions/admin-inbox", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ messageId, action }),
+    });
+    if (!res.ok) {
+      return;
+    }
+    await loadAdminInbox();
+    await loadAdminAuditLog();
+    await loadAdminStatus();
+  } catch (_) {
+    // no-op
   }
 }
 
@@ -391,9 +486,154 @@ async function loadAdminInbox() {
     }
 
     adminInboxCache = Array.isArray(data.messages) ? data.messages : [];
+    populateInboxFilters();
     renderAdminInbox();
   } catch (_) {
     adminInboxList.innerHTML = "<p class=\"muted\">Erreur reseau.</p>";
+  }
+}
+
+function renderAdminVotesSummary(summary = []) {
+  if (!adminVotesSummary) {
+    return;
+  }
+  if (!summary.length) {
+    adminVotesSummary.innerHTML = "<p class=\"muted\">Aucun vote pour le moment.</p>";
+    return;
+  }
+
+  adminVotesSummary.innerHTML = "";
+  summary.forEach((row) => {
+    const card = document.createElement("article");
+    card.className = "admin-vote-item";
+    card.innerHTML = `
+      <p class="admin-vote-title">${formatTrackTitle(row.track_title)}</p>
+      <p class="admin-vote-meta">Total votes : ${row.total} | À garder : ${row.keep} | À retravailler : ${row.revise} | À écarter : ${row.discard}</p>
+    `;
+    adminVotesSummary.appendChild(card);
+  });
+}
+
+async function loadAdminVotesSummary() {
+  if (!canManageMembers() || !session?.access_token || !adminVotesSummary) {
+    return;
+  }
+  adminVotesSummary.innerHTML = "<p class=\"muted\">Chargement des votes...</p>";
+  try {
+    const res = await fetch("/.netlify/functions/admin-votes-summary", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      adminVotesSummary.innerHTML = `<p class="muted">Impossible de charger (${data.error || res.status}).</p>`;
+      return;
+    }
+    renderAdminVotesSummary(Array.isArray(data.summary) ? data.summary : []);
+  } catch (_) {
+    adminVotesSummary.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
+  }
+}
+
+function renderAdminStatus(data) {
+  if (!adminStatusPanel) {
+    return;
+  }
+  const uptime = data?.uptime || {};
+  const magic = data?.magicLinks || {};
+  const pending = Number(data?.pendingMessages || 0);
+  const functions = Array.isArray(data?.functions) ? data.functions.slice(0, 6) : [];
+
+  adminStatusPanel.innerHTML = "";
+  const top = document.createElement("article");
+  top.className = "admin-status-item";
+  top.innerHTML = `
+    <p class="admin-status-title">Synthèse</p>
+    <p class="admin-status-meta">Échecs fonctions 24h : ${uptime.errors24h || 0}/${uptime.total24h || 0} (${Math.round((uptime.failureRate24h || 0) * 100)}%)</p>
+    <p class="admin-status-meta">Liens magiques (7 jours) : ${magic.sent || 0} envoyés, ${magic.error || 0} en erreur</p>
+    <p class="admin-status-meta">Messages non traités : ${pending}</p>
+  `;
+  adminStatusPanel.appendChild(top);
+
+  functions.forEach((fn) => {
+    const card = document.createElement("article");
+    card.className = "admin-status-item";
+    card.innerHTML = `
+      <p class="admin-status-title">${fn.function_name}</p>
+      <p class="admin-status-meta">OK: ${fn.ok} | Erreurs: ${fn.error} | Taux échec: ${Math.round((fn.error_rate || 0) * 100)}%</p>
+    `;
+    adminStatusPanel.appendChild(card);
+  });
+}
+
+async function loadAdminStatus() {
+  if (!canManageMembers() || !session?.access_token || !adminStatusPanel) {
+    return;
+  }
+  adminStatusPanel.innerHTML = "<p class=\"muted\">Chargement du statut...</p>";
+  try {
+    const res = await fetch("/.netlify/functions/admin-status", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      adminStatusPanel.innerHTML = `<p class="muted">Impossible de charger (${data.error || res.status}).</p>`;
+      return;
+    }
+    renderAdminStatus(data);
+  } catch (_) {
+    adminStatusPanel.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
+  }
+}
+
+function renderAdminAuditLog(logs = []) {
+  if (!adminAuditLog) {
+    return;
+  }
+  if (!logs.length) {
+    adminAuditLog.innerHTML = "<p class=\"muted\">Aucune action récente.</p>";
+    return;
+  }
+
+  adminAuditLog.innerHTML = "";
+  const actionLabel = (action) => ({
+    member_approved: "Membre validé",
+    member_revoked: "Accès retiré",
+    message_processed: "Message marqué traité",
+    message_reopened: "Message rouvert",
+  }[action] || action);
+
+  logs.slice(0, 25).forEach((row) => {
+    const card = document.createElement("article");
+    card.className = "admin-audit-item";
+    card.innerHTML = `
+      <p class="admin-audit-title">${actionLabel(row.action)}</p>
+      <p class="admin-audit-meta">${formatInboxDate(row.created_at)} — ${row.admin_email}</p>
+      <p class="admin-audit-meta">Cible: ${row.target_type}${row.target_id ? ` (${row.target_id})` : ""}</p>
+    `;
+    adminAuditLog.appendChild(card);
+  });
+}
+
+async function loadAdminAuditLog() {
+  if (!canManageMembers() || !session?.access_token || !adminAuditLog) {
+    return;
+  }
+  adminAuditLog.innerHTML = "<p class=\"muted\">Chargement du journal...</p>";
+  try {
+    const res = await fetch("/.netlify/functions/admin-audit-log", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      adminAuditLog.innerHTML = `<p class="muted">Impossible de charger (${data.error || res.status}).</p>`;
+      return;
+    }
+    renderAdminAuditLog(Array.isArray(data.logs) ? data.logs : []);
+  } catch (_) {
+    adminAuditLog.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
   }
 }
 
@@ -423,6 +663,8 @@ async function updateMemberStatus(userId, action) {
     }
     await loadAdminMembers();
     await loadCircleCount();
+    await loadAdminAuditLog();
+    await loadAdminStatus();
   } catch (_) {
     // no-op
   }
@@ -658,6 +900,9 @@ async function loadTracks() {
     await loadAdminMembers();
     await loadAdminWeeklyStats();
     await loadAdminInbox();
+    await loadAdminVotesSummary();
+    await loadAdminStatus();
+    await loadAdminAuditLog();
   } else if (adminPanel) {
     hide(adminPanel);
   }
@@ -759,13 +1004,29 @@ async function logQualifiedPlay() {
 
   playLoggedForCurrentTrack = true;
 
-  const { error } = await supabase.from("atelier_track_plays").insert({
-    track_id: selectedTrack.id,
-    user_id: profile.id,
-  });
-
-  if (error) {
+  let res = null;
+  let data = null;
+  try {
+    res = await fetch("/.netlify/functions/log-track-play", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ trackId: selectedTrack.id }),
+    });
+    data = await res.json().catch(() => ({}));
+  } catch (_) {
     playLoggedForCurrentTrack = false;
+    return;
+  }
+
+  if (!res?.ok) {
+    playLoggedForCurrentTrack = false;
+    return;
+  }
+
+  if (!data?.counted) {
     return;
   }
 
@@ -854,6 +1115,11 @@ magicLinkForm.addEventListener("submit", async (event) => {
   if (error) {
     const raw = String(error.message || "");
     const lower = raw.toLowerCase();
+    fetch("/.netlify/functions/log-magic-link-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, result: "error", error_code: lower.slice(0, 120) }),
+    }).catch(() => {});
     if (lower.includes("rate limit")) {
       authStatus.textContent = "Trop de tentatives. Réessayez dans 60 secondes.";
       startMagicLinkCooldown(60);
@@ -865,6 +1131,11 @@ magicLinkForm.addEventListener("submit", async (event) => {
     return;
   }
   authStatus.textContent = "Lien envoyé. Vérifie ta boîte mail.";
+  fetch("/.netlify/functions/log-magic-link-event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, result: "sent" }),
+  }).catch(() => {});
   startMagicLinkCooldown(60);
 });
 
@@ -964,6 +1235,7 @@ if (copyAtelierLinkBtn) {
 if (refreshInboxBtn) {
   refreshInboxBtn.addEventListener("click", async () => {
     await loadAdminInbox();
+    await loadAdminStatus();
   });
 }
 
@@ -975,6 +1247,18 @@ if (markInboxReadBtn) {
 
 if (adminInboxSearch) {
   adminInboxSearch.addEventListener("input", () => {
+    renderAdminInbox();
+  });
+}
+
+if (adminInboxTrackFilter) {
+  adminInboxTrackFilter.addEventListener("change", () => {
+    renderAdminInbox();
+  });
+}
+
+if (adminInboxSenderFilter) {
+  adminInboxSenderFilter.addEventListener("change", () => {
     renderAdminInbox();
   });
 }

@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /atelier
+Disallow: /atelier/
 
 Sitemap: https://morjane.re/sitemap.xml

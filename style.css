@@ -127,7 +127,14 @@ main {
 .hero-media {
   position: absolute;
   inset: 0;
-  background: url("assets/images/hero.jpg") center 35% / cover no-repeat;
+  background-image: image-set(
+    url("assets/images/hero.avif") type("image/avif"),
+    url("assets/images/hero.webp") type("image/webp"),
+    url("assets/images/hero.jpg") type("image/jpeg")
+  );
+  background-position: center 35%;
+  background-size: cover;
+  background-repeat: no-repeat;
   z-index: 1;
 }
 
@@ -244,6 +251,13 @@ main {
   overflow: hidden;
   background: #0b0b0b;
   margin: 12vh 0;
+}
+
+.regard-transition picture,
+.regard-transition img {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .regard-transition img {
@@ -464,7 +478,14 @@ main {
 
 .scene-section {
   min-height: 85vh;
-  background: url("assets/images/scene.jpg") center 70% / cover no-repeat;
+  background-image: image-set(
+    url("assets/images/scene.avif") type("image/avif"),
+    url("assets/images/scene.webp") type("image/webp"),
+    url("assets/images/scene.jpg") type("image/jpeg")
+  );
+  background-position: center 70%;
+  background-size: cover;
+  background-repeat: no-repeat;
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -515,6 +536,7 @@ main {
   overflow: hidden;
 }
 
+.music-image picture,
 .music-image img {
   width: 100%;
   height: auto;
@@ -1104,6 +1126,10 @@ body::before {
   font-size: 10px;
   letter-spacing: 0.1em;
   opacity: 0.5;
+}
+
+.epk-credit {
+  opacity: 0.78;
 }
 
 .site-credit a,

@@ -23,7 +23,11 @@ body {
   font-family: "Inter", "Segoe UI", sans-serif;
   background:
     linear-gradient(rgba(11, 11, 11, 0.82), rgba(11, 11, 11, 0.85)),
-    url("../assets/images/atelier/atelier-bg-fissure.png") center / cover no-repeat fixed,
+    image-set(
+      url("../assets/images/atelier/atelier-bg-fissure.avif") type("image/avif"),
+      url("../assets/images/atelier/atelier-bg-fissure.webp") type("image/webp"),
+      url("../assets/images/atelier/atelier-bg-fissure.png") type("image/png")
+    ) center / cover no-repeat fixed,
     radial-gradient(1200px 500px at 15% -10%, rgba(201, 152, 82, 0.2), transparent 58%),
     radial-gradient(1000px 450px at 110% 15%, rgba(201, 152, 82, 0.08), transparent 58%),
     var(--bg);
@@ -410,9 +414,70 @@ button.ghost {
   padding: 8px 10px;
 }
 
+.admin-tools select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--ink);
+  padding: 8px 10px;
+}
+
 .admin-tools .ghost.is-active {
   background: rgba(201, 152, 82, 0.2);
   border-color: rgba(201, 152, 82, 0.7);
+}
+
+.admin-inbox-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-inbox-state {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: rgba(232, 223, 211, 0.72);
+}
+
+.admin-votes-summary,
+.admin-status-panel,
+.admin-audit-log {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.admin-vote-item,
+.admin-status-item,
+.admin-audit-item {
+  border: 1px solid rgba(201, 152, 82, 0.22);
+  border-radius: 10px;
+  background: rgba(201, 152, 82, 0.04);
+  padding: 10px;
+}
+
+.admin-vote-title,
+.admin-status-title,
+.admin-audit-title {
+  margin: 0;
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-vote-meta,
+.admin-status-meta,
+.admin-audit-meta {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: rgba(232, 223, 211, 0.82);
+}
+
+.admin-audit-meta {
+  white-space: pre-wrap;
 }
 
 .admin-tabs {
