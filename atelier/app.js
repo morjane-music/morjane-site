@@ -1003,6 +1003,19 @@ function renderTrackLikeState() {
   }
 }
 
+function pulseLikeButton() {
+  if (!trackLikeBtn) {
+    return;
+  }
+  trackLikeBtn.classList.remove("is-pulsing");
+  // Force reflow so animation can restart reliably.
+  void trackLikeBtn.offsetWidth;
+  trackLikeBtn.classList.add("is-pulsing");
+  setTimeout(() => {
+    trackLikeBtn.classList.remove("is-pulsing");
+  }, 700);
+}
+
 function renderTrackList() {
   trackList.innerHTML = "";
   tracks.forEach((track) => {
@@ -1135,6 +1148,7 @@ async function toggleTrackLike() {
     }
     userLikedTrackIds.add(selectedTrack.id);
     trackLikeCounts.set(selectedTrack.id, getTrackLikeCount(selectedTrack.id) + 1);
+    pulseLikeButton();
   }
 
   renderTrackLikeState();

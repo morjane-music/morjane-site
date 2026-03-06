@@ -331,7 +331,7 @@ main {
 .trace-layout {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
-  gap: 120px;
+  gap: 76px;
   align-items: flex-start;
   justify-items: start;
 }
@@ -340,8 +340,9 @@ main {
   display: flex;
   flex-direction: column;
   gap: 30px;
-  align-items: flex-start;
-  text-align: left;
+  align-items: center;
+  text-align: center;
+  justify-self: end;
   padding-top: 6px;
 }
 
@@ -356,7 +357,7 @@ main {
 
 .trace-signature {
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
   max-width: 520px;
 }
 
