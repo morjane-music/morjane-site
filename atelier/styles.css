@@ -452,7 +452,8 @@ button.ghost {
 
 .admin-votes-summary,
 .admin-status-panel,
-.admin-audit-log {
+.admin-audit-log,
+.admin-live-listeners {
   display: grid;
   gap: 8px;
   margin-top: 10px;

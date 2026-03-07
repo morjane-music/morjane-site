@@ -29,6 +29,7 @@ const toggleUnreadOnlyBtn = document.getElementById("toggleUnreadOnlyBtn");
 const adminVotesSummary = document.getElementById("adminVotesSummary");
 const adminStatusPanel = document.getElementById("adminStatusPanel");
 const adminAuditLog = document.getElementById("adminAuditLog");
+const adminLiveListeners = document.getElementById("adminLiveListeners");
 const adminSearchInput = document.getElementById("adminSearchInput");
 const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
@@ -68,6 +69,8 @@ let adminViewMode = "pending";
 let magicLinkCooldownTimer = null;
 let voteCooldownUntil = 0;
 let adminUnlocked = false;
+let presenceHeartbeatTimer = null;
+let adminLiveRefreshTimer = null;
 
 function formatTrackTitle(rawTitle) {
   const title = String(rawTitle || "").trim();
@@ -643,6 +646,68 @@ async function loadAdminStatus() {
   }
 }
 
+function renderAdminLiveListeners(listeners = []) {
+  if (!adminLiveListeners) {
+    return;
+  }
+  if (!listeners.length) {
+    adminLiveListeners.innerHTML = "<p class=\"muted\">Personne n'ecoute en ce moment.</p>";
+    return;
+  }
+
+  adminLiveListeners.innerHTML = "";
+  listeners.forEach((row) => {
+    const card = document.createElement("article");
+    card.className = "admin-status-item";
+    const seen = row.last_seen_at ? formatInboxDate(row.last_seen_at) : "-";
+    card.innerHTML = `
+      <p class="admin-status-title">${row.email || "Email inconnu"}</p>
+      <p class="admin-status-meta">${formatTrackTitle(row.track_title || "Maquette")}</p>
+      <p class="admin-status-meta">Actif a ${seen}</p>
+    `;
+    adminLiveListeners.appendChild(card);
+  });
+}
+
+async function loadAdminLiveListeners() {
+  if (!canManageMembers() || !session?.access_token || !adminLiveListeners || !adminUnlocked) {
+    return;
+  }
+  try {
+    const res = await fetch("/.netlify/functions/admin-live-listeners", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      adminLiveListeners.innerHTML = `<p class="muted">Impossible de charger le live (${data.error || res.status}).</p>`;
+      return;
+    }
+    renderAdminLiveListeners(Array.isArray(data.listeners) ? data.listeners : []);
+  } catch (_) {
+    adminLiveListeners.innerHTML = "<p class=\"muted\">Erreur reseau.</p>";
+  }
+}
+
+function stopAdminLiveRefresh() {
+  if (adminLiveRefreshTimer) {
+    clearInterval(adminLiveRefreshTimer);
+    adminLiveRefreshTimer = null;
+  }
+}
+
+function startAdminLiveRefresh() {
+  if (!canManageMembers() || !adminUnlocked) {
+    stopAdminLiveRefresh();
+    return;
+  }
+  stopAdminLiveRefresh();
+  loadAdminLiveListeners();
+  adminLiveRefreshTimer = setInterval(() => {
+    loadAdminLiveListeners();
+  }, 5000);
+}
+
 function renderAdminAuditLog(logs = []) {
   if (!adminAuditLog) {
     return;
@@ -699,6 +764,45 @@ function markInboxAsRead() {
     : new Date().toISOString();
   saveInboxLastSeen(latestIso);
   renderAdminInbox();
+}
+
+async function sendPresenceHeartbeat(isListening) {
+  if (!session?.access_token || !profile?.id) {
+    return;
+  }
+  try {
+    await fetch("/.netlify/functions/presence-heartbeat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        isListening: Boolean(isListening && selectedTrack?.id),
+        trackId: selectedTrack?.id || null,
+      }),
+    });
+  } catch (_) {
+    // no-op
+  }
+}
+
+function stopPresenceHeartbeat() {
+  if (presenceHeartbeatTimer) {
+    clearInterval(presenceHeartbeatTimer);
+    presenceHeartbeatTimer = null;
+  }
+}
+
+function startPresenceHeartbeat() {
+  if (!selectedTrack?.id || !session?.access_token) {
+    return;
+  }
+  stopPresenceHeartbeat();
+  sendPresenceHeartbeat(true);
+  presenceHeartbeatTimer = setInterval(() => {
+    sendPresenceHeartbeat(true);
+  }, 15000);
 }
 
 async function updateMemberStatus(userId, action) {
@@ -886,6 +990,8 @@ async function loadSessionAndProfile() {
   session = sessionResult.data.session || null;
 
   if (!session) {
+    stopPresenceHeartbeat();
+    stopAdminLiveRefresh();
     show(authView);
     hide(memberView);
     hide(trackView);
@@ -967,8 +1073,13 @@ async function loadTracks() {
       await loadAdminVotesSummary();
       await loadAdminStatus();
       await loadAdminAuditLog();
+      await loadAdminLiveListeners();
+      startAdminLiveRefresh();
+    } else {
+      stopAdminLiveRefresh();
     }
   } else if (adminPanel) {
+    stopAdminLiveRefresh();
     hide(adminPanel);
   }
 }
@@ -1330,6 +1441,9 @@ messageForm.addEventListener("submit", async (event) => {
 });
 
 logoutBtn.addEventListener("click", async () => {
+  await sendPresenceHeartbeat(false);
+  stopPresenceHeartbeat();
+  stopAdminLiveRefresh();
   await supabase.auth.signOut();
   session = null;
   profile = null;
@@ -1342,6 +1456,8 @@ logoutBtn.addEventListener("click", async () => {
 });
 
 backBtn.addEventListener("click", () => {
+  sendPresenceHeartbeat(false);
+  stopPresenceHeartbeat();
   player.pause();
   stopWatermark();
   player.removeAttribute("src");
@@ -1355,10 +1471,17 @@ if (player) {
     if (player.currentTime < 2) {
       playLoggedForCurrentTrack = false;
     }
+    startPresenceHeartbeat();
     startWatermark();
   });
-  player.addEventListener("pause", stopWatermark);
+  player.addEventListener("pause", () => {
+    sendPresenceHeartbeat(false);
+    stopPresenceHeartbeat();
+    stopWatermark();
+  });
   player.addEventListener("ended", () => {
+    sendPresenceHeartbeat(false);
+    stopPresenceHeartbeat();
     stopWatermark();
     playLoggedForCurrentTrack = false;
   });
@@ -1474,6 +1597,8 @@ if (adminUnlockForm) {
     await loadAdminVotesSummary();
     await loadAdminStatus();
     await loadAdminAuditLog();
+    await loadAdminLiveListeners();
+    startAdminLiveRefresh();
   });
 }
 

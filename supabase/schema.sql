@@ -220,6 +220,62 @@ begin
 end
 $$;
 
+create table if not exists public.atelier_presence (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  track_id uuid references public.atelier_tracks(id) on delete set null,
+  is_listening boolean not null default false,
+  last_seen_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_atelier_presence_listening_seen
+  on public.atelier_presence(is_listening, last_seen_at desc);
+
+alter table public.atelier_presence enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_presence' and policyname = 'atelier_presence_select_own_or_admin'
+  ) then
+    create policy atelier_presence_select_own_or_admin
+    on public.atelier_presence
+    for select to authenticated
+    using (auth.uid() = user_id or public.atelier_is_admin(auth.uid()));
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_presence' and policyname = 'atelier_presence_insert_own'
+  ) then
+    create policy atelier_presence_insert_own
+    on public.atelier_presence
+    for insert to authenticated
+    with check (auth.uid() = user_id and public.atelier_is_member(auth.uid()));
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'atelier_presence' and policyname = 'atelier_presence_update_own'
+  ) then
+    create policy atelier_presence_update_own
+    on public.atelier_presence
+    for update to authenticated
+    using (auth.uid() = user_id and public.atelier_is_member(auth.uid()))
+    with check (auth.uid() = user_id and public.atelier_is_member(auth.uid()));
+  end if;
+end
+$$;
+
 create or replace function public.atelier_is_member(uid uuid)
 returns boolean
 language sql
