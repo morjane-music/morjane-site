@@ -680,7 +680,12 @@ async function loadAdminLiveListeners() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      adminLiveListeners.innerHTML = `<p class="muted">Impossible de charger le live (${data.error || res.status}).</p>`;
+      const detail = data.detail ? ` - ${data.detail}` : "";
+      adminLiveListeners.innerHTML = `<p class="muted">Impossible de charger le live (${data.error || res.status})${detail}.</p>`;
+      return;
+    }
+    if (data.setup_required) {
+      adminLiveListeners.innerHTML = "<p class=\"muted\">Live en écoute non configuré sur cette base (table atelier_presence manquante).</p>";
       return;
     }
     renderAdminLiveListeners(Array.isArray(data.listeners) ? data.listeners : []);

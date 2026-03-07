@@ -85,17 +85,39 @@ exports.handler = async (event) => {
     .limit(100);
 
   if (presenceRes.error) {
+    const pgCode = String(presenceRes.error.code || "");
+    const pgMessage = String(presenceRes.error.message || "");
+    const tableMissing = pgCode === "42P01" || /does not exist|relation/i.test(pgMessage);
     await trackFunctionEvent(auth.adminClient, {
       function_name: "admin-live-listeners",
-      status: "error",
-      error_code: "query_failed_presence",
+      status: tableMissing ? "ok" : "error",
+      error_code: tableMissing ? "presence_not_configured" : "query_failed_presence",
       latency_ms: Date.now() - startedAt,
-      meta: {},
+      meta: { pg_code: pgCode || null },
     });
+
+    if (tableMissing) {
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+        body: JSON.stringify({
+          ok: true,
+          listeners: [],
+          setup_required: true,
+          error: "presence_not_configured",
+          detail: pgMessage || null,
+        }),
+      };
+    }
+
     return {
       statusCode: 500,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ok: false, error: "query_failed_presence" }),
+      body: JSON.stringify({
+        ok: false,
+        error: "query_failed_presence",
+        detail: pgMessage || null,
+      }),
     };
   }
 
@@ -145,4 +167,3 @@ exports.handler = async (event) => {
     body: JSON.stringify({ ok: true, listeners }),
   };
 };
-
