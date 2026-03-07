@@ -474,7 +474,7 @@ button.ghost {
 
 .admin-tools {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 8px;
   margin-top: 10px;
   align-items: center;
@@ -596,7 +596,7 @@ button.ghost {
 .admin-audit-meta {
   margin: 6px 0 0;
   font-size: 13px;
-  color: rgba(232, 223, 211, 0.78);
+  color: rgba(232, 223, 211, 0.74);
   line-height: 1.5;
 }
 
@@ -619,6 +619,54 @@ button.ghost {
 .admin-tab.is-active {
   background: rgba(201, 152, 82, 0.25);
   border-color: rgba(201, 152, 82, 0.75);
+}
+
+body.admin-compact .admin-panel {
+  padding: 10px;
+  border-radius: 12px;
+}
+
+body.admin-compact .admin-panel h3 {
+  margin: 12px 0 6px;
+  padding-top: 8px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+body.admin-compact .admin-weekly-value {
+  font-size: 18px;
+}
+
+body.admin-compact .admin-weekly-label,
+body.admin-compact .admin-inbox-meta,
+body.admin-compact .admin-inbox-state,
+body.admin-compact .admin-vote-meta,
+body.admin-compact .admin-status-meta,
+body.admin-compact .admin-audit-meta,
+body.admin-compact .admin-member-meta {
+  font-size: 12px;
+}
+
+body.admin-compact .admin-inbox-item,
+body.admin-compact .admin-status-item,
+body.admin-compact .admin-audit-item,
+body.admin-compact .admin-vote-item,
+body.admin-compact .admin-live-item,
+body.admin-compact .admin-member-item,
+body.admin-compact .admin-weekly-card {
+  padding: 8px;
+}
+
+body.admin-compact .admin-tools input,
+body.admin-compact .admin-tools select,
+body.admin-compact .admin-tools button,
+body.admin-compact .admin-tab {
+  font-size: 12px;
+}
+
+body.admin-compact .admin-note-input {
+  font-size: 12px;
+  padding: 7px 9px;
 }
 
 .admin-member-item {

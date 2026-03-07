@@ -31,6 +31,7 @@ const adminStatusPanel = document.getElementById("adminStatusPanel");
 const adminAuditLog = document.getElementById("adminAuditLog");
 const adminLiveListeners = document.getElementById("adminLiveListeners");
 const adminTodayCards = document.getElementById("adminTodayCards");
+const adminDensityToggle = document.getElementById("adminDensityToggle");
 const adminSearchInput = document.getElementById("adminSearchInput");
 const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
@@ -78,6 +79,25 @@ const adminTodayState = {
   playsToday: 0,
   activeMembers7d: 0,
 };
+const ADMIN_DENSITY_STORAGE_KEY = "atelier_admin_compact_density";
+
+function applyAdminDensityMode(isCompact) {
+  document.body.classList.toggle("admin-compact", Boolean(isCompact));
+  if (adminDensityToggle) {
+    adminDensityToggle.textContent = `Mode compact : ${isCompact ? "on" : "off"}`;
+    adminDensityToggle.setAttribute("aria-pressed", isCompact ? "true" : "false");
+  }
+}
+
+function initAdminDensityMode() {
+  let compact = false;
+  try {
+    compact = localStorage.getItem(ADMIN_DENSITY_STORAGE_KEY) === "1";
+  } catch (_) {
+    compact = false;
+  }
+  applyAdminDensityMode(compact);
+}
 
 function formatTrackTitle(rawTitle) {
   const title = String(rawTitle || "").trim();
@@ -1659,6 +1679,18 @@ if (copyAtelierLinkBtn) {
   });
 }
 
+if (adminDensityToggle) {
+  adminDensityToggle.addEventListener("click", () => {
+    const next = !document.body.classList.contains("admin-compact");
+    applyAdminDensityMode(next);
+    try {
+      localStorage.setItem(ADMIN_DENSITY_STORAGE_KEY, next ? "1" : "0");
+    } catch (_) {
+      // ignore storage errors
+    }
+  });
+}
+
 if (refreshInboxBtn) {
   refreshInboxBtn.addEventListener("click", async () => {
     await loadAdminInbox();
@@ -1736,6 +1768,7 @@ if (trackLikeBtn) {
 }
 
 async function boot() {
+  initAdminDensityMode();
   setTimeout(() => {
     document.body.classList.add("ritual-ready");
   }, 120);
