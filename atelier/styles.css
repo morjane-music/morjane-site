@@ -312,17 +312,29 @@ button.ghost {
 }
 
 .admin-panel {
-  margin-top: 14px;
-  border-top: 1px solid rgba(201, 152, 82, 0.2);
-  padding-top: 14px;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid rgba(201, 152, 82, 0.2);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(201, 152, 82, 0.045), rgba(0, 0, 0, 0.36));
+  backdrop-filter: blur(1.5px);
 }
 
 .admin-panel h3 {
-  margin: 0 0 6px;
+  margin: 16px 0 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(201, 152, 82, 0.16);
   font-family: "Montserrat", "Inter", sans-serif;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  font-size: 14px;
+  font-size: 13px;
+  color: rgba(232, 223, 211, 0.88);
+}
+
+.admin-panel h3:first-of-type {
+  margin-top: 10px;
+  padding-top: 0;
+  border-top: 0;
 }
 
 #adminUnlockForm {
@@ -356,7 +368,7 @@ button.ghost {
 .admin-weekly-card {
   border: 1px solid rgba(201, 152, 82, 0.2);
   border-radius: 10px;
-  background: rgba(201, 152, 82, 0.04);
+  background: rgba(0, 0, 0, 0.36);
   padding: 10px;
 }
 
@@ -375,8 +387,8 @@ button.ghost {
 .admin-inbox-item {
   border: 1px solid rgba(201, 152, 82, 0.22);
   border-radius: 10px;
-  padding: 10px;
-  background: rgba(201, 152, 82, 0.04);
+  padding: 11px;
+  background: rgba(0, 0, 0, 0.38);
 }
 
 .admin-inbox-head {
@@ -417,17 +429,19 @@ button.ghost {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-top: 10px;
+  align-items: center;
 }
 
 .admin-tools input {
   padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.42);
 }
 
 .admin-tools select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(0, 0, 0, 0.42);
   color: var(--ink);
   padding: 8px 10px;
 }
@@ -464,8 +478,8 @@ button.ghost {
 .admin-audit-item {
   border: 1px solid rgba(201, 152, 82, 0.22);
   border-radius: 10px;
-  background: rgba(201, 152, 82, 0.04);
-  padding: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 11px;
 }
 
 .admin-vote-title,
@@ -483,7 +497,8 @@ button.ghost {
 .admin-audit-meta {
   margin: 6px 0 0;
   font-size: 13px;
-  color: rgba(232, 223, 211, 0.82);
+  color: rgba(232, 223, 211, 0.78);
+  line-height: 1.5;
 }
 
 .admin-audit-meta {
@@ -514,8 +529,8 @@ button.ghost {
   align-items: center;
   border: 1px solid rgba(201, 152, 82, 0.22);
   border-radius: 10px;
-  padding: 8px;
-  background: rgba(201, 152, 82, 0.04);
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.38);
 }
 
 .admin-member-meta {
