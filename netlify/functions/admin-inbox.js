@@ -87,7 +87,8 @@ exports.handler = async (event) => {
 
     const messageId = payload.messageId;
     const action = payload.action;
-    if (!messageId || !["mark_processed", "mark_new"].includes(action)) {
+    const note = typeof payload.note === "string" ? payload.note.slice(0, 2000) : null;
+    if (!messageId || !["mark_processed", "mark_new", "set_note"].includes(action)) {
       await trackFunctionEvent(auth.adminClient, {
         function_name: "admin-inbox",
         status: "error",
@@ -104,10 +105,14 @@ exports.handler = async (event) => {
 
     const isProcessed = action === "mark_processed";
     const adminId = adminUserId;
-
-    const updatePayload = isProcessed
-      ? { admin_status: "processed", processed_at: new Date().toISOString(), processed_by: adminId }
-      : { admin_status: "new", processed_at: null, processed_by: null };
+    let updatePayload = {};
+    if (action === "set_note") {
+      updatePayload = { admin_note: note || null };
+    } else {
+      updatePayload = isProcessed
+        ? { admin_status: "processed", processed_at: new Date().toISOString(), processed_by: adminId }
+        : { admin_status: "new", processed_at: null, processed_by: null };
+    }
 
     const updateResult = await auth.adminClient
       .from("atelier_messages")
@@ -134,10 +139,10 @@ exports.handler = async (event) => {
     if (adminId) {
       await auth.adminClient.from("atelier_admin_audit_logs").insert({
         admin_user_id: adminId,
-        action: isProcessed ? "message_processed" : "message_reopened",
+        action: action === "set_note" ? "message_noted" : (isProcessed ? "message_processed" : "message_reopened"),
         target_type: "atelier_message",
         target_id: messageId,
-        details: { action },
+        details: { action, has_note: action === "set_note" ? Boolean(note) : null },
       });
     }
 
@@ -172,7 +177,7 @@ exports.handler = async (event) => {
 
   const messagesResult = await auth.adminClient
     .from("atelier_messages")
-    .select("id, created_at, content, user_id, track_id, admin_status, processed_at, processed_by")
+    .select("id, created_at, content, user_id, track_id, admin_status, admin_note, processed_at, processed_by")
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -249,6 +254,7 @@ exports.handler = async (event) => {
         sender_email: profileById.get(row.user_id)?.email || "Email inconnu",
         track_title: trackById.get(row.track_id)?.title || "Maquette",
         admin_status: row.admin_status || "new",
+        admin_note: row.admin_note || "",
         processed_at: row.processed_at || null,
         processed_by_email: adminById.get(row.processed_by)?.email || null,
       })),

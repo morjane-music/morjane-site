@@ -79,7 +79,7 @@ exports.handler = async (event) => {
   const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const supabase = auth.adminClient;
 
-  const [events24hRes, events7dRes, magicRes, pendingRes] = await Promise.all([
+  const [events24hRes, events7dRes, magicRes, pendingRes, playsTodayRes, activeMembers7dRes, liveNowRes] = await Promise.all([
     supabase
       .from("atelier_function_events")
       .select("function_name, status", { count: "exact" })
@@ -99,9 +99,23 @@ exports.handler = async (event) => {
       .from("atelier_messages")
       .select("id", { count: "exact", head: true })
       .eq("admin_status", "new"),
+    supabase
+      .from("atelier_track_plays")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", since24h),
+    supabase
+      .from("atelier_track_plays")
+      .select("user_id")
+      .gte("created_at", since7d)
+      .limit(5000),
+    supabase
+      .from("atelier_presence")
+      .select("user_id", { count: "exact", head: true })
+      .eq("is_listening", true)
+      .gte("last_seen_at", new Date(Date.now() - 30 * 1000).toISOString()),
   ]);
 
-  if (events24hRes.error || events7dRes.error || magicRes.error || pendingRes.error) {
+  if (events24hRes.error || events7dRes.error || magicRes.error || pendingRes.error || playsTodayRes.error || activeMembers7dRes.error) {
     await trackFunctionEvent(supabase, {
       function_name: "admin-status",
       status: "error",
@@ -141,6 +155,9 @@ exports.handler = async (event) => {
   const errors7d = events7d.filter((e) => e.status === "error").length;
   const linksSent7d = magicEvents.filter((e) => e.result === "sent").length;
   const linksError7d = magicEvents.filter((e) => e.result === "error").length;
+  const playsToday = playsTodayRes.count || 0;
+  const activeMembers7d = new Set((activeMembers7dRes.data || []).map((row) => row.user_id).filter(Boolean)).size;
+  const liveNow = liveNowRes.error ? 0 : (liveNowRes.count || 0);
 
   await trackFunctionEvent(supabase, {
     function_name: "admin-status",
@@ -167,6 +184,11 @@ exports.handler = async (event) => {
         since7d,
         sent: linksSent7d,
         error: linksError7d,
+      },
+      today: {
+        playsToday,
+        activeMembers7d,
+        liveNow,
       },
       pendingMessages: pendingRes.count || 0,
       functions: summaryByFunction,

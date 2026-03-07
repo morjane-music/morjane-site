@@ -30,6 +30,7 @@ const adminVotesSummary = document.getElementById("adminVotesSummary");
 const adminStatusPanel = document.getElementById("adminStatusPanel");
 const adminAuditLog = document.getElementById("adminAuditLog");
 const adminLiveListeners = document.getElementById("adminLiveListeners");
+const adminTodayCards = document.getElementById("adminTodayCards");
 const adminSearchInput = document.getElementById("adminSearchInput");
 const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
@@ -71,6 +72,12 @@ let voteCooldownUntil = 0;
 let adminUnlocked = false;
 let presenceHeartbeatTimer = null;
 let adminLiveRefreshTimer = null;
+const adminTodayState = {
+  liveNow: 0,
+  pendingMessages: 0,
+  playsToday: 0,
+  activeMembers7d: 0,
+};
 
 function formatTrackTitle(rawTitle) {
   const title = String(rawTitle || "").trim();
@@ -235,6 +242,30 @@ function isInboxMessageNew(createdAt) {
     return true;
   }
   return Date.parse(createdAt) > Date.parse(adminLastSeenIso);
+}
+
+function renderAdminTodayCards() {
+  if (!adminTodayCards) {
+    return;
+  }
+  adminTodayCards.innerHTML = `
+    <article class="admin-weekly-card">
+      <p class="admin-weekly-label">Live maintenant</p>
+      <p class="admin-weekly-value">${Number(adminTodayState.liveNow || 0)}</p>
+    </article>
+    <article class="admin-weekly-card">
+      <p class="admin-weekly-label">Messages non traites</p>
+      <p class="admin-weekly-value">${Number(adminTodayState.pendingMessages || 0)}</p>
+    </article>
+    <article class="admin-weekly-card">
+      <p class="admin-weekly-label">Ecoutes aujourd'hui</p>
+      <p class="admin-weekly-value">${Number(adminTodayState.playsToday || 0)}</p>
+    </article>
+    <article class="admin-weekly-card">
+      <p class="admin-weekly-label">Membres actifs 7j</p>
+      <p class="admin-weekly-value">${Number(adminTodayState.activeMembers7d || 0)}</p>
+    </article>
+  `;
 }
 
 function renderAdminWeeklyStats(data) {
@@ -447,62 +478,124 @@ function renderAdminInbox() {
     adminInboxList.innerHTML = "<p class=\"muted\">Aucun message dans ce filtre.</p>";
   }
 
+  const buckets = { new: [], todo: [], done: [] };
   filteredMessages.forEach((item) => {
-    const card = document.createElement("article");
-    card.className = "admin-inbox-item";
+    if (item.admin_status === "processed") {
+      buckets.done.push(item);
+    } else if (isInboxMessageNew(item.created_at)) {
+      buckets.new.push(item);
+    } else {
+      buckets.todo.push(item);
+    }
+  });
 
-    const head = document.createElement("div");
-    head.className = "admin-inbox-head";
+  const columnsWrap = document.createElement("div");
+  columnsWrap.className = "admin-inbox-columns";
+  const columns = [
+    { key: "new", label: "Nouveau" },
+    { key: "todo", label: "A traiter" },
+    { key: "done", label: "Traite" },
+  ];
 
-    const sender = document.createElement("strong");
-    sender.textContent = item.sender_email || "Email inconnu";
-    head.appendChild(sender);
+  columns.forEach(({ key, label }) => {
+    const col = document.createElement("section");
+    col.className = "admin-inbox-column";
+    col.innerHTML = `
+      <header class="admin-inbox-column-head">
+        <h4>${label}</h4>
+        <span>${buckets[key].length}</span>
+      </header>
+      <div class="admin-inbox-column-list"></div>
+    `;
+    const list = col.querySelector(".admin-inbox-column-list");
 
-    const meta = document.createElement("span");
-    meta.className = "admin-inbox-meta";
-    meta.textContent = `${formatTrackTitle(item.track_title || "Maquette")} - ${formatInboxDate(item.created_at)}`;
-    head.appendChild(meta);
-
-    if (isInboxMessageNew(item.created_at)) {
-      unreadCount += 1;
-      const badge = document.createElement("span");
-      badge.className = "admin-inbox-badge";
-      badge.textContent = "Nouveau";
-      head.appendChild(badge);
+    if (buckets[key].length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "muted";
+      empty.textContent = "Aucun message";
+      list.appendChild(empty);
+      columnsWrap.appendChild(col);
+      return;
     }
 
-    const body = document.createElement("p");
-    body.className = "admin-inbox-body";
-    body.textContent = item.content || "";
+    buckets[key].forEach((item) => {
+      const card = document.createElement("article");
+      card.className = "admin-inbox-item";
 
-    const state = document.createElement("p");
-    state.className = "admin-inbox-state";
-    state.textContent = formatProcessedState(item);
+      const head = document.createElement("div");
+      head.className = "admin-inbox-head";
+      const sender = document.createElement("strong");
+      sender.textContent = item.sender_email || "Email inconnu";
+      head.appendChild(sender);
 
-    const actions = document.createElement("div");
-    actions.className = "admin-inbox-actions";
-    const actionBtn = document.createElement("button");
-    actionBtn.type = "button";
-    actionBtn.className = "ghost";
-    actionBtn.textContent = item.admin_status === "processed" ? "Remettre non traité" : "Marquer traité";
-    actionBtn.addEventListener("click", async () => {
-      await updateMessageStatus(item.id, item.admin_status === "processed" ? "mark_new" : "mark_processed");
+      const meta = document.createElement("span");
+      meta.className = "admin-inbox-meta";
+      meta.textContent = `${formatTrackTitle(item.track_title || "Maquette")} - ${formatInboxDate(item.created_at)}`;
+      head.appendChild(meta);
+
+      if (isInboxMessageNew(item.created_at)) {
+        unreadCount += 1;
+        const badge = document.createElement("span");
+        badge.className = "admin-inbox-badge";
+        badge.textContent = "Nouveau";
+        head.appendChild(badge);
+      }
+
+      const body = document.createElement("p");
+      body.className = "admin-inbox-body";
+      body.textContent = item.content || "";
+
+      const state = document.createElement("p");
+      state.className = "admin-inbox-state";
+      state.textContent = formatProcessedState(item);
+
+      const noteInput = document.createElement("textarea");
+      noteInput.className = "admin-note-input";
+      noteInput.rows = 2;
+      noteInput.placeholder = "Note admin privee";
+      noteInput.value = item.admin_note || "";
+
+      const actions = document.createElement("div");
+      actions.className = "admin-inbox-actions";
+      const actionBtn = document.createElement("button");
+      actionBtn.type = "button";
+      actionBtn.className = "ghost";
+      actionBtn.textContent = item.admin_status === "processed" ? "Remettre non traite" : "Marquer traite";
+      actionBtn.addEventListener("click", async () => {
+        await updateMessageStatus(item.id, item.admin_status === "processed" ? "mark_new" : "mark_processed");
+      });
+      actions.appendChild(actionBtn);
+
+      const saveNoteBtn = document.createElement("button");
+      saveNoteBtn.type = "button";
+      saveNoteBtn.className = "ghost";
+      saveNoteBtn.textContent = "Enregistrer note";
+      saveNoteBtn.addEventListener("click", async () => {
+        await updateMessageStatus(item.id, "set_note", noteInput.value || "");
+      });
+      actions.appendChild(saveNoteBtn);
+
+      card.appendChild(head);
+      card.appendChild(body);
+      card.appendChild(state);
+      card.appendChild(noteInput);
+      card.appendChild(actions);
+      list.appendChild(card);
     });
-    actions.appendChild(actionBtn);
 
-    card.appendChild(head);
-    card.appendChild(body);
-    card.appendChild(state);
-    card.appendChild(actions);
-    adminInboxList.appendChild(card);
+    columnsWrap.appendChild(col);
   });
+
+  if (filteredMessages.length > 0) {
+    adminInboxList.appendChild(columnsWrap);
+  }
 
   if (adminInboxUnread) {
     adminInboxUnread.textContent = `Nouveaux messages : ${unreadCount}`;
   }
 }
 
-async function updateMessageStatus(messageId, action) {
+async function updateMessageStatus(messageId, action, note = "") {
   if (!canManageMembers() || !session?.access_token || !messageId) {
     return;
   }
@@ -514,7 +607,7 @@ async function updateMessageStatus(messageId, action) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ messageId, action }),
+      body: JSON.stringify({ messageId, action, note }),
     });
     if (!res.ok) {
       return;
@@ -545,6 +638,8 @@ async function loadAdminInbox() {
     }
 
     adminInboxCache = Array.isArray(data.messages) ? data.messages : [];
+    adminTodayState.pendingMessages = adminInboxCache.filter((item) => item.admin_status !== "processed").length;
+    renderAdminTodayCards();
     populateInboxFilters();
     renderAdminInbox();
   } catch (_) {
@@ -601,7 +696,13 @@ function renderAdminStatus(data) {
   const uptime = data?.uptime || {};
   const magic = data?.magicLinks || {};
   const pending = Number(data?.pendingMessages || 0);
+  const today = data?.today || {};
   const functions = Array.isArray(data?.functions) ? data.functions.slice(0, 6) : [];
+  adminTodayState.pendingMessages = pending;
+  adminTodayState.playsToday = Number(today.playsToday || 0);
+  adminTodayState.activeMembers7d = Number(today.activeMembers7d || 0);
+  adminTodayState.liveNow = Number(today.liveNow || adminTodayState.liveNow || 0);
+  renderAdminTodayCards();
 
   adminStatusPanel.innerHTML = "";
   const top = document.createElement("article");
@@ -651,19 +752,35 @@ function renderAdminLiveListeners(listeners = []) {
     return;
   }
   if (!listeners.length) {
+    adminTodayState.liveNow = 0;
+    renderAdminTodayCards();
     adminLiveListeners.innerHTML = "<p class=\"muted\">Personne n'ecoute en ce moment.</p>";
     return;
   }
 
+  adminTodayState.liveNow = listeners.length;
+  renderAdminTodayCards();
   adminLiveListeners.innerHTML = "";
   listeners.forEach((row) => {
+    const email = row.email || "Email inconnu";
+    const initial = email.slice(0, 1).toUpperCase();
+    const secondsAgo = Math.max(
+      0,
+      Math.floor((Date.now() - new Date(row.last_seen_at || Date.now()).getTime()) / 1000)
+    );
+    const statusLabel = secondsAgo <= 20 ? "En lecture" : `Inactif ${secondsAgo}s`;
+    const statusClass = secondsAgo <= 20 ? "is-live" : "is-idle";
     const card = document.createElement("article");
-    card.className = "admin-status-item";
+    card.className = "admin-live-item";
     const seen = row.last_seen_at ? formatInboxDate(row.last_seen_at) : "-";
     card.innerHTML = `
-      <p class="admin-status-title">${row.email || "Email inconnu"}</p>
-      <p class="admin-status-meta">${formatTrackTitle(row.track_title || "Maquette")}</p>
-      <p class="admin-status-meta">Actif a ${seen}</p>
+      <div class="admin-live-avatar">${initial}</div>
+      <div class="admin-live-content">
+        <p class="admin-status-title">${email}</p>
+        <p class="admin-status-meta">${formatTrackTitle(row.track_title || "Maquette")}</p>
+        <p class="admin-status-meta">Derniere activite : ${seen}</p>
+      </div>
+      <span class="admin-live-pill ${statusClass}">${statusLabel}</span>
     `;
     adminLiveListeners.appendChild(card);
   });
@@ -685,11 +802,15 @@ async function loadAdminLiveListeners() {
       return;
     }
     if (data.setup_required) {
+      adminTodayState.liveNow = 0;
+      renderAdminTodayCards();
       adminLiveListeners.innerHTML = "<p class=\"muted\">Live en écoute non configuré sur cette base (table atelier_presence manquante).</p>";
       return;
     }
     renderAdminLiveListeners(Array.isArray(data.listeners) ? data.listeners : []);
   } catch (_) {
+    adminTodayState.liveNow = 0;
+    renderAdminTodayCards();
     adminLiveListeners.innerHTML = "<p class=\"muted\">Erreur reseau.</p>";
   }
 }
@@ -1068,6 +1189,7 @@ async function loadTracks() {
     if (adminPanel) {
       show(adminPanel);
     }
+    renderAdminTodayCards();
     loadInboxLastSeen();
     adminUnlocked = await checkAdminGate();
     renderAdminLockState();

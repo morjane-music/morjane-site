@@ -358,9 +358,57 @@ button.ghost {
   margin-top: 10px;
 }
 
+.admin-inbox-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-inbox-column {
+  border: 1px solid rgba(201, 152, 82, 0.2);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px;
+}
+
+.admin-inbox-column-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.admin-inbox-column-head h4 {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-inbox-column-head span {
+  min-width: 22px;
+  text-align: center;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 152, 82, 0.5);
+  font-size: 11px;
+  padding: 2px 6px;
+}
+
+.admin-inbox-column-list {
+  display: grid;
+  gap: 8px;
+}
+
 .admin-weekly-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.admin-today-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-top: 10px;
 }
@@ -458,6 +506,17 @@ button.ghost {
   flex-wrap: wrap;
 }
 
+.admin-note-input {
+  width: 100%;
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.42);
+  color: var(--ink);
+  padding: 8px 10px;
+  resize: vertical;
+}
+
 .admin-inbox-state {
   margin: 6px 0 0;
   font-size: 12px;
@@ -480,6 +539,46 @@ button.ghost {
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.4);
   padding: 11px;
+}
+
+.admin-live-item {
+  border: 1px solid rgba(201, 152, 82, 0.22);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 10px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.admin-live-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 152, 82, 0.45);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: rgba(232, 223, 211, 0.9);
+}
+
+.admin-live-content {
+  min-width: 0;
+}
+
+.admin-live-pill {
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(201, 152, 82, 0.35);
+}
+
+.admin-live-pill.is-live {
+  color: #b6f0cc;
+  border-color: rgba(90, 190, 130, 0.65);
+  background: rgba(90, 190, 130, 0.16);
 }
 
 .admin-vote-title,
@@ -743,6 +842,23 @@ button.ghost {
 
   .admin-tools {
     grid-template-columns: 1fr;
+  }
+
+  .admin-today-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-inbox-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-live-item {
+    grid-template-columns: auto 1fr;
+  }
+
+  .admin-live-pill {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
   .admin-weekly-stats {
