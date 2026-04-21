@@ -24,7 +24,8 @@
 1. Run SQL from `supabase/schema.sql` (creates isolated `atelier_*` tables).
 2. Create Supabase Storage bucket `atelier-audio` as private.
 3. Ensure one active season and up to 3 active tracks with valid `storage_path`.
-4. Install dependencies:
+4. To add a second active maquette quickly, run `supabase/add-second-maquette.sql` after uploading its audio file to the bucket.
+5. Install dependencies:
    - `npm install`
 
 ## Files

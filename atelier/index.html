@@ -41,7 +41,11 @@
         <p>Ici les morceaux existent avant d'être finis.</p>
         <p>Des fragments, des idées, des versions encore fragiles.</p>
         <p>Votre écoute et vos retours m'aident à faire naître les versions définitives.</p>
-        <p class="atelier-intro__note">Accès privé — merci de ne pas partager ces contenus.</p>
+        <p class="atelier-intro__note">Accès privé — contenu protégé, merci de ne pas partager ces contenus.</p>
+        <p class="atelier-protection-badge" aria-label="Contenu privé et protégé">
+          <span class="protection-seal" aria-hidden="true"></span>
+          Privé et sous copyright
+        </p>
       </div>
     </header>
 
@@ -167,7 +171,15 @@
       <p id="trackPlayCount" class="muted">Écoutes du cercle : -</p>
       <p id="trackLikeCount" class="muted">J'aime du cercle : -</p>
       <button id="trackLikeBtn" type="button" class="ghost">♡ J'aime</button>
-      <p class="track-confidential-note">Écoute confidentielle du cercle privé. Merci de ne pas partager ce contenu.</p>
+      <div class="track-protection-banner" role="note" aria-label="Protection du contenu">
+        <span class="track-protection-banner__icon" aria-hidden="true">
+          <span class="protection-seal protection-seal--large"></span>
+        </span>
+        <div>
+          <p class="track-protection-banner__title">Privé et sous copyright</p>
+          <p class="track-confidential-note">Écoute confidentielle du cercle privé. Merci de ne pas partager, enregistrer ou redistribuer ce contenu.</p>
+        </div>
+      </div>
       <div id="trackWatermark" class="track-watermark hidden" aria-hidden="true"></div>
       <audio id="player" controls controlslist="nodownload noplaybackrate nofullscreen noremoteplayback" disableremoteplayback disablepictureinpicture preload="none"></audio>
       <div class="vote-grid">

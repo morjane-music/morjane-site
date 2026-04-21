@@ -102,7 +102,7 @@ function initAdminDensityMode() {
 function formatTrackTitle(rawTitle) {
   const title = String(rawTitle || "").trim();
   if (title === "Track test 01") {
-    return "Maquette 01 - En bas - Morjane";
+    return "En bas";
   }
 
   const genericMatch = title.match(/^(?:track(?:\s*test)?|tracktest|track)\s*0*(\d{1,2})$/i);
