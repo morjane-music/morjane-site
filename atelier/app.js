@@ -1552,18 +1552,33 @@ function renderTrackList() {
     const li = document.createElement("li");
     const btn = document.createElement("button");
     btn.type = "button";
+    btn.className = "track-card";
     btn.addEventListener("click", () => selectTrack(track.id));
+
+    const top = document.createElement("span");
+    top.className = "track-card__top";
 
     const title = document.createElement("span");
     title.className = "track-list__title";
     title.textContent = formatTrackTitle(track.title);
 
+    const status = document.createElement("span");
+    status.className = "track-card__status";
+    status.textContent = getDecisionStatusLabel(track.decision_status);
+
     const meta = document.createElement("span");
     meta.className = "track-list__meta";
     meta.textContent = `Écoutes : ${getTrackPlayCount(track.id)} · J'aime : ${getTrackLikeCount(track.id)}`;
 
-    btn.appendChild(title);
+    const hint = document.createElement("span");
+    hint.className = "track-card__hint";
+    hint.textContent = track.feedback_question || track.intent_note || "Ouvrir la maquette et laisser une trace";
+
+    top.appendChild(title);
+    top.appendChild(status);
+    btn.appendChild(top);
     btn.appendChild(meta);
+    btn.appendChild(hint);
     li.appendChild(btn);
     trackList.appendChild(li);
   });

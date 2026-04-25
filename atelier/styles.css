@@ -4,8 +4,12 @@
   --ink: #e8dfd3;
   --muted: rgba(194, 182, 166, 0.7);
   --line: rgba(201, 152, 82, 0.28);
+  --line-strong: rgba(201, 152, 82, 0.46);
   --accent: #c99852;
   --accent-soft: rgba(201, 152, 82, 0.12);
+  --surface: rgba(0, 0, 0, 0.38);
+  --surface-quiet: rgba(255, 255, 255, 0.035);
+  --success: #b6f0cc;
 }
 
 * {
@@ -64,7 +68,7 @@ body.is-listening::before {
 }
 
 .atelier-wrap {
-  width: min(920px, 100%);
+  width: min(1080px, 100%);
   margin: 8vh auto 10vh;
   padding: 0 16px;
   position: relative;
@@ -85,6 +89,8 @@ body.is-listening::before {
   font-family: "Montserrat", "Inter", sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  font-size: clamp(38px, 6vw, 68px);
+  line-height: 0.94;
 }
 
 .circle-count {
@@ -239,7 +245,9 @@ body.is-listening::before {
   border-radius: 16px;
   background: linear-gradient(180deg, rgba(201, 152, 82, 0.05), transparent 32%), var(--panel);
   padding: 18px;
-  box-shadow: inset 0 0 0 1px rgba(201, 152, 82, 0.08);
+  box-shadow:
+    inset 0 0 0 1px rgba(201, 152, 82, 0.08),
+    0 22px 55px rgba(0, 0, 0, 0.24);
   position: relative;
   transition: box-shadow 0.35s ease, border-color 0.35s ease;
 }
@@ -299,6 +307,14 @@ select {
   padding: 11px 12px;
 }
 
+input:focus,
+textarea:focus,
+select:focus,
+button:focus-visible {
+  outline: 2px solid rgba(201, 152, 82, 0.58);
+  outline-offset: 2px;
+}
+
 button {
   border: 1px solid rgba(201, 152, 82, 0.45);
   border-radius: 10px;
@@ -306,12 +322,13 @@ button {
   color: var(--ink);
   padding: 10px 12px;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 button:hover {
   background: rgba(201, 152, 82, 0.18);
   border-color: rgba(201, 152, 82, 0.65);
+  transform: translateY(-1px);
 }
 
 button.ghost {
@@ -354,27 +371,85 @@ button.ghost {
 
 .track-list {
   display: grid;
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
   margin: 14px 0 0;
   padding: 0;
   list-style: none;
 }
 
-.track-list button {
+.track-list button,
+.track-card {
   width: 100%;
   text-align: left;
 }
 
+.track-card {
+  min-height: 148px;
+  display: grid;
+  align-content: space-between;
+  gap: 14px;
+  padding: 16px;
+  border-color: rgba(201, 152, 82, 0.28);
+  background:
+    linear-gradient(135deg, rgba(201, 152, 82, 0.12), transparent 45%),
+    rgba(0, 0, 0, 0.36);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.track-card:hover {
+  border-color: var(--line-strong);
+  background:
+    linear-gradient(135deg, rgba(201, 152, 82, 0.16), transparent 48%),
+    rgba(0, 0, 0, 0.42);
+}
+
+.track-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
 .track-list__title {
   display: block;
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.track-card__status {
+  flex: 0 0 auto;
+  max-width: 118px;
+  padding: 3px 7px;
+  border: 1px solid rgba(201, 152, 82, 0.38);
+  border-radius: 999px;
+  color: rgba(245, 228, 198, 0.95);
+  background: rgba(201, 152, 82, 0.09);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .track-list__meta {
   display: block;
-  margin-top: 4px;
+  margin-top: 0;
   font-size: 12px;
   color: rgba(201, 152, 82, 0.82);
   letter-spacing: 0.03em;
+}
+
+.track-card__hint {
+  display: -webkit-box;
+  overflow: hidden;
+  color: rgba(232, 223, 211, 0.72);
+  font-size: 13px;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .member-pending-help {
@@ -415,13 +490,15 @@ button.ghost {
   padding: 14px;
   border: 1px solid rgba(201, 152, 82, 0.2);
   border-radius: 14px;
-  background: linear-gradient(180deg, rgba(201, 152, 82, 0.045), rgba(0, 0, 0, 0.36));
+  background:
+    linear-gradient(180deg, rgba(201, 152, 82, 0.055), rgba(0, 0, 0, 0.42)),
+    rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(1.5px);
 }
 
 .admin-panel h3 {
-  margin: 16px 0 8px;
-  padding-top: 12px;
+  margin: 22px 0 10px;
+  padding-top: 14px;
   border-top: 1px solid rgba(201, 152, 82, 0.16);
   font-family: "Montserrat", "Inter", sans-serif;
   letter-spacing: 0.05em;
@@ -465,9 +542,9 @@ button.ghost {
 
 .admin-inbox-column {
   border: 1px solid rgba(201, 152, 82, 0.2);
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgba(0, 0, 0, 0.25);
-  padding: 8px;
+  padding: 10px;
 }
 
 .admin-inbox-column-head {
@@ -514,9 +591,11 @@ button.ghost {
 
 .admin-weekly-card {
   border: 1px solid rgba(201, 152, 82, 0.2);
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.36);
-  padding: 10px;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
+    var(--surface);
+  padding: 12px;
 }
 
 .admin-weekly-label {
@@ -528,7 +607,7 @@ button.ghost {
 .admin-weekly-value {
   margin: 4px 0 0;
   font-family: "Montserrat", "Inter", sans-serif;
-  font-size: 21px;
+  font-size: 24px;
 }
 
 .admin-inbox-item {
@@ -637,9 +716,11 @@ button.ghost {
 .admin-status-item,
 .admin-audit-item {
   border: 1px solid rgba(201, 152, 82, 0.22);
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 11px;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
+    rgba(0, 0, 0, 0.4);
+  padding: 12px;
 }
 
 .admin-live-item {
@@ -802,13 +883,15 @@ body.admin-compact .admin-note-input {
 
 .admin-track-item {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .admin-track-head {
   display: flex;
   justify-content: space-between;
   gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(201, 152, 82, 0.14);
 }
 
 .admin-track-item label {
@@ -820,6 +903,10 @@ body.admin-compact .admin-note-input {
 .admin-track-item select {
   padding: 8px 10px;
   background: rgba(0, 0, 0, 0.42);
+}
+
+.admin-track-item button {
+  justify-self: start;
 }
 
 .admin-member-item button {
@@ -869,8 +956,10 @@ body.admin-compact .admin-note-input {
   margin: 12px 0;
   padding: 12px 14px;
   border: 1px solid rgba(201, 152, 82, 0.22);
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(201, 152, 82, 0.09), transparent 58%),
+    rgba(0, 0, 0, 0.3);
 }
 
 .track-intent-panel.hidden {
@@ -890,6 +979,27 @@ body.admin-compact .admin-note-input {
   margin: 0 0 6px;
   color: rgba(232, 223, 211, 0.9);
   line-height: 1.45;
+}
+
+#messageForm {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(201, 152, 82, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.24);
+}
+
+#messageForm label {
+  color: rgba(232, 223, 211, 0.86);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#messageForm button {
+  justify-self: start;
+  min-width: 180px;
 }
 
 @keyframes likePulse {
@@ -1094,6 +1204,23 @@ body.admin-compact .admin-note-input {
     grid-template-columns: 1fr;
     gap: 8px;
     margin-top: 10px;
+  }
+
+  .track-list {
+    grid-template-columns: 1fr;
+  }
+
+  .track-card {
+    min-height: 132px;
+  }
+
+  .track-card__top {
+    display: grid;
+  }
+
+  .track-card__status {
+    justify-self: start;
+    max-width: 100%;
   }
 
   .track-watermark {
