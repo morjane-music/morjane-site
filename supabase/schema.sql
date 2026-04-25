@@ -23,6 +23,9 @@ create table if not exists public.atelier_tracks (
   storage_path text not null,
   status text not null default 'draft' check (status in ('draft', 'active', 'archived')),
   influence_mode text not null default 'open',
+  intent_note text,
+  feedback_question text,
+  decision_status text not null default 'testing' check (decision_status in ('testing', 'kept', 'rework', 'paused', 'released', 'archived')),
   created_at timestamptz not null default now()
 );
 
@@ -127,8 +130,15 @@ $$;
 alter table public.atelier_messages
   add column if not exists admin_status text not null default 'new' check (admin_status in ('new', 'processed')),
   add column if not exists admin_note text,
+  add column if not exists admin_reply text,
+  add column if not exists feedback_tags text[] not null default '{}'::text[],
   add column if not exists processed_at timestamptz,
   add column if not exists processed_by uuid references auth.users(id) on delete set null;
+
+alter table public.atelier_tracks
+  add column if not exists intent_note text,
+  add column if not exists feedback_question text,
+  add column if not exists decision_status text not null default 'testing' check (decision_status in ('testing', 'kept', 'rework', 'paused', 'released', 'archived'));
 
 create index if not exists idx_atelier_messages_status_created
   on public.atelier_messages(admin_status, created_at desc);

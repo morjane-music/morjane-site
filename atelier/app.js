@@ -27,6 +27,7 @@ const markInboxReadBtn = document.getElementById("markInboxReadBtn");
 const adminInboxSearch = document.getElementById("adminInboxSearch");
 const toggleUnreadOnlyBtn = document.getElementById("toggleUnreadOnlyBtn");
 const adminVotesSummary = document.getElementById("adminVotesSummary");
+const adminTrackCockpit = document.getElementById("adminTrackCockpit");
 const adminStatusPanel = document.getElementById("adminStatusPanel");
 const adminAuditLog = document.getElementById("adminAuditLog");
 const adminLiveListeners = document.getElementById("adminLiveListeners");
@@ -36,6 +37,10 @@ const adminSearchInput = document.getElementById("adminSearchInput");
 const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
 const trackTitle = document.getElementById("trackTitle");
+const trackDecisionStatus = document.getElementById("trackDecisionStatus");
+const trackIntentPanel = document.getElementById("trackIntentPanel");
+const trackIntentNote = document.getElementById("trackIntentNote");
+const trackFeedbackQuestion = document.getElementById("trackFeedbackQuestion");
 const trackPlayCount = document.getElementById("trackPlayCount");
 const trackLikeCount = document.getElementById("trackLikeCount");
 const trackLikeBtn = document.getElementById("trackLikeBtn");
@@ -44,11 +49,13 @@ const trackWatermark = document.getElementById("trackWatermark");
 const voteStatus = document.getElementById("voteStatus");
 const messageStatus = document.getElementById("messageStatus");
 const privateMessage = document.getElementById("privateMessage");
+const memberReplies = document.getElementById("memberReplies");
 
 const magicLinkForm = document.getElementById("magicLinkForm");
 const emailInput = document.getElementById("emailInput");
 const magicLinkSubmitBtn = magicLinkForm ? magicLinkForm.querySelector("button[type='submit']") : null;
 const messageForm = document.getElementById("messageForm");
+const feedbackTag = document.getElementById("feedbackTag");
 const logoutBtn = document.getElementById("logoutBtn");
 const backBtn = document.getElementById("backBtn");
 const voteButtons = Array.from(document.querySelectorAll("[data-vote]"));
@@ -112,6 +119,28 @@ function formatTrackTitle(rawTitle) {
   }
 
   return title;
+}
+
+function getDecisionStatusLabel(status) {
+  return ({
+    testing: "En test",
+    kept: "Retenue",
+    rework: "A retravailler",
+    paused: "En pause",
+    released: "Sortie",
+    archived: "Archivee",
+  }[status] || "En test");
+}
+
+function getFeedbackTagLabel(tag) {
+  return ({
+    emotion: "Emotion",
+    text: "Texte",
+    melody: "Melodie",
+    arrangement: "Arrangement",
+    scene: "Scene",
+    doubt: "Doute",
+  }[tag] || tag || "Retour");
 }
 
 function show(el) {
@@ -466,6 +495,11 @@ function formatProcessedState(item) {
   return `Statut : traité${who}${when}`;
 }
 
+function formatMessageTags(tags = []) {
+  const list = Array.isArray(tags) ? tags : [];
+  return list.map(getFeedbackTagLabel).filter(Boolean).join(", ");
+}
+
 function renderAdminInbox() {
   if (!adminInboxList) {
     return;
@@ -565,6 +599,10 @@ function renderAdminInbox() {
       body.className = "admin-inbox-body";
       body.textContent = item.content || "";
 
+      const tags = document.createElement("p");
+      tags.className = "admin-inbox-tags";
+      tags.textContent = formatMessageTags(item.feedback_tags || []);
+
       const state = document.createElement("p");
       state.className = "admin-inbox-state";
       state.textContent = formatProcessedState(item);
@@ -574,6 +612,12 @@ function renderAdminInbox() {
       noteInput.rows = 2;
       noteInput.placeholder = "Note admin privee";
       noteInput.value = item.admin_note || "";
+
+      const replyInput = document.createElement("textarea");
+      replyInput.className = "admin-note-input";
+      replyInput.rows = 2;
+      replyInput.placeholder = "Reponse courte au membre";
+      replyInput.value = item.admin_reply || "";
 
       const actions = document.createElement("div");
       actions.className = "admin-inbox-actions";
@@ -595,10 +639,23 @@ function renderAdminInbox() {
       });
       actions.appendChild(saveNoteBtn);
 
+      const saveReplyBtn = document.createElement("button");
+      saveReplyBtn.type = "button";
+      saveReplyBtn.className = "ghost";
+      saveReplyBtn.textContent = "Enregistrer reponse";
+      saveReplyBtn.addEventListener("click", async () => {
+        await updateMessageStatus(item.id, "set_reply", replyInput.value || "");
+      });
+      actions.appendChild(saveReplyBtn);
+
       card.appendChild(head);
       card.appendChild(body);
+      if (tags.textContent) {
+        card.appendChild(tags);
+      }
       card.appendChild(state);
       card.appendChild(noteInput);
+      card.appendChild(replyInput);
       card.appendChild(actions);
       list.appendChild(card);
     });
@@ -706,6 +763,148 @@ async function loadAdminVotesSummary() {
     renderAdminVotesSummary(Array.isArray(data.summary) ? data.summary : []);
   } catch (_) {
     adminVotesSummary.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
+  }
+}
+
+function renderAdminTrackCockpit(tracks = []) {
+  if (!adminTrackCockpit) {
+    return;
+  }
+  if (!tracks.length) {
+    adminTrackCockpit.innerHTML = "<p class=\"muted\">Aucune maquette trouvee.</p>";
+    return;
+  }
+
+  adminTrackCockpit.innerHTML = "";
+  tracks.forEach((track) => {
+    const card = document.createElement("article");
+    card.className = "admin-track-item";
+    card.innerHTML = `
+      <div class="admin-track-head">
+        <div>
+          <p class="admin-status-title">${formatTrackTitle(track.title)}</p>
+          <p class="admin-status-meta">${getDecisionStatusLabel(track.decision_status)} | ${track.plays || 0} ecoutes | ${track.likes || 0} likes | ${track.messages || 0} messages</p>
+          <p class="admin-status-meta">Votes: garder ${track.votes?.develop || 0} | retravailler ${track.votes?.revise || 0} | ecarter ${track.votes?.leave || 0}</p>
+        </div>
+      </div>
+      <label>Statut artistique</label>
+      <select data-track-status>
+        <option value="testing">En test</option>
+        <option value="kept">Retenue</option>
+        <option value="rework">A retravailler</option>
+        <option value="paused">En pause</option>
+        <option value="released">Sortie</option>
+        <option value="archived">Archivee</option>
+      </select>
+      <label>Note de Morjane</label>
+      <textarea data-track-intent rows="3" placeholder="Ce que tu cherches avec cette maquette..."></textarea>
+      <label>Question posee au cercle</label>
+      <textarea data-track-question rows="2" placeholder="Ex: Est-ce que le refrain tient ?"></textarea>
+      <button type="button" class="ghost" data-track-save>Enregistrer</button>
+    `;
+    const status = card.querySelector("[data-track-status]");
+    const intent = card.querySelector("[data-track-intent]");
+    const question = card.querySelector("[data-track-question]");
+    const save = card.querySelector("[data-track-save]");
+    status.value = track.decision_status || "testing";
+    intent.value = track.intent_note || "";
+    question.value = track.feedback_question || "";
+    save.addEventListener("click", async () => {
+      await updateTrackCockpit(track.id, {
+        decision_status: status.value,
+        intent_note: intent.value,
+        feedback_question: question.value,
+      });
+    });
+    adminTrackCockpit.appendChild(card);
+  });
+}
+
+async function loadAdminTrackCockpit() {
+  if (!canManageMembers() || !session?.access_token || !adminTrackCockpit || !adminUnlocked) {
+    return;
+  }
+  adminTrackCockpit.innerHTML = "<p class=\"muted\">Chargement du cockpit...</p>";
+  try {
+    const res = await fetch("/.netlify/functions/admin-track-cockpit", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      adminTrackCockpit.innerHTML = `<p class="muted">Impossible de charger (${data.error || res.status}).</p>`;
+      return;
+    }
+    renderAdminTrackCockpit(Array.isArray(data.tracks) ? data.tracks : []);
+  } catch (_) {
+    adminTrackCockpit.innerHTML = "<p class=\"muted\">Erreur reseau.</p>";
+  }
+}
+
+async function updateTrackCockpit(trackId, payload) {
+  if (!canManageMembers() || !session?.access_token || !trackId) {
+    return;
+  }
+  try {
+    const res = await fetch("/.netlify/functions/admin-track-cockpit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ trackId, ...payload }),
+    });
+    if (!res.ok) {
+      return;
+    }
+    await loadAdminTrackCockpit();
+    await loadTracks();
+    await loadAdminAuditLog();
+  } catch (_) {
+    // no-op
+  }
+}
+
+function renderMemberReplies(replies = []) {
+  if (!memberReplies) {
+    return;
+  }
+  if (!replies.length) {
+    memberReplies.innerHTML = "";
+    hide(memberReplies);
+    return;
+  }
+  memberReplies.innerHTML = "<p class=\"member-replies-title\">Reponse de Morjane</p>";
+  replies.forEach((reply) => {
+    const item = document.createElement("p");
+    item.className = "member-reply-item";
+    item.textContent = reply.admin_reply || "";
+    memberReplies.appendChild(item);
+  });
+  show(memberReplies);
+}
+
+async function loadMemberReplies() {
+  if (!selectedTrack?.id || !session?.access_token || !memberReplies) {
+    return;
+  }
+  try {
+    const res = await fetch("/.netlify/functions/member-message-replies", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ trackId: selectedTrack.id }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      renderMemberReplies([]);
+      return;
+    }
+    renderMemberReplies(Array.isArray(data.replies) ? data.replies : []);
+  } catch (_) {
+    renderMemberReplies([]);
   }
 }
 
@@ -869,6 +1068,8 @@ function renderAdminAuditLog(logs = []) {
     member_revoked: "Accès retiré",
     message_processed: "Message marqué traité",
     message_reopened: "Message rouvert",
+    message_replied: "Reponse message",
+    track_cockpit_updated: "Maquette mise a jour",
   }[action] || action);
 
   logs.slice(0, 25).forEach((row) => {
@@ -1173,12 +1374,23 @@ async function loadSessionAndProfile() {
 }
 
 async function loadTracks() {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("atelier_tracks")
-    .select("id, title, status, season_id")
+    .select("id, title, status, season_id, intent_note, feedback_question, decision_status")
     .eq("status", "active")
     .order("id", { ascending: false })
     .limit(3);
+
+  if (error && /intent_note|feedback_question|decision_status/i.test(String(error.message || ""))) {
+    const fallback = await supabase
+      .from("atelier_tracks")
+      .select("id, title, status, season_id")
+      .eq("status", "active")
+      .order("id", { ascending: false })
+      .limit(3);
+    data = fallback.data;
+    error = fallback.error;
+  }
 
   if (error) {
     memberMeta.textContent = "Impossible de charger les titres.";
@@ -1218,6 +1430,7 @@ async function loadTracks() {
       await loadAdminWeeklyStats();
       await loadAdminInbox();
       await loadAdminVotesSummary();
+      await loadAdminTrackCockpit();
       await loadAdminStatus();
       await loadAdminAuditLog();
       await loadAdminLiveListeners();
@@ -1363,12 +1576,26 @@ async function selectTrack(trackId) {
   }
 
   trackTitle.textContent = formatTrackTitle(selectedTrack.title);
+  if (trackDecisionStatus) {
+    trackDecisionStatus.textContent = getDecisionStatusLabel(selectedTrack.decision_status);
+  }
+  const hasIntent = Boolean(selectedTrack.intent_note || selectedTrack.feedback_question);
+  if (trackIntentPanel && trackIntentNote && trackFeedbackQuestion) {
+    if (hasIntent) {
+      trackIntentNote.textContent = selectedTrack.intent_note || "Je vous laisse ecouter librement cette version.";
+      trackFeedbackQuestion.textContent = selectedTrack.feedback_question || "Qu'est-ce que cette maquette vous fait garder en tete ?";
+      show(trackIntentPanel);
+    } else {
+      hide(trackIntentPanel);
+    }
+  }
   if (trackPlayCount) {
     trackPlayCount.textContent = `Écoutes du cercle : ${getTrackPlayCount(selectedTrack.id)}`;
   }
   renderTrackLikeState();
   voteStatus.textContent = "";
   messageStatus.textContent = "";
+  renderMemberReplies([]);
   privateMessage.value = "";
   playLoggedForCurrentTrack = false;
 
@@ -1392,6 +1619,7 @@ async function selectTrack(trackId) {
     show(trackView);
     hide(memberView);
     stopWatermark();
+    await loadMemberReplies();
   } catch (_) {
     voteStatus.textContent = "Erreur réseau.";
   }
@@ -1505,17 +1733,28 @@ async function submitVote(choice) {
   voteStatus.textContent = error ? `Vote refuse. ${error.message || ""}`.trim() : "Vote enregistre.";
 }
 
-async function submitMessage(content) {
+async function submitMessage(content, tag = "emotion") {
   if (!selectedTrack || !profile) {
     messageStatus.textContent = "Sélectionne un titre avant d'envoyer un message.";
     return;
   }
 
-  const { error } = await supabase.from("atelier_messages").insert({
+  const payload = {
     track_id: selectedTrack.id,
     user_id: profile.id,
     content,
-  });
+    feedback_tags: [tag],
+  };
+
+  let { error } = await supabase.from("atelier_messages").insert(payload);
+  if (error && String(error.message || "").includes("feedback_tags")) {
+    const fallback = await supabase.from("atelier_messages").insert({
+      track_id: selectedTrack.id,
+      user_id: profile.id,
+      content,
+    });
+    error = fallback.error;
+  }
 
   if (error) {
     messageStatus.textContent = `Message refusé. ${error.message || ""}`.trim();
@@ -1584,7 +1823,7 @@ messageForm.addEventListener("submit", async (event) => {
     messageStatus.textContent = "Message vide.";
     return;
   }
-  await submitMessage(content);
+  await submitMessage(content, feedbackTag?.value || "emotion");
 });
 
 logoutBtn.addEventListener("click", async () => {
@@ -1754,6 +1993,7 @@ if (adminUnlockForm) {
     await loadAdminWeeklyStats();
     await loadAdminInbox();
     await loadAdminVotesSummary();
+    await loadAdminTrackCockpit();
     await loadAdminStatus();
     await loadAdminAuditLog();
     await loadAdminLiveListeners();

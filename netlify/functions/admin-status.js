@@ -9,6 +9,11 @@ function getBearerToken(header) {
   return token;
 }
 
+function isMissingMessageAdminColumns(error) {
+  const text = `${error?.code || ""} ${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.toLowerCase();
+  return text.includes("admin_status");
+}
+
 async function authenticateAdmin(event, supabaseUrl, anonKey, serviceRoleKey) {
   const token = getBearerToken(event.headers.authorization || event.headers.Authorization);
   if (!token) return { ok: false, statusCode: 401, error: "missing_token" };
@@ -79,7 +84,7 @@ exports.handler = async (event) => {
   const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const supabase = auth.adminClient;
 
-  const [events24hRes, events7dRes, magicRes, pendingRes, playsTodayRes, activeMembers7dRes, liveNowRes] = await Promise.all([
+  const [events24hRes, events7dRes, magicRes, initialPendingRes, playsTodayRes, activeMembers7dRes, liveNowRes] = await Promise.all([
     supabase
       .from("atelier_function_events")
       .select("function_name, status", { count: "exact" })
@@ -115,13 +120,25 @@ exports.handler = async (event) => {
       .gte("last_seen_at", new Date(Date.now() - 30 * 1000).toISOString()),
   ]);
 
+  let pendingRes = initialPendingRes;
+  let legacyMessageSchema = false;
+  if (pendingRes.error && isMissingMessageAdminColumns(pendingRes.error)) {
+    legacyMessageSchema = true;
+    pendingRes = await supabase
+      .from("atelier_messages")
+      .select("id", { count: "exact", head: true });
+  }
+
   if (events24hRes.error || events7dRes.error || magicRes.error || pendingRes.error || playsTodayRes.error || activeMembers7dRes.error) {
     await trackFunctionEvent(supabase, {
       function_name: "admin-status",
       status: "error",
       error_code: "query_failed",
       latency_ms: Date.now() - startedAt,
-      meta: {},
+      meta: {
+        pending_code: pendingRes.error?.code || initialPendingRes.error?.code || null,
+        pending_message: pendingRes.error?.message || initialPendingRes.error?.message || null,
+      },
     });
     return {
       statusCode: 500,
@@ -163,7 +180,7 @@ exports.handler = async (event) => {
     function_name: "admin-status",
     status: "ok",
     latency_ms: Date.now() - startedAt,
-    meta: { total24h, total7d },
+    meta: { total24h, total7d, legacy_message_schema: legacyMessageSchema },
   });
 
   return {

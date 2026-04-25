@@ -289,7 +289,8 @@ button {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -384,6 +385,29 @@ button.ghost {
   background: rgba(201, 152, 82, 0.05);
   font-size: 13px;
   line-height: 1.45;
+}
+
+.member-replies {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(201, 152, 82, 0.24);
+  border-radius: 12px;
+  background: rgba(201, 152, 82, 0.06);
+}
+
+.member-replies-title {
+  margin: 0 0 8px;
+  color: rgba(201, 152, 82, 0.9);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.member-reply-item {
+  margin: 0;
+  line-height: 1.45;
+  color: rgba(232, 223, 211, 0.9);
 }
 
 .admin-panel {
@@ -599,6 +623,7 @@ button.ghost {
 }
 
 .admin-votes-summary,
+.admin-track-cockpit,
 .admin-status-panel,
 .admin-audit-log,
 .admin-live-listeners {
@@ -608,6 +633,7 @@ button.ghost {
 }
 
 .admin-vote-item,
+.admin-track-item,
 .admin-status-item,
 .admin-audit-item {
   border: 1px solid rgba(201, 152, 82, 0.22);
@@ -726,6 +752,7 @@ body.admin-compact .admin-inbox-item,
 body.admin-compact .admin-status-item,
 body.admin-compact .admin-audit-item,
 body.admin-compact .admin-vote-item,
+body.admin-compact .admin-track-item,
 body.admin-compact .admin-live-item,
 body.admin-compact .admin-member-item,
 body.admin-compact .admin-weekly-card {
@@ -760,6 +787,41 @@ body.admin-compact .admin-note-input {
   color: rgba(232, 223, 211, 0.86);
 }
 
+.admin-inbox-tags {
+  display: inline-flex;
+  width: fit-content;
+  margin: 8px 0 0;
+  padding: 3px 8px;
+  border: 1px solid rgba(201, 152, 82, 0.34);
+  border-radius: 999px;
+  color: rgba(201, 152, 82, 0.92);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-track-item {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-track-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-track-item label {
+  font-size: 12px;
+  color: rgba(232, 223, 211, 0.74);
+}
+
+.admin-track-item textarea,
+.admin-track-item select {
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.42);
+}
+
 .admin-member-item button {
   padding: 6px 8px;
   font-size: 12px;
@@ -784,6 +846,50 @@ body.admin-compact .admin-note-input {
 
 #trackLikeBtn.is-pulsing {
   animation: likePulse 0.65s ease-out 1;
+}
+
+.track-status-pill {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0 0 8px;
+  padding: 4px 9px;
+  border: 1px solid rgba(201, 152, 82, 0.45);
+  border-radius: 999px;
+  background: rgba(201, 152, 82, 0.1);
+  color: rgba(245, 228, 198, 0.95);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.track-intent-panel {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(201, 152, 82, 0.22);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.track-intent-panel.hidden {
+  display: none;
+}
+
+.track-intent-label {
+  margin: 0;
+  color: rgba(201, 152, 82, 0.86);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.track-intent-text {
+  margin: 0 0 6px;
+  color: rgba(232, 223, 211, 0.9);
+  line-height: 1.45;
 }
 
 @keyframes likePulse {

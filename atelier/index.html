@@ -152,6 +152,11 @@
           <p class="muted">Chargement des votes...</p>
         </div>
 
+        <h3>Cockpit maquettes</h3>
+        <div id="adminTrackCockpit" class="admin-track-cockpit">
+          <p class="muted">Chargement du cockpit...</p>
+        </div>
+
         <h3>Statut technique</h3>
         <div id="adminStatusPanel" class="admin-status-panel">
           <p class="muted">Chargement du statut...</p>
@@ -168,6 +173,13 @@
     <section id="trackView" class="panel hidden ritual-reveal" data-ritual>
       <button id="backBtn" class="ghost">Retour liste</button>
       <h2 id="trackTitle">Titre</h2>
+      <p id="trackDecisionStatus" class="track-status-pill">En test</p>
+      <div id="trackIntentPanel" class="track-intent-panel hidden">
+        <p class="track-intent-label">Note de Morjane</p>
+        <p id="trackIntentNote" class="track-intent-text"></p>
+        <p class="track-intent-label">Question du moment</p>
+        <p id="trackFeedbackQuestion" class="track-intent-text"></p>
+      </div>
       <p id="trackPlayCount" class="muted">Écoutes du cercle : -</p>
       <p id="trackLikeCount" class="muted">J'aime du cercle : -</p>
       <button id="trackLikeBtn" type="button" class="ghost">♡ J'aime</button>
@@ -190,10 +202,19 @@
       <p id="voteStatus" class="muted"></p>
       <form id="messageForm" class="stack">
         <label for="privateMessage">Message privé pour l'admin</label>
-        <textarea id="privateMessage" rows="4" placeholder="Ton retour confidentiel"></textarea>
+        <select id="feedbackTag" aria-label="Axe principal du retour">
+          <option value="emotion">Emotion ressentie</option>
+          <option value="text">Texte / phrase qui reste</option>
+          <option value="melody">Melodie / refrain</option>
+          <option value="arrangement">Arrangement / energie</option>
+          <option value="scene">Potentiel scene</option>
+          <option value="doubt">Point de doute</option>
+        </select>
+        <textarea id="privateMessage" rows="4" placeholder="Ce que tu ressens, ce que tu garderais, ce que tu retravaillerais..."></textarea>
         <button type="submit">Envoyer le message</button>
       </form>
       <p id="messageStatus" class="muted"></p>
+      <div id="memberReplies" class="member-replies hidden"></div>
     </section>
 
     <footer class="atelier-footer-credit">

@@ -13,6 +13,18 @@ function getBearerToken(header) {
   return token;
 }
 
+function isMissingMessageAdminColumns(error) {
+  const text = `${error?.code || ""} ${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.toLowerCase();
+  return (
+    text.includes("admin_status") ||
+    text.includes("admin_note") ||
+    text.includes("admin_reply") ||
+    text.includes("feedback_tags") ||
+    text.includes("processed_at") ||
+    text.includes("processed_by")
+  );
+}
+
 async function authenticateAdmin(event, supabaseUrl, anonKey, serviceRoleKey) {
   const token = getBearerToken(event.headers.authorization || event.headers.Authorization);
   if (!token) {
@@ -88,7 +100,7 @@ exports.handler = async (event) => {
     const messageId = payload.messageId;
     const action = payload.action;
     const note = typeof payload.note === "string" ? payload.note.slice(0, 2000) : null;
-    if (!messageId || !["mark_processed", "mark_new", "set_note"].includes(action)) {
+    if (!messageId || !["mark_processed", "mark_new", "set_note", "set_reply"].includes(action)) {
       await trackFunctionEvent(auth.adminClient, {
         function_name: "admin-inbox",
         status: "error",
@@ -108,6 +120,8 @@ exports.handler = async (event) => {
     let updatePayload = {};
     if (action === "set_note") {
       updatePayload = { admin_note: note || null };
+    } else if (action === "set_reply") {
+      updatePayload = { admin_reply: note || null };
     } else {
       updatePayload = isProcessed
         ? { admin_status: "processed", processed_at: new Date().toISOString(), processed_by: adminId }
@@ -139,7 +153,7 @@ exports.handler = async (event) => {
     if (adminId) {
       await auth.adminClient.from("atelier_admin_audit_logs").insert({
         admin_user_id: adminId,
-        action: action === "set_note" ? "message_noted" : (isProcessed ? "message_processed" : "message_reopened"),
+        action: action === "set_note" ? "message_noted" : (action === "set_reply" ? "message_replied" : (isProcessed ? "message_processed" : "message_reopened")),
         target_type: "atelier_message",
         target_id: messageId,
         details: { action, has_note: action === "set_note" ? Boolean(note) : null },
@@ -175,11 +189,21 @@ exports.handler = async (event) => {
     };
   }
 
-  const messagesResult = await auth.adminClient
+  let messagesResult = await auth.adminClient
     .from("atelier_messages")
-    .select("id, created_at, content, user_id, track_id, admin_status, admin_note, processed_at, processed_by")
+    .select("id, created_at, content, user_id, track_id, admin_status, admin_note, admin_reply, feedback_tags, processed_at, processed_by")
     .order("created_at", { ascending: false })
     .limit(200);
+  let hasAdminMessageColumns = true;
+
+  if (messagesResult.error && isMissingMessageAdminColumns(messagesResult.error)) {
+    hasAdminMessageColumns = false;
+    messagesResult = await auth.adminClient
+      .from("atelier_messages")
+      .select("id, created_at, content, user_id, track_id")
+      .order("created_at", { ascending: false })
+      .limit(200);
+  }
 
   if (messagesResult.error) {
     await trackFunctionEvent(auth.adminClient, {
@@ -187,7 +211,11 @@ exports.handler = async (event) => {
       status: "error",
       error_code: "query_failed_messages",
       latency_ms: Date.now() - startedAt,
-      meta: { method: "GET" },
+      meta: {
+        method: "GET",
+        code: messagesResult.error.code || null,
+        message: messagesResult.error.message || null,
+      },
     });
     return {
       statusCode: 500,
@@ -239,7 +267,7 @@ exports.handler = async (event) => {
     function_name: "admin-inbox",
     status: "ok",
     latency_ms: Date.now() - startedAt,
-    meta: { method: "GET", count: messages.length },
+    meta: { method: "GET", count: messages.length, legacy_message_schema: !hasAdminMessageColumns },
   });
 
   return {
@@ -255,6 +283,8 @@ exports.handler = async (event) => {
         track_title: trackById.get(row.track_id)?.title || "Maquette",
         admin_status: row.admin_status || "new",
         admin_note: row.admin_note || "",
+        admin_reply: row.admin_reply || "",
+        feedback_tags: Array.isArray(row.feedback_tags) ? row.feedback_tags : [],
         processed_at: row.processed_at || null,
         processed_by_email: adminById.get(row.processed_by)?.email || null,
       })),
