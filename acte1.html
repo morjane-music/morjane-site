@@ -25,6 +25,7 @@
   <meta name="twitter:image" content="https://morjane.re/assets/images/hero.jpg">
 
   <link rel="preload" as="image" href="assets/images/logo.png" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/photo-hero-acte1.png" fetchpriority="high">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@300;400;500;700&family=Cormorant+Garamond:ital@1&display=swap" rel="stylesheet">
@@ -45,15 +46,20 @@
 
   <main>
     <section class="hero" aria-labelledby="hero-title">
-      <h1 id="hero-title">Acte I : Dans la Fissure</h1>
-      <p class="hero-identity">Morjane, autrice, compositrice et interprète réunionnaise</p>
-      <p class="hero-text">Un EP narratif de 7 titres qui explore les fissures humaines : les contradictions, les blessures et les histoires que l'on continue à vivre même lorsqu'on les comprend.</p>
-      <p class="hero-sub">Un projet où la musique devient la porte d'entrée.</p>
-      <div class="button-row">
-        <a class="button" href="#resume">En 30 secondes</a>
-        <a class="button button-ghost" href="assets/epk/Morjane-EPK.pdf" target="_blank" rel="noopener noreferrer">EPK</a>
-        <a class="text-link" href="mailto:booking@morjane.re">Contact</a>
+      <div class="hero-content">
+        <h1 id="hero-title">Acte I : Dans la Fissure</h1>
+        <p class="hero-identity">Morjane, autrice, compositrice et interprète réunionnaise</p>
+        <p class="hero-text">Un EP narratif de 7 titres qui explore les fissures humaines : les contradictions, les blessures et les histoires que l'on continue à vivre même lorsqu'on les comprend.</p>
+        <p class="hero-sub">Un projet où la musique devient la porte d'entrée.</p>
+        <div class="button-row">
+          <a class="button" href="#resume">En 30 secondes</a>
+          <a class="button button-ghost" href="assets/epk/Morjane-EPK.pdf" target="_blank" rel="noopener noreferrer">EPK</a>
+          <a class="text-link" href="mailto:booking@morjane.re">Contact</a>
+        </div>
       </div>
+      <figure class="hero-portrait">
+        <img src="assets/photo-hero-acte1.png" alt="Morjane au micro" width="320" height="320" decoding="async" fetchpriority="high">
+      </figure>
     </section>
 
     <section class="quick-section" id="resume" aria-labelledby="resume-title">
@@ -82,6 +88,7 @@
       <div class="quick-actions">
         <a href="mailto:booking@morjane.re">Me recontacter</a>
         <a href="assets/epk/Morjane-EPK.pdf" target="_blank" rel="noopener noreferrer">EPK</a>
+        <a href="#maquettes">Maquettes</a>
         <a href="https://open.spotify.com/intl-fr/artist/0B5Ta7mUfgxXd8OlZ3C2Zw?si=rn4_GbKzRgGsvfd9tIYLjw" target="_blank" rel="noopener noreferrer">Spotify</a>
         <a href="https://www.youtube.com/@Morjane_music" target="_blank" rel="noopener noreferrer">YouTube</a>
       </div>
@@ -111,6 +118,38 @@
     </section>
 
     <section class="fold-list" aria-label="Approfondir le projet">
+      <details class="section-fold" id="maquettes">
+        <summary>
+          <span>Écoute rapide</span>
+          <strong>Maquettes audio</strong>
+        </summary>
+        <div class="fold-content">
+          <div class="copy">
+            <p>Deux maquettes de travail pour entrer directement dans la matière sonore du projet.</p>
+          </div>
+          <div class="audio-list" aria-label="Maquettes audio d'Acte I">
+            <article class="audio-card">
+              <div>
+                <h3>Cosmos</h3>
+                <p>Maquette</p>
+              </div>
+              <audio controls preload="none" src="assets/Cosmos.mp3">
+                Votre navigateur ne permet pas l'écoute audio.
+              </audio>
+            </article>
+            <article class="audio-card">
+              <div>
+                <h3>En bas</h3>
+                <p>Maquette</p>
+              </div>
+              <audio controls preload="none" src="assets/En_bas.mp3">
+                Votre navigateur ne permet pas l'écoute audio.
+              </audio>
+            </article>
+          </div>
+        </div>
+      </details>
+
       <details class="section-fold" id="pourquoi">
         <summary>
           <span>Le point de départ</span>
