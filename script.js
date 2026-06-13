@@ -2,6 +2,13 @@ const toggle = document.querySelector('.menu-toggle');
 const nav = document.querySelector('.main-nav');
 const links = document.querySelectorAll('.main-nav a');
 
+function updateScrollState() {
+  document.body.classList.toggle('has-scrolled', window.scrollY > 24);
+}
+
+updateScrollState();
+window.addEventListener('scroll', updateScrollState, { passive: true });
+
 if (toggle && nav) {
   toggle.setAttribute('aria-expanded', 'false');
 
