@@ -1498,7 +1498,7 @@ async function loadSessionAndProfile() {
     }
     memberMeta.textContent = "Vous etes sur le seuil. Votre acces au cercle doit encore etre ouvert.";
     trackList.innerHTML = "";
-    emptyTracks.classList.remove("hidden");
+    emptyTracks.classList.add("hidden");
     return;
   }
 
@@ -1750,11 +1750,20 @@ async function selectTrack(trackId) {
     trackPlayCount.textContent = `Écoutes du cercle : ${getTrackPlayCount(selectedTrack.id)}`;
   }
   renderTrackLikeState();
-  voteStatus.textContent = "";
+  voteStatus.textContent = "Chargement de l'audio...";
   messageStatus.textContent = "";
   renderMemberReplies([]);
   privateMessage.value = "";
   playLoggedForCurrentTrack = false;
+  player.pause();
+  player.removeAttribute("src");
+  player.load();
+  show(trackView);
+  hide(memberView);
+  if (adminPanel) {
+    hide(adminPanel);
+  }
+  stopWatermark();
 
   try {
     const res = await fetch("/.netlify/functions/get-audio-url", {
@@ -1773,9 +1782,7 @@ async function selectTrack(trackId) {
     }
 
     player.src = data.url;
-    show(trackView);
-    hide(memberView);
-    stopWatermark();
+    voteStatus.textContent = "";
     await loadMemberReplies();
   } catch (_) {
     voteStatus.textContent = "Erreur réseau.";
@@ -2007,6 +2014,9 @@ backBtn.addEventListener("click", () => {
   player.load();
   hide(trackView);
   show(memberView);
+  if (canManageMembers() && adminPanel) {
+    show(adminPanel);
+  }
 });
 
 if (player) {
