@@ -10,6 +10,7 @@
 - `ATELIER_COOKIE_SECRET`
 - `ATELIER_ADMIN_PIN`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `ATELIER_ADMIN_DIGEST_WEBHOOK_URL` optional, for the daily Atelier admin digest webhook.
 
 ## What is implemented
 - V1 entry: logo hint "atelier" -> `/atelier/` -> Supabase magic-link login.
@@ -32,6 +33,7 @@
 - If the Atelier product feedback columns are missing, run:
   - `supabase/atelier-product-upgrade.sql`
   - `supabase/fix-atelier-message-admin-columns.sql`
+- If the member queue columns are missing, run `supabase/atelier-member-queue.sql`.
 
 ## Files
 - `_redirects`

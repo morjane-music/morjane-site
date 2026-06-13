@@ -684,6 +684,42 @@ button.ghost {
   line-height: 1.45;
 }
 
+.member-personal-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+
+.member-personal-stats.hidden {
+  display: none;
+}
+
+.member-personal-stats article {
+  min-height: 68px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  border: 1px solid rgba(201, 152, 82, 0.2);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+  padding: 10px;
+}
+
+.member-personal-stats span {
+  color: rgba(201, 152, 82, 0.86);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.member-personal-stats strong {
+  color: rgba(244, 239, 231, 0.94);
+  font-size: 16px;
+  font-weight: 500;
+}
+
 .member-replies {
   margin-top: 12px;
   padding: 12px 14px;

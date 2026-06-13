@@ -8,6 +8,7 @@ const authStatus = document.getElementById("authStatus");
 const ritualEntry = document.getElementById("ritualEntry");
 const ritualEntryBtn = document.getElementById("ritualEntryBtn");
 const memberMeta = document.getElementById("memberMeta");
+const memberPersonalStats = document.getElementById("memberPersonalStats");
 const circleCount = document.getElementById("circleCount");
 const trackList = document.getElementById("trackList");
 const emptyTracks = document.getElementById("emptyTracks");
@@ -701,6 +702,85 @@ function formatInboxDate(iso) {
     });
   } catch (_) {
     return iso || "-";
+  }
+}
+
+function getMemberDisplayName() {
+  const email = profile?.email || session?.user?.email || "";
+  if (!email) {
+    return "toi";
+  }
+  return email.split("@")[0].replace(/[._-]+/g, " ");
+}
+
+function formatShortDate(iso) {
+  if (!iso) {
+    return "pas encore";
+  }
+  try {
+    return new Date(iso).toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "short",
+    });
+  } catch (_) {
+    return "pas encore";
+  }
+}
+
+function renderMemberPersonalStats(stats = {}) {
+  if (!memberPersonalStats) {
+    return;
+  }
+  const availableTracks = tracks.length;
+  const traces = Number(stats.messages || 0);
+  const plays = Number(stats.plays || 0);
+  const likes = Number(stats.likes || 0);
+  memberPersonalStats.innerHTML = `
+    <article>
+      <span>Chapitre</span>
+      <strong>Saison 01</strong>
+    </article>
+    <article>
+      <span>Fragments</span>
+      <strong>${availableTracks}</strong>
+    </article>
+    <article>
+      <span>Derniere ecoute</span>
+      <strong>${formatShortDate(stats.last_play_at)}</strong>
+    </article>
+    <article>
+      <span>Traces</span>
+      <strong>${traces}</strong>
+    </article>
+    <article>
+      <span>Ecoutes</span>
+      <strong>${plays}</strong>
+    </article>
+    <article>
+      <span>Coeurs</span>
+      <strong>${likes}</strong>
+    </article>
+  `;
+  show(memberPersonalStats);
+}
+
+async function loadMemberPersonalStats() {
+  if (!session?.access_token || !memberPersonalStats) {
+    return;
+  }
+  try {
+    const res = await fetch("/.netlify/functions/member-stats", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      renderMemberPersonalStats({});
+      return;
+    }
+    renderMemberPersonalStats(data.stats || {});
+  } catch (_) {
+    renderMemberPersonalStats({});
   }
 }
 
@@ -1694,10 +1774,13 @@ async function loadSessionAndProfile() {
     if (memberPendingHelp) {
       show(memberPendingHelp);
     }
+    if (memberPersonalStats) {
+      hide(memberPersonalStats);
+    }
     if (adminPanel) {
       hide(adminPanel);
     }
-    memberMeta.textContent = "Vous etes sur le seuil. Votre acces au cercle doit encore etre ouvert.";
+    memberMeta.textContent = "Ta demande est recue. L'Atelier ouvre par vagues.";
     trackList.innerHTML = "";
     emptyTracks.classList.add("hidden");
     return;
@@ -1742,7 +1825,8 @@ async function loadTracks() {
   }
   renderTrackList();
 
-  memberMeta.textContent = `${profile.email} - ${getAudienceStatusLabel(profile.member_status)}`;
+  memberMeta.textContent = `Bienvenue, ${getMemberDisplayName()} - ${getAudienceStatusLabel(profile.member_status)}`;
+  await loadMemberPersonalStats();
 
   if (tracks.length === 0) {
     emptyTracks.classList.remove("hidden");
