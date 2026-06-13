@@ -85,6 +85,42 @@ function getUpdateForAction(action) {
   return null;
 }
 
+async function sendAccessEmail(supabase, userId) {
+  const apiKey = process.env.RESEND_API_KEY || "";
+  if (!apiKey) {
+    return { ok: false, error: "missing_resend_key" };
+  }
+  const profile = await supabase
+    .from("atelier_profiles")
+    .select("email")
+    .eq("id", userId)
+    .maybeSingle();
+  const to = profile.data?.email || "";
+  if (profile.error || !to) {
+    return { ok: false, error: "missing_email" };
+  }
+  const from = process.env.ATELIER_DIGEST_FROM_EMAIL || "Atelier Morjane <atelier@morjane.re>";
+  const url = "https://morjane.re/atelier/";
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to,
+      subject: "Ton acces a l'Atelier Morjane est ouvert",
+      text: `Ton acces a l'Atelier est ouvert.\n\nEntre ici : ${url}\n\nSi le site te le demande, reconnecte-toi avec le meme email.`,
+      html: `<p>Ton acces a l'Atelier est ouvert.</p><p><a href="${url}">Entrer dans l'Atelier</a></p><p>Si le site te le demande, reconnecte-toi avec le meme email.</p>`,
+    }),
+  });
+  if (!res.ok) {
+    return { ok: false, error: `resend_${res.status}` };
+  }
+  return { ok: true };
+}
+
 exports.handler = async (event) => {
   const startedAt = Date.now();
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -174,7 +210,7 @@ exports.handler = async (event) => {
 
     const userId = payload.userId;
     const action = payload.action;
-    const allowedActions = ["approve", "revoke", "vip", "refuse", "archive", "set_meta"];
+    const allowedActions = ["approve", "revoke", "vip", "refuse", "archive", "set_meta", "send_access_email"];
     if (!userId || !allowedActions.includes(action)) {
       await trackFunctionEvent(supabase, {
         function_name: "admin-members",
@@ -202,6 +238,38 @@ exports.handler = async (event) => {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ok: false, error: "self_revoke_blocked" }),
+      };
+    }
+
+    if (action === "send_access_email") {
+      const sent = await sendAccessEmail(supabase, userId);
+      if (!sent.ok) {
+        await trackFunctionEvent(supabase, {
+          function_name: "admin-members",
+          status: "error",
+          error_code: sent.error,
+          latency_ms: Date.now() - startedAt,
+          meta: { method: "POST", action },
+        });
+        return {
+          statusCode: 500,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ok: false, error: sent.error }),
+        };
+      }
+      if (adminUserId) {
+        await supabase.from("atelier_admin_audit_logs").insert({
+          admin_user_id: adminUserId,
+          action: "member_access_email_sent",
+          target_type: "atelier_profile",
+          target_id: userId,
+          details: { action },
+        });
+      }
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+        body: JSON.stringify({ ok: true }),
       };
     }
 

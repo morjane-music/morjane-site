@@ -537,6 +537,23 @@ button.ghost {
     rgba(0, 0, 0, 0.24);
 }
 
+.atelier-charter {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(232, 223, 211, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.atelier-charter p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.member-wave-note.hidden {
+  display: none;
+}
+
 .season-note p {
   margin: 0;
   line-height: 1.5;
@@ -723,9 +740,11 @@ button.ghost {
 .member-replies {
   margin-top: 12px;
   padding: 12px 14px;
-  border: 1px solid rgba(201, 152, 82, 0.24);
+  border: 1px solid rgba(201, 152, 82, 0.38);
   border-radius: 12px;
-  background: rgba(201, 152, 82, 0.06);
+  background:
+    linear-gradient(135deg, rgba(201, 152, 82, 0.12), transparent 62%),
+    rgba(0, 0, 0, 0.36);
 }
 
 .member-replies-title {
@@ -756,6 +775,30 @@ button.ghost {
   box-shadow:
     inset 0 0 0 1px rgba(201, 152, 82, 0.07),
     0 22px 55px rgba(0, 0, 0, 0.2);
+}
+
+.admin-main-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-main-tab {
+  padding: 8px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-main-tab.is-active {
+  background: rgba(232, 223, 211, 0.14);
+  border-color: rgba(232, 223, 211, 0.38);
+}
+
+.admin-section {
+  margin-top: 12px;
 }
 
 .admin-panel__head {
@@ -988,7 +1031,8 @@ button.ghost {
 .admin-track-cockpit,
 .admin-status-panel,
 .admin-audit-log,
-.admin-live-listeners {
+.admin-live-listeners,
+.admin-signal-board {
   display: grid;
   gap: 8px;
   margin-top: 10px;
@@ -997,7 +1041,8 @@ button.ghost {
 .admin-vote-item,
 .admin-track-item,
 .admin-status-item,
-.admin-audit-item {
+.admin-audit-item,
+.admin-signal-item {
   border: 1px solid rgba(201, 152, 82, 0.22);
   border-radius: 8px;
   background:
@@ -1358,6 +1403,36 @@ body.atelier-listening .atelier-player-frame {
   font-size: 11px;
   letter-spacing: 0.09em;
   text-transform: uppercase;
+}
+
+.track-timeline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 12px;
+  color: rgba(232, 223, 211, 0.52);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.track-timeline span {
+  padding: 4px 8px;
+  border: 1px solid rgba(201, 152, 82, 0.2);
+  border-radius: 999px;
+}
+
+.track-timeline span.is-active {
+  color: rgba(245, 228, 198, 0.95);
+  border-color: rgba(201, 152, 82, 0.55);
+  background: rgba(201, 152, 82, 0.1);
+}
+
+.track-timeline b {
+  font-weight: 400;
+  color: rgba(201, 152, 82, 0.52);
 }
 
 .track-intent-panel {
@@ -1751,6 +1826,10 @@ body.atelier-listening .atelier-player-frame {
 
   .admin-tools {
     grid-template-columns: 1fr;
+  }
+
+  .admin-main-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .admin-today-cards {

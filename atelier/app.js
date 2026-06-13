@@ -9,6 +9,7 @@ const ritualEntry = document.getElementById("ritualEntry");
 const ritualEntryBtn = document.getElementById("ritualEntryBtn");
 const memberMeta = document.getElementById("memberMeta");
 const memberPersonalStats = document.getElementById("memberPersonalStats");
+const memberWaveNote = document.getElementById("memberWaveNote");
 const circleCount = document.getElementById("circleCount");
 const trackList = document.getElementById("trackList");
 const emptyTracks = document.getElementById("emptyTracks");
@@ -30,8 +31,10 @@ const refreshInboxBtn = document.getElementById("refreshInboxBtn");
 const markInboxReadBtn = document.getElementById("markInboxReadBtn");
 const adminInboxSearch = document.getElementById("adminInboxSearch");
 const toggleUnreadOnlyBtn = document.getElementById("toggleUnreadOnlyBtn");
+const exportInboxCsvBtn = document.getElementById("exportInboxCsvBtn");
 const adminVotesSummary = document.getElementById("adminVotesSummary");
 const adminTrackCockpit = document.getElementById("adminTrackCockpit");
+const adminSignalBoard = document.getElementById("adminSignalBoard");
 const adminStatusPanel = document.getElementById("adminStatusPanel");
 const adminAuditLog = document.getElementById("adminAuditLog");
 const adminLiveListeners = document.getElementById("adminLiveListeners");
@@ -42,6 +45,7 @@ const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
 const trackTitle = document.getElementById("trackTitle");
 const trackDecisionStatus = document.getElementById("trackDecisionStatus");
+const trackTimeline = document.getElementById("trackTimeline");
 const trackIntentPanel = document.getElementById("trackIntentPanel");
 const trackIntentNote = document.getElementById("trackIntentNote");
 const trackFeedbackQuestion = document.getElementById("trackFeedbackQuestion");
@@ -107,6 +111,13 @@ const ADMIN_MEMBER_SEGMENT_LABELS = {
   creator: "createur",
   friend: "proche",
   team: "equipe",
+};
+
+const WAVE_PUBLIC_NOTES = {
+  proches: "Vague proches : ecoute instinctive, sans posture. Ce que tu ressens en premier compte.",
+  pros: "Vague pros : aide-moi a voir ce qui tient artistiquement, en scene et en sortie.",
+  presse: "Vague presse : fragments confidentiels pour comprendre la direction avant l'annonce publique.",
+  fans: "Vague fans fideles : ton role est de dire ce qui reste apres l'ecoute.",
 };
 
 function applyAdminDensityMode(isCompact) {
@@ -588,6 +599,7 @@ function createAdminMemberRow(member) {
   const actions = document.createElement("div");
   actions.className = "admin-member-actions";
   actions.appendChild(createMemberAction("Valider", "approve", member.id));
+  actions.appendChild(createMemberAction("Envoyer acces", "send_access_email", member.id));
   actions.appendChild(createMemberAction("VIP", "vip", member.id));
   actions.appendChild(createMemberAction("Refuser", "refuse", member.id));
   actions.appendChild(createMemberAction("Archiver", "archive", member.id));
@@ -833,6 +845,121 @@ function formatMessageTags(tags = []) {
   return list.map(getFeedbackTagLabel).filter(Boolean).join(", ");
 }
 
+function csvEscape(value) {
+  return `"${String(value ?? "").replace(/"/g, '""')}"`;
+}
+
+function exportInboxCsv() {
+  if (!adminInboxCache.length) {
+    return;
+  }
+  const rows = [
+    ["date", "email", "maquette", "axe", "message", "note_admin", "reponse_morjane", "statut"],
+    ...adminInboxCache.map((item) => [
+      item.created_at,
+      item.sender_email,
+      item.track_title,
+      formatMessageTags(item.feedback_tags || []),
+      item.content,
+      item.admin_note,
+      item.admin_reply,
+      item.admin_status,
+    ]),
+  ];
+  const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `atelier-retours-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function renderAdminSignalBoard() {
+  if (!adminSignalBoard) {
+    return;
+  }
+  const byTrack = new Map();
+  adminInboxCache.forEach((item) => {
+    const title = item.track_title || "Maquette";
+    if (!byTrack.has(title)) {
+      byTrack.set(title, { title, tags: new Map(), messages: [] });
+    }
+    const bucket = byTrack.get(title);
+    (item.feedback_tags || []).forEach((tag) => {
+      bucket.tags.set(tag, (bucket.tags.get(tag) || 0) + 1);
+    });
+    if (item.content) {
+      bucket.messages.push(item);
+    }
+  });
+
+  const tracks = [...byTrack.values()];
+  if (!tracks.length) {
+    adminSignalBoard.innerHTML = "<p class=\"muted\">Aucun signal pour le moment.</p>";
+    return;
+  }
+
+  adminSignalBoard.innerHTML = "";
+  tracks.forEach((track) => {
+    const topTag = [...track.tags.entries()].sort((a, b) => b[1] - a[1])[0];
+    const best = [...track.messages].sort((a, b) => String(b.content || "").length - String(a.content || "").length)[0];
+    const doubt = track.messages.find((item) => (item.feedback_tags || []).includes("doubt") || (item.feedback_tags || []).includes("weak"));
+    const card = document.createElement("article");
+    card.className = "admin-signal-item";
+    card.innerHTML = `
+      <p class="admin-status-title">${formatTrackTitle(track.title)}</p>
+      <p class="admin-status-meta">Signal dominant : ${topTag ? `${getFeedbackTagLabel(topTag[0])} (${topTag[1]})` : "pas encore"}</p>
+      <p class="admin-status-meta">Doute recurrent : ${doubt ? doubt.content : "aucun signal fort"}</p>
+      <p class="admin-status-meta">Meilleur retour : ${best ? best.content : "aucun message"}</p>
+    `;
+    adminSignalBoard.appendChild(card);
+  });
+}
+
+function renderWaveNote() {
+  if (!memberWaveNote) {
+    return;
+  }
+  const wave = String(profile?.access_wave || "").trim().toLowerCase();
+  const note = WAVE_PUBLIC_NOTES[wave] || (wave ? `Vague ${wave} : ton ecoute aide a choisir ce qui continue.` : "");
+  if (!note) {
+    hide(memberWaveNote);
+    return;
+  }
+  memberWaveNote.innerHTML = `<p class="season-note__title">Note de vague</p><p>${note}</p>`;
+  show(memberWaveNote);
+}
+
+function renderTrackTimeline(status) {
+  if (!trackTimeline) {
+    return;
+  }
+  const steps = [
+    ["testing", "fragment"],
+    ["rework", "reecriture"],
+    ["kept", "retenu"],
+  ];
+  const activeIndex = Math.max(0, steps.findIndex(([value]) => value === status));
+  trackTimeline.innerHTML = steps.map(([, label], index) => (
+    `<span class="${index <= activeIndex ? "is-active" : ""}">${label}</span>`
+  )).join("<b>→</b>");
+}
+
+function showAdminSection(name) {
+  const memberTabs = document.querySelector(".admin-tabs");
+  if (memberTabs) {
+    memberTabs.classList.toggle("hidden", name !== "requests");
+  }
+  document.querySelectorAll("[data-admin-panel-section]").forEach((section) => {
+    section.classList.toggle("hidden", section.dataset.adminPanelSection !== name);
+  });
+  document.querySelectorAll("[data-admin-section]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.adminSection === name);
+  });
+}
+
 function renderAdminInbox() {
   if (!adminInboxList) {
     return;
@@ -1052,6 +1179,7 @@ async function loadAdminInbox() {
     renderAdminTodayCards();
     populateInboxFilters();
     renderAdminInbox();
+    renderAdminSignalBoard();
   } catch (_) {
     adminInboxList.innerHTML = "<p class=\"muted\">Erreur reseau.</p>";
   }
@@ -1686,11 +1814,20 @@ async function ensureAtelierProfile() {
     { onConflict: "id" }
   );
 
-  const { data } = await supabase
+  let { data, error } = await supabase
     .from("atelier_profiles")
-    .select("id, email, role, member_status")
+    .select("id, email, role, member_status, access_wave")
     .eq("id", session.user.id)
     .maybeSingle();
+
+  if (error && /access_wave/i.test(String(error.message || ""))) {
+    const fallback = await supabase
+      .from("atelier_profiles")
+      .select("id, email, role, member_status")
+      .eq("id", session.user.id)
+      .maybeSingle();
+    data = fallback.data;
+  }
 
   return data || null;
 }
@@ -1826,6 +1963,7 @@ async function loadTracks() {
   renderTrackList();
 
   memberMeta.textContent = `Bienvenue, ${getMemberDisplayName()} - ${getAudienceStatusLabel(profile.member_status)}`;
+  renderWaveNote();
   await loadMemberPersonalStats();
 
   if (tracks.length === 0) {
@@ -2021,6 +2159,7 @@ async function selectTrack(trackId) {
   if (trackDecisionStatus) {
     trackDecisionStatus.textContent = getDecisionStatusLabel(selectedTrack.decision_status);
   }
+  renderTrackTimeline(selectedTrack.decision_status || "testing");
   const hasIntent = Boolean(selectedTrack.intent_note || selectedTrack.feedback_question);
   if (trackIntentPanel && trackIntentNote && trackFeedbackQuestion) {
     if (hasIntent) {
@@ -2420,6 +2559,16 @@ if (toggleUnreadOnlyBtn) {
     toggleUnreadOnlyBtn.classList.toggle("is-active", adminInboxUnreadOnly);
     renderAdminInbox();
   });
+}
+
+document.querySelectorAll("[data-admin-section]").forEach((button) => {
+  button.addEventListener("click", () => {
+    showAdminSection(button.dataset.adminSection || "requests");
+  });
+});
+
+if (exportInboxCsvBtn) {
+  exportInboxCsvBtn.addEventListener("click", exportInboxCsv);
 }
 
 if (adminUnlockForm) {

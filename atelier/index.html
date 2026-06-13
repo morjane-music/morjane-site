@@ -90,6 +90,11 @@
       </div>
       <p id="memberMeta" class="muted"></p>
       <div id="memberPersonalStats" class="member-personal-stats hidden"></div>
+      <div id="memberWaveNote" class="season-note member-wave-note hidden"></div>
+      <div class="atelier-charter">
+        <p class="season-note__title">Charte du cercle</p>
+        <p>Ecoute en prive. Ne partage pas les fichiers. Reponds avec instinct, pas avec politesse. Une trace sincere vaut mieux qu'un avis parfait.</p>
+      </div>
       <div class="season-note">
         <p class="season-note__title">Chapitre ouvert</p>
         <p>Ces versions ne demandent pas un verdict parfait. Elles cherchent une présence, une mémoire, un frisson vrai. Écoutez comme on entre dans une pièce encore en désordre.</p>
@@ -140,27 +145,40 @@
         <button type="button" id="adminDensityToggle" class="ghost" aria-pressed="false">Mode compact : off</button>
         <input id="adminSearchInput" type="search" placeholder="Rechercher un email">
       </div>
+      <nav class="admin-main-tabs" aria-label="Navigation admin">
+        <button type="button" class="admin-main-tab is-active" data-admin-section="requests">Demandes</button>
+        <button type="button" class="admin-main-tab" data-admin-section="members">Membres</button>
+        <button type="button" class="admin-main-tab" data-admin-section="messages">Messages</button>
+        <button type="button" class="admin-main-tab" data-admin-section="tracks">Morceaux</button>
+        <button type="button" class="admin-main-tab" data-admin-section="decisions">Decisions</button>
+      </nav>
       <div class="admin-tabs">
         <button type="button" id="tabPendingBtn" class="admin-tab is-active">File d'attente</button>
         <button type="button" id="tabMembersBtn" class="admin-tab">Cercle actif</button>
       </div>
+      <section class="admin-section" data-admin-panel-section="requests">
       <div id="adminMembersSummary" class="admin-member-summary"></div>
       <div id="adminMembersList" class="admin-members-list"></div>
+      </section>
 
-      <h3>Résumé 7 jours</h3>
+      <section class="admin-section hidden" data-admin-panel-section="members">
+      <h3>Membres et live</h3>
       <div id="adminWeeklyStats" class="admin-weekly-stats">
         <p class="muted">Chargement des indicateurs...</p>
       </div>
 
-      <h3>Live en écoute</h3>
+
       <div id="adminLiveListeners" class="admin-live-listeners">
         <p class="muted">Chargement des auditeurs live...</p>
       </div>
 
+      </section>
+      <section class="admin-section hidden" data-admin-panel-section="messages">
       <h3>Messages reçus</h3>
       <div class="admin-tools">
         <button type="button" id="refreshInboxBtn" class="ghost">Actualiser les messages</button>
         <button type="button" id="markInboxReadBtn" class="ghost">Tout marquer lu</button>
+        <button type="button" id="exportInboxCsvBtn" class="ghost">Exporter CSV</button>
       </div>
       <div class="admin-tools">
         <input id="adminInboxSearch" type="search" placeholder="Filtrer les messages">
@@ -177,11 +195,17 @@
       <p id="adminInboxUnread" class="muted"></p>
       <div id="adminInboxList" class="admin-inbox-list"></div>
 
+      </section>
+      <section class="admin-section hidden" data-admin-panel-section="tracks">
       <h3>Votes agrégés</h3>
       <div id="adminVotesSummary" class="admin-votes-summary">
         <p class="muted">Chargement des votes...</p>
       </div>
 
+      </section>
+      <section class="admin-section hidden" data-admin-panel-section="decisions">
+      <h3>Top signaux</h3>
+      <div id="adminSignalBoard" class="admin-signal-board"><p class="muted">Chargement des signaux...</p></div>
       <h3>Cockpit maquettes</h3>
       <div id="adminTrackCockpit" class="admin-track-cockpit">
         <p class="muted">Chargement du cockpit...</p>
@@ -196,6 +220,7 @@
       <div id="adminAuditLog" class="admin-audit-log">
         <p class="muted">Chargement du journal...</p>
       </div>
+      </section>
       </div>
     </section>
 
@@ -203,6 +228,7 @@
       <button id="backBtn" class="ghost">Retour au chapitre</button>
       <h2 id="trackTitle">Titre</h2>
       <p id="trackDecisionStatus" class="track-status-pill">En test</p>
+      <div id="trackTimeline" class="track-timeline" aria-label="Evolution de la maquette"></div>
       <div id="trackIntentPanel" class="track-intent-panel hidden">
         <p class="track-intent-label">Note de Morjane</p>
         <p id="trackIntentNote" class="track-intent-text"></p>
