@@ -140,9 +140,10 @@
         <input id="adminSearchInput" type="search" placeholder="Rechercher un email">
       </div>
       <div class="admin-tabs">
-        <button type="button" id="tabPendingBtn" class="admin-tab is-active">En attente</button>
-        <button type="button" id="tabMembersBtn" class="admin-tab">Membres</button>
+        <button type="button" id="tabPendingBtn" class="admin-tab is-active">File d'attente</button>
+        <button type="button" id="tabMembersBtn" class="admin-tab">Cercle actif</button>
       </div>
+      <div id="adminMembersSummary" class="admin-member-summary"></div>
       <div id="adminMembersList" class="admin-members-list"></div>
 
       <h3>Résumé 7 jours</h3>
@@ -245,6 +246,9 @@
             <option value="melody">Melodie / refrain</option>
             <option value="arrangement">Arrangement / energie</option>
             <option value="scene">Potentiel scene</option>
+            <option value="replay">Envie de reecouter</option>
+            <option value="share">A qui tu l'enverrais</option>
+            <option value="weak">Moment faible</option>
             <option value="doubt">Point de doute</option>
           </select>
           <textarea id="privateMessage" rows="4" placeholder="Ce que tu as ressenti. Ce que tu garderais. Ce qui te sort du morceau. Même si c'est flou."></textarea>

@@ -1050,6 +1050,24 @@ button.ghost {
   border-color: rgba(201, 152, 82, 0.75);
 }
 
+.admin-member-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.admin-member-summary span {
+  padding: 4px 8px;
+  border: 1px solid rgba(201, 152, 82, 0.28);
+  border-radius: 999px;
+  background: rgba(201, 152, 82, 0.07);
+  color: rgba(232, 223, 211, 0.8);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 body.admin-compact .admin-panel {
   padding: 10px;
   border-radius: 12px;
@@ -1101,18 +1119,90 @@ body.admin-compact .admin-note-input {
 
 .admin-member-item {
   display: grid;
-  grid-template-columns: 1fr auto auto;
   gap: 8px;
-  align-items: center;
+  align-items: stretch;
   border: 1px solid rgba(201, 152, 82, 0.22);
   border-radius: 10px;
   padding: 10px;
   background: rgba(0, 0, 0, 0.38);
 }
 
+.admin-member-content {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-member-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.admin-member-email {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.admin-member-badge {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border: 1px solid rgba(201, 152, 82, 0.36);
+  border-radius: 999px;
+  background: rgba(201, 152, 82, 0.09);
+  color: rgba(245, 228, 198, 0.9);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-member-badge.is-vip,
+.admin-member-badge.is-approved {
+  border-color: rgba(118, 202, 152, 0.62);
+  background: rgba(90, 190, 130, 0.14);
+  color: #b6f0cc;
+}
+
+.admin-member-badge.is-refused,
+.admin-member-badge.is-archived {
+  border-color: rgba(220, 120, 100, 0.48);
+  background: rgba(180, 70, 50, 0.12);
+  color: rgba(255, 190, 175, 0.9);
+}
+
 .admin-member-meta {
+  margin: 0;
   font-size: 13px;
   color: rgba(232, 223, 211, 0.86);
+}
+
+.admin-member-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-member-fields input,
+.admin-member-fields select {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.42);
+  color: var(--ink);
+  padding: 8px 10px;
+}
+
+.admin-member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .admin-inbox-tags {
@@ -1605,6 +1695,22 @@ body.atelier-listening .atelier-player-frame {
 
   .admin-member-item {
     grid-template-columns: 1fr;
+  }
+
+  .admin-member-head {
+    display: grid;
+  }
+
+  .admin-member-badge {
+    width: fit-content;
+  }
+
+  .admin-member-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-member-actions button {
+    flex: 1 1 120px;
   }
 
   .admin-tools {

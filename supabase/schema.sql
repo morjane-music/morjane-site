@@ -5,6 +5,12 @@ create table if not exists public.atelier_profiles (
   email text,
   role text not null default 'member' check (role in ('member', 'founder', 'admin')),
   member_status text not null default 'none' check (member_status in ('none', 'member', 'founder')),
+  audience_status text not null default 'new' check (audience_status in ('new', 'waiting', 'approved', 'vip', 'refused', 'archived')),
+  audience_segment text check (audience_segment in ('listener', 'pro', 'press', 'creator', 'friend', 'team')),
+  access_source text,
+  access_wave text,
+  admin_note text,
+  last_admin_action_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -167,6 +173,17 @@ alter table public.atelier_tracks
   add column if not exists intent_note text,
   add column if not exists feedback_question text,
   add column if not exists decision_status text not null default 'testing' check (decision_status in ('testing', 'kept', 'rework', 'paused', 'released', 'archived'));
+
+alter table public.atelier_profiles
+  add column if not exists audience_status text not null default 'new' check (audience_status in ('new', 'waiting', 'approved', 'vip', 'refused', 'archived')),
+  add column if not exists audience_segment text check (audience_segment in ('listener', 'pro', 'press', 'creator', 'friend', 'team')),
+  add column if not exists access_source text,
+  add column if not exists access_wave text,
+  add column if not exists admin_note text,
+  add column if not exists last_admin_action_at timestamptz;
+
+create index if not exists idx_atelier_profiles_audience_status
+  on public.atelier_profiles(audience_status, created_at desc);
 
 create index if not exists idx_atelier_messages_status_created
   on public.atelier_messages(admin_status, created_at desc);

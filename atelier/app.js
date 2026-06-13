@@ -17,6 +17,7 @@ const adminUnlockForm = document.getElementById("adminUnlockForm");
 const adminPinInput = document.getElementById("adminPinInput");
 const adminUnlockStatus = document.getElementById("adminUnlockStatus");
 const adminSecureContent = document.getElementById("adminSecureContent");
+const adminMembersSummary = document.getElementById("adminMembersSummary");
 const adminMembersList = document.getElementById("adminMembersList");
 const adminWeeklyStats = document.getElementById("adminWeeklyStats");
 const adminInboxList = document.getElementById("adminInboxList");
@@ -90,6 +91,22 @@ const adminTodayState = {
 };
 const ADMIN_DENSITY_STORAGE_KEY = "atelier_admin_compact_density";
 const RITUAL_ENTRY_STORAGE_KEY = "atelier_ritual_entry_seen";
+const ADMIN_MEMBER_STATUS_LABELS = {
+  new: "nouveau",
+  waiting: "a relancer",
+  approved: "valide",
+  vip: "VIP / founder",
+  refused: "refuse",
+  archived: "archive",
+};
+const ADMIN_MEMBER_SEGMENT_LABELS = {
+  listener: "auditeur",
+  pro: "pro",
+  press: "presse",
+  creator: "createur",
+  friend: "proche",
+  team: "equipe",
+};
 
 function applyAdminDensityMode(isCompact) {
   document.body.classList.toggle("admin-compact", Boolean(isCompact));
@@ -430,7 +447,7 @@ async function loadAdminWeeklyStats() {
   }
 }
 
-function createAdminMemberRow(member) {
+function createBasicAdminMemberRow(member) {
   const row = document.createElement("div");
   row.className = "admin-member-item";
 
@@ -456,6 +473,145 @@ function createAdminMemberRow(member) {
     revokeBtn.addEventListener("click", () => updateMemberStatus(member.id, "revoke"));
   }
   row.appendChild(revokeBtn);
+
+  return row;
+}
+
+function getQueueStatus(member) {
+  if (member.audience_status) {
+    return member.audience_status;
+  }
+  if (member.member_status === "founder" || member.role === "founder") {
+    return "vip";
+  }
+  if (member.member_status === "member" || member.role === "admin") {
+    return "approved";
+  }
+  return "new";
+}
+
+function getQueueLabel(member) {
+  const status = getQueueStatus(member);
+  return ADMIN_MEMBER_STATUS_LABELS[status] || status;
+}
+
+function createSelect(options, value, label) {
+  const select = document.createElement("select");
+  select.setAttribute("aria-label", label);
+  options.forEach(([optionValue, optionLabel]) => {
+    const option = document.createElement("option");
+    option.value = optionValue;
+    option.textContent = optionLabel;
+    select.appendChild(option);
+  });
+  select.value = value || "";
+  return select;
+}
+
+function createMemberAction(label, action, userId) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "ghost";
+  button.textContent = label;
+  button.addEventListener("click", () => updateMemberStatus(userId, action));
+  return button;
+}
+
+function createAdminMemberRow(member) {
+  const row = document.createElement("div");
+  row.className = "admin-member-item";
+
+  const content = document.createElement("div");
+  content.className = "admin-member-content";
+
+  const head = document.createElement("div");
+  head.className = "admin-member-head";
+  const email = document.createElement("p");
+  email.className = "admin-member-email";
+  email.textContent = member.email || "email inconnu";
+  const badge = document.createElement("span");
+  badge.className = `admin-member-badge is-${getQueueStatus(member)}`;
+  badge.textContent = getQueueLabel(member);
+  head.appendChild(email);
+  head.appendChild(badge);
+  content.appendChild(head);
+
+  const meta = document.createElement("p");
+  meta.className = "admin-member-meta";
+  const segment = member.audience_segment ? (ADMIN_MEMBER_SEGMENT_LABELS[member.audience_segment] || member.audience_segment) : "segment non defini";
+  const source = member.access_source || "source inconnue";
+  const wave = member.access_wave || "hors vague";
+  meta.textContent = `${member.member_status} / ${member.role} | ${segment} | ${source} | ${wave}`;
+  content.appendChild(meta);
+
+  const fields = document.createElement("div");
+  fields.className = "admin-member-fields";
+  const queueStatus = createSelect([
+    ["new", "Nouveau"],
+    ["waiting", "A relancer"],
+    ["approved", "Valide"],
+    ["vip", "VIP / founder"],
+    ["refused", "Refuse"],
+    ["archived", "Archive"],
+  ], getQueueStatus(member), "Statut de file");
+  const segmentSelect = createSelect([
+    ["", "Segment"],
+    ["listener", "Auditeur"],
+    ["pro", "Pro"],
+    ["press", "Presse"],
+    ["creator", "Createur"],
+    ["friend", "Proche"],
+    ["team", "Equipe"],
+  ], member.audience_segment || "", "Segment");
+  const sourceInput = document.createElement("input");
+  sourceInput.type = "text";
+  sourceInput.placeholder = "Source";
+  sourceInput.value = member.access_source || "";
+  const waveInput = document.createElement("input");
+  waveInput.type = "text";
+  waveInput.placeholder = "Vague";
+  waveInput.value = member.access_wave || "";
+  fields.appendChild(queueStatus);
+  fields.appendChild(segmentSelect);
+  fields.appendChild(sourceInput);
+  fields.appendChild(waveInput);
+  content.appendChild(fields);
+
+  const note = document.createElement("textarea");
+  note.className = "admin-note-input";
+  note.rows = 2;
+  note.placeholder = "Note interne equipe";
+  note.value = member.admin_note || "";
+  content.appendChild(note);
+
+  const actions = document.createElement("div");
+  actions.className = "admin-member-actions";
+  actions.appendChild(createMemberAction("Valider", "approve", member.id));
+  actions.appendChild(createMemberAction("VIP", "vip", member.id));
+  actions.appendChild(createMemberAction("Refuser", "refuse", member.id));
+  actions.appendChild(createMemberAction("Archiver", "archive", member.id));
+  const revokeBtn = createMemberAction("Retirer", "revoke", member.id);
+  if (member.id && member.id === profile?.id) {
+    revokeBtn.disabled = true;
+    revokeBtn.title = "Impossible de retirer votre propre acces admin.";
+  }
+  actions.appendChild(revokeBtn);
+
+  const saveMeta = document.createElement("button");
+  saveMeta.type = "button";
+  saveMeta.className = "ghost";
+  saveMeta.textContent = "Sauver note";
+  saveMeta.addEventListener("click", () => updateMemberMeta(member.id, {
+    audience_status: queueStatus.value,
+    audience_segment: segmentSelect.value,
+    access_source: sourceInput.value,
+    access_wave: waveInput.value,
+    admin_note: note.value,
+  }));
+  actions.appendChild(saveMeta);
+  content.appendChild(actions);
+
+  row.appendChild(content);
 
   return row;
 }
@@ -490,14 +646,36 @@ function renderAdminMembers() {
   if (!adminMembersList) {
     return;
   }
+  if (adminMembersSummary) {
+    const counts = adminMembersCache.reduce((acc, member) => {
+      const status = getQueueStatus(member);
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+    adminMembersSummary.innerHTML = `
+      <span>Nouveaux ${counts.new || 0}</span>
+      <span>A relancer ${counts.waiting || 0}</span>
+      <span>Valides ${counts.approved || 0}</span>
+      <span>VIP ${counts.vip || 0}</span>
+      <span>Refuses ${counts.refused || 0}</span>
+    `;
+  }
   const term = String(adminSearchInput?.value || "").trim().toLowerCase();
-  const wanted = adminViewMode === "pending"
-    ? ["none"]
-    : ["member", "founder", "admin"];
-
   const filtered = adminMembersCache.filter((member) => {
-    const statusOk = wanted.includes(member.member_status) || (adminViewMode === "members" && member.role === "admin");
-    const searchOk = !term || String(member.email || "").toLowerCase().includes(term);
+    const queueStatus = getQueueStatus(member);
+    const pendingStatuses = ["new", "waiting", "refused", "archived"];
+    const statusOk = adminViewMode === "pending"
+      ? member.member_status === "none" || pendingStatuses.includes(queueStatus)
+      : member.member_status !== "none" || member.role === "admin" || queueStatus === "approved" || queueStatus === "vip";
+    const haystack = [
+      member.email,
+      member.audience_status,
+      member.audience_segment,
+      member.access_source,
+      member.access_wave,
+      member.admin_note,
+    ].join(" ").toLowerCase();
+    const searchOk = !term || haystack.includes(term);
     return statusOk && searchOk;
   });
 
@@ -1313,6 +1491,29 @@ async function updateMemberStatus(userId, action) {
     await loadCircleCount();
     await loadAdminAuditLog();
     await loadAdminStatus();
+  } catch (_) {
+    // no-op
+  }
+}
+
+async function updateMemberMeta(userId, fields) {
+  if (!canManageMembers() || !session?.access_token) {
+    return;
+  }
+  try {
+    const res = await fetch("/.netlify/functions/admin-members", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ userId, action: "set_meta", fields }),
+    });
+    if (!res.ok) {
+      return;
+    }
+    await loadAdminMembers();
+    await loadAdminAuditLog();
   } catch (_) {
     // no-op
   }
