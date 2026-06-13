@@ -118,7 +118,30 @@ async function sendAccessEmail(supabase, userId) {
   if (!res.ok) {
     return { ok: false, error: `resend_${res.status}` };
   }
-  return { ok: true };
+  return { ok: true, email: to };
+}
+
+async function getTargetProfile(supabase, userId) {
+  const result = await supabase
+    .from("atelier_profiles")
+    .select("id, email, role, member_status, audience_status")
+    .eq("id", userId)
+    .maybeSingle();
+  if (result.error || !result.data) {
+    return null;
+  }
+  return result.data;
+}
+
+function getProfileState(profile) {
+  if (!profile) {
+    return null;
+  }
+  return {
+    role: profile.role || null,
+    member_status: profile.member_status || null,
+    audience_status: profile.audience_status || null,
+  };
 }
 
 exports.handler = async (event) => {
@@ -241,6 +264,8 @@ exports.handler = async (event) => {
       };
     }
 
+    const targetBefore = await getTargetProfile(supabase, userId);
+
     if (action === "send_access_email") {
       const sent = await sendAccessEmail(supabase, userId);
       if (!sent.ok) {
@@ -263,7 +288,11 @@ exports.handler = async (event) => {
           action: "member_access_email_sent",
           target_type: "atelier_profile",
           target_id: userId,
-          details: { action },
+          details: {
+            action,
+            target_email: sent.email || targetBefore?.email || null,
+            before: getProfileState(targetBefore),
+          },
         });
       }
       return {
@@ -331,12 +360,19 @@ exports.handler = async (event) => {
 
     const adminId = adminUserId;
     if (adminId) {
+      const targetAfter = await getTargetProfile(supabase, userId);
       await supabase.from("atelier_admin_audit_logs").insert({
         admin_user_id: adminId,
         action: `member_${action}`,
         target_type: "atelier_profile",
         target_id: userId,
-        details: { action, fields: action === "set_meta" ? Object.keys(payload.fields || {}) : undefined },
+        details: {
+          action,
+          target_email: targetAfter?.email || targetBefore?.email || null,
+          before: getProfileState(targetBefore),
+          after: getProfileState(targetAfter),
+          fields: action === "set_meta" ? Object.keys(payload.fields || {}) : undefined,
+        },
       });
     }
 

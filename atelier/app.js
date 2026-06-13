@@ -903,6 +903,30 @@ function exportInboxCsv() {
   URL.revokeObjectURL(url);
 }
 
+const SIGNAL_STOPWORDS = new Set([
+  "avec", "alors", "apres", "avant", "avoir", "dans", "donc", "elle", "elles", "encore",
+  "etre", "faire", "mais", "meme", "moins", "nous", "pour", "quand", "sans", "sont",
+  "tout", "tres", "plus", "cest", "comme", "cette", "celui", "cela", "peut", "peu",
+  "quoi", "bien", "juste", "vraiment", "morceau", "maquette", "titre", "refrain",
+]);
+
+function getRecurringTerms(messages = []) {
+  const counts = new Map();
+  messages.forEach((item) => {
+    String(item.content || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .split(/[^a-z0-9]+/i)
+      .filter((word) => word.length > 3 && !SIGNAL_STOPWORDS.has(word))
+      .forEach((word) => counts.set(word, (counts.get(word) || 0) + 1));
+  });
+  return [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
+}
+
 function renderAdminSignalBoard() {
   if (!adminSignalBoard) {
     return;
@@ -933,6 +957,7 @@ function renderAdminSignalBoard() {
     const topTag = [...track.tags.entries()].sort((a, b) => b[1] - a[1])[0];
     const best = [...track.messages].sort((a, b) => String(b.content || "").length - String(a.content || "").length)[0];
     const doubt = track.messages.find((item) => (item.feedback_tags || []).includes("doubt") || (item.feedback_tags || []).includes("weak"));
+    const weakSignals = getRecurringTerms(track.messages);
     const card = document.createElement("article");
     card.className = "admin-signal-item";
     const title = document.createElement("p");
@@ -944,12 +969,16 @@ function renderAdminSignalBoard() {
     const recurringDoubt = document.createElement("p");
     recurringDoubt.className = "admin-status-meta";
     recurringDoubt.textContent = `Doute recurrent : ${doubt ? doubt.content : "aucun signal fort"}`;
+    const weakSignalText = document.createElement("p");
+    weakSignalText.className = "admin-status-meta";
+    weakSignalText.textContent = `Signaux faibles : ${weakSignals.length ? weakSignals.map(([word, count]) => `${word} (${count})`).join(", ") : "pas assez de recurrence"}`;
     const bestFeedback = document.createElement("p");
     bestFeedback.className = "admin-status-meta";
     bestFeedback.textContent = `Meilleur retour : ${best ? best.content : "aucun message"}`;
     card.appendChild(title);
     card.appendChild(dominant);
     card.appendChild(recurringDoubt);
+    card.appendChild(weakSignalText);
     card.appendChild(bestFeedback);
     adminSignalBoard.appendChild(card);
   });
@@ -1655,6 +1684,13 @@ function renderAdminAuditLog(logs = []) {
     message_reopened: "Message rouvert",
     message_replied: "Reponse message",
     track_cockpit_updated: "Maquette mise a jour",
+    member_approve: "Membre valide",
+    member_revoke: "Acces retire",
+    member_vip: "VIP / proche",
+    member_refuse: "Demande refusee",
+    member_archive: "Profil archive",
+    member_set_meta: "Fiche membre mise a jour",
+    member_access_email_sent: "Email d'acces envoye",
   }[action] || action);
 
   logs.slice(0, 25).forEach((row) => {
@@ -1672,6 +1708,22 @@ function renderAdminAuditLog(logs = []) {
     card.appendChild(title);
     card.appendChild(meta);
     card.appendChild(target);
+    if (row.details?.target_email) {
+      const profile = document.createElement("p");
+      profile.className = "admin-audit-meta";
+      profile.textContent = `Profil: ${row.details.target_email}`;
+      card.appendChild(profile);
+    }
+    if (row.details?.before || row.details?.after) {
+      const before = row.details.before || {};
+      const after = row.details.after || {};
+      const beforeText = [before.member_status, before.audience_status].filter(Boolean).join(" / ") || "-";
+      const afterText = [after.member_status, after.audience_status].filter(Boolean).join(" / ") || "-";
+      const change = document.createElement("p");
+      change.className = "admin-audit-meta";
+      change.textContent = `Etat: ${beforeText} -> ${afterText}`;
+      card.appendChild(change);
+    }
     adminAuditLog.appendChild(card);
   });
 }
