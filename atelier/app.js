@@ -525,8 +525,30 @@ function createMemberAction(label, action, userId) {
   button.type = "button";
   button.className = "ghost";
   button.textContent = label;
-  button.addEventListener("click", () => updateMemberStatus(userId, action));
+  button.addEventListener("click", () => {
+    const confirmations = {
+      refuse: "Confirmer le refus de cette demande ?",
+      archive: "Archiver ce profil ?",
+      revoke: "Retirer l'acces de ce membre ?",
+    };
+    if (confirmations[action] && !window.confirm(confirmations[action])) {
+      return;
+    }
+    updateMemberStatus(userId, action);
+  });
   return button;
+}
+
+function appendAdminMemberDetails(content, member, fields, note, saveMeta) {
+  const details = document.createElement("details");
+  details.className = "admin-details";
+  const summary = document.createElement("summary");
+  summary.textContent = "Details";
+  details.appendChild(summary);
+  details.appendChild(fields);
+  details.appendChild(note);
+  details.appendChild(saveMeta);
+  content.appendChild(details);
 }
 
 function createAdminMemberRow(member) {
@@ -587,28 +609,33 @@ function createAdminMemberRow(member) {
   fields.appendChild(segmentSelect);
   fields.appendChild(sourceInput);
   fields.appendChild(waveInput);
-  content.appendChild(fields);
 
   const note = document.createElement("textarea");
   note.className = "admin-note-input";
   note.rows = 2;
   note.placeholder = "Note interne equipe";
   note.value = member.admin_note || "";
-  content.appendChild(note);
 
   const actions = document.createElement("div");
   actions.className = "admin-member-actions";
   actions.appendChild(createMemberAction("Valider", "approve", member.id));
   actions.appendChild(createMemberAction("Envoyer acces", "send_access_email", member.id));
-  actions.appendChild(createMemberAction("VIP", "vip", member.id));
-  actions.appendChild(createMemberAction("Refuser", "refuse", member.id));
-  actions.appendChild(createMemberAction("Archiver", "archive", member.id));
+
+  const secondary = document.createElement("details");
+  secondary.className = "admin-action-menu";
+  const secondarySummary = document.createElement("summary");
+  secondarySummary.textContent = "Plus";
+  secondary.appendChild(secondarySummary);
+  secondary.appendChild(createMemberAction("VIP", "vip", member.id));
+  secondary.appendChild(createMemberAction("Refuser", "refuse", member.id));
+  secondary.appendChild(createMemberAction("Archiver", "archive", member.id));
   const revokeBtn = createMemberAction("Retirer", "revoke", member.id);
   if (member.id && member.id === profile?.id) {
     revokeBtn.disabled = true;
     revokeBtn.title = "Impossible de retirer votre propre acces admin.";
   }
-  actions.appendChild(revokeBtn);
+  secondary.appendChild(revokeBtn);
+  actions.appendChild(secondary);
 
   const saveMeta = document.createElement("button");
   saveMeta.type = "button";
@@ -621,8 +648,8 @@ function createAdminMemberRow(member) {
     access_wave: waveInput.value,
     admin_note: note.value,
   }));
-  actions.appendChild(saveMeta);
   content.appendChild(actions);
+  appendAdminMemberDetails(content, member, fields, note, saveMeta);
 
   row.appendChild(content);
 
@@ -908,12 +935,22 @@ function renderAdminSignalBoard() {
     const doubt = track.messages.find((item) => (item.feedback_tags || []).includes("doubt") || (item.feedback_tags || []).includes("weak"));
     const card = document.createElement("article");
     card.className = "admin-signal-item";
-    card.innerHTML = `
-      <p class="admin-status-title">${formatTrackTitle(track.title)}</p>
-      <p class="admin-status-meta">Signal dominant : ${topTag ? `${getFeedbackTagLabel(topTag[0])} (${topTag[1]})` : "pas encore"}</p>
-      <p class="admin-status-meta">Doute recurrent : ${doubt ? doubt.content : "aucun signal fort"}</p>
-      <p class="admin-status-meta">Meilleur retour : ${best ? best.content : "aucun message"}</p>
-    `;
+    const title = document.createElement("p");
+    title.className = "admin-status-title";
+    title.textContent = formatTrackTitle(track.title);
+    const dominant = document.createElement("p");
+    dominant.className = "admin-status-meta";
+    dominant.textContent = `Signal dominant : ${topTag ? `${getFeedbackTagLabel(topTag[0])} (${topTag[1]})` : "pas encore"}`;
+    const recurringDoubt = document.createElement("p");
+    recurringDoubt.className = "admin-status-meta";
+    recurringDoubt.textContent = `Doute recurrent : ${doubt ? doubt.content : "aucun signal fort"}`;
+    const bestFeedback = document.createElement("p");
+    bestFeedback.className = "admin-status-meta";
+    bestFeedback.textContent = `Meilleur retour : ${best ? best.content : "aucun message"}`;
+    card.appendChild(title);
+    card.appendChild(dominant);
+    card.appendChild(recurringDoubt);
+    card.appendChild(bestFeedback);
     adminSignalBoard.appendChild(card);
   });
 }
@@ -928,7 +965,14 @@ function renderWaveNote() {
     hide(memberWaveNote);
     return;
   }
-  memberWaveNote.innerHTML = `<p class="season-note__title">Note de vague</p><p>${note}</p>`;
+  memberWaveNote.innerHTML = "";
+  const title = document.createElement("p");
+  title.className = "season-note__title";
+  title.textContent = "Note de vague";
+  const body = document.createElement("p");
+  body.textContent = note;
+  memberWaveNote.appendChild(title);
+  memberWaveNote.appendChild(body);
   show(memberWaveNote);
 }
 
@@ -942,9 +986,20 @@ function renderTrackTimeline(status) {
     ["kept", "retenu"],
   ];
   const activeIndex = Math.max(0, steps.findIndex(([value]) => value === status));
-  trackTimeline.innerHTML = steps.map(([, label], index) => (
-    `<span class="${index <= activeIndex ? "is-active" : ""}">${label}</span>`
-  )).join("<b>→</b>");
+  trackTimeline.innerHTML = "";
+  steps.forEach(([, label], index) => {
+    if (index > 0) {
+      const arrow = document.createElement("b");
+      arrow.textContent = "->";
+      trackTimeline.appendChild(arrow);
+    }
+    const step = document.createElement("span");
+    if (index <= activeIndex) {
+      step.className = "is-active";
+    }
+    step.textContent = label;
+    trackTimeline.appendChild(step);
+  });
 }
 
 function showAdminSection(name) {
@@ -1081,6 +1136,8 @@ function renderAdminInbox() {
 
       const actions = document.createElement("div");
       actions.className = "admin-inbox-actions";
+      const quickActions = document.createElement("div");
+      quickActions.className = "admin-inbox-actions admin-inbox-actions--quick";
       const actionBtn = document.createElement("button");
       actionBtn.type = "button";
       actionBtn.className = "ghost";
@@ -1088,7 +1145,7 @@ function renderAdminInbox() {
       actionBtn.addEventListener("click", async () => {
         await updateMessageStatus(item.id, item.admin_status === "processed" ? "mark_new" : "mark_processed");
       });
-      actions.appendChild(actionBtn);
+      quickActions.appendChild(actionBtn);
 
       const saveNoteBtn = document.createElement("button");
       saveNoteBtn.type = "button";
@@ -1108,15 +1165,23 @@ function renderAdminInbox() {
       });
       actions.appendChild(saveReplyBtn);
 
+      const details = document.createElement("details");
+      details.className = "admin-details";
+      const summary = document.createElement("summary");
+      summary.textContent = "Traiter";
+      details.appendChild(summary);
+      details.appendChild(noteInput);
+      details.appendChild(replyInput);
+      details.appendChild(actions);
+
       card.appendChild(head);
       card.appendChild(body);
       if (tags.textContent) {
         card.appendChild(tags);
       }
       card.appendChild(state);
-      card.appendChild(noteInput);
-      card.appendChild(replyInput);
-      card.appendChild(actions);
+      card.appendChild(quickActions);
+      card.appendChild(details);
       list.appendChild(card);
     });
 
@@ -2327,25 +2392,54 @@ async function submitMessage(content, tag = "emotion") {
     return;
   }
 
-  const payload = {
-    track_id: selectedTrack.id,
-    user_id: profile.id,
-    content,
-    feedback_tags: [tag],
-  };
-
-  let { error } = await supabase.from("atelier_messages").insert(payload);
-  if (error && String(error.message || "").includes("feedback_tags")) {
-    const fallback = await supabase.from("atelier_messages").insert({
-      track_id: selectedTrack.id,
-      user_id: profile.id,
-      content,
-    });
-    error = fallback.error;
+  if (!session?.access_token) {
+    messageStatus.textContent = "Votre session a expire. Reconnectez-vous pour laisser une trace.";
+    return;
   }
 
-  if (error) {
-    messageStatus.textContent = `Trace refusee. ${error.message || ""}`.trim();
+  if (content.length < 2) {
+    messageStatus.textContent = "Trace trop courte. Quelques mots suffisent.";
+    return;
+  }
+
+  if (content.length > 1200) {
+    messageStatus.textContent = "Trace trop longue. Garde-la sous 1200 caracteres.";
+    return;
+  }
+
+  let res = null;
+  let data = {};
+  try {
+    res = await fetch("/.netlify/functions/submit-member-message", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        trackId: selectedTrack.id,
+        content,
+        tag,
+      }),
+    });
+    data = await res.json().catch(() => ({}));
+  } catch (_) {
+    messageStatus.textContent = "Trace impossible pour le moment. Reessaie dans un instant.";
+    return;
+  }
+
+  if (!res.ok) {
+    if (data.error === "rate_limited") {
+      messageStatus.textContent = "Patiente un instant avant de laisser une nouvelle trace.";
+    } else if (data.error === "missing_token" || data.error === "invalid_token") {
+      messageStatus.textContent = "Votre session a expire. Reconnectez-vous pour laisser une trace.";
+    } else if (data.error === "forbidden") {
+      messageStatus.textContent = "Votre acces au cercle n'est pas encore ouvert pour laisser une trace.";
+    } else if (data.error === "invalid_message") {
+      messageStatus.textContent = "Trace trop courte ou trop longue.";
+    } else {
+      messageStatus.textContent = "Trace refusee. Reessaie dans un instant.";
+    }
     return;
   }
 

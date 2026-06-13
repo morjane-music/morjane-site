@@ -764,13 +764,12 @@ button.ghost {
 
 .admin-panel {
   margin-top: 22px;
-  padding: 16px;
-  border: 1px solid rgba(201, 152, 82, 0.24);
-  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid rgba(232, 223, 211, 0.12);
+  border-radius: 10px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 25%),
-    linear-gradient(180deg, rgba(201, 152, 82, 0.055), rgba(0, 0, 0, 0.56)),
-    rgba(0, 0, 0, 0.46);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 18%),
+    rgba(8, 8, 8, 0.72);
   backdrop-filter: blur(1.5px);
   box-shadow:
     inset 0 0 0 1px rgba(201, 152, 82, 0.07),
@@ -779,15 +778,15 @@ button.ghost {
 
 .admin-main-tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
   margin-top: 12px;
 }
 
 .admin-main-tab {
-  padding: 8px 9px;
+  padding: 7px 8px;
   border-radius: 8px;
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -823,9 +822,9 @@ button.ghost {
 }
 
 .admin-panel h3 {
-  margin: 22px 0 10px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(201, 152, 82, 0.16);
+  margin: 14px 0 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(232, 223, 211, 0.1);
   font-family: "Montserrat", "Inter", sans-serif;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -863,11 +862,11 @@ button.ghost {
 .admin-inbox-columns {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .admin-inbox-column {
-  border: 1px solid rgba(201, 152, 82, 0.2);
+  border: 1px solid rgba(232, 223, 211, 0.11);
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.25);
   padding: 10px;
@@ -916,12 +915,12 @@ button.ghost {
 }
 
 .admin-weekly-card {
-  border: 1px solid rgba(201, 152, 82, 0.2);
+  border: 1px solid rgba(232, 223, 211, 0.11);
   border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
     var(--surface);
-  padding: 12px;
+  padding: 10px;
 }
 
 .admin-weekly-label {
@@ -933,14 +932,14 @@ button.ghost {
 .admin-weekly-value {
   margin: 4px 0 0;
   font-family: "Montserrat", "Inter", sans-serif;
-  font-size: 24px;
+  font-size: 21px;
 }
 
 .admin-inbox-item {
-  border: 1px solid rgba(201, 152, 82, 0.22);
-  border-radius: 10px;
-  padding: 11px;
-  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(232, 223, 211, 0.11);
+  border-radius: 8px;
+  padding: 9px;
+  background: rgba(0, 0, 0, 0.32);
 }
 
 .admin-inbox-head {
@@ -974,6 +973,10 @@ button.ghost {
   margin: 0;
   white-space: pre-wrap;
   line-height: 1.45;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
 }
 
 .admin-tools {
@@ -1008,6 +1011,41 @@ button.ghost {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.admin-inbox-actions--quick {
+  margin-top: 8px;
+}
+
+.admin-details,
+.admin-action-menu {
+  margin-top: 8px;
+}
+
+.admin-details > summary,
+.admin-action-menu > summary {
+  cursor: pointer;
+  width: fit-content;
+  padding: 5px 8px;
+  border: 1px solid rgba(232, 223, 211, 0.16);
+  border-radius: 999px;
+  color: rgba(232, 223, 211, 0.76);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-action-menu {
+  display: inline-block;
+}
+
+.admin-action-menu[open] {
+  width: 100%;
+}
+
+.admin-action-menu[open] button {
+  margin: 8px 6px 0 0;
 }
 
 .admin-note-input {
@@ -1202,10 +1240,10 @@ body.admin-compact .admin-note-input {
   display: grid;
   gap: 8px;
   align-items: stretch;
-  border: 1px solid rgba(201, 152, 82, 0.22);
-  border-radius: 10px;
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(232, 223, 211, 0.11);
+  border-radius: 8px;
+  padding: 9px;
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .admin-member-content {
