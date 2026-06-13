@@ -27,21 +27,37 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <main class="atelier-wrap">
+  <div id="ritualEntry" class="atelier-ritual-entry" aria-hidden="true">
+    <div class="atelier-crack-light" aria-hidden="true"></div>
+    <div class="atelier-ritual-entry__content">
+      <p class="atelier-ritual-entry__line atelier-ritual-entry__line--first">Tu es entré.</p>
+      <p class="atelier-ritual-entry__line atelier-ritual-entry__line--second">Ici, les morceaux existent avant d'être finis.</p>
+      <button id="ritualEntryBtn" class="atelier-ritual-entry__button" type="button">Entrer dans le cercle</button>
+    </div>
+  </div>
+
+  <main class="atelier-wrap atelier-shell">
     <header class="atelier-header">
       <h1>L'Atelier</h1>
       <p id="gateStatus">Vérification de l'accès...</p>
+      <p class="atelier-gate-subtitle">Ce que tu vas entendre n'est pas public.</p>
       <p id="circleCount" class="circle-count">Membres du cercle : ...</p>
+      <div class="atelier-circle-presence" aria-label="Présence du cercle">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <p>Le cercle écoute en silence.</p>
+      </div>
       <p class="atelier-quote ritual-reveal" data-ritual>
         Certaines portes ne s'ouvrent qu'à ceux qui regardent dans <span class="quote-lock">les fissures.</span>
       </p>
       <div class="atelier-intro ritual-reveal" data-ritual>
         <p class="atelier-intro__badge">Cercle privilégié</p>
-        <p>Bienvenue dans mon atelier maquettes.</p>
-        <p>Ici les morceaux existent avant d'être finis.</p>
-        <p>Des fragments, des idées, des versions encore fragiles.</p>
-        <p>Votre écoute et vos retours m'aident à faire naître les versions définitives.</p>
-        <p class="atelier-intro__note">Accès privé — contenu protégé, merci de ne pas partager ces contenus.</p>
+        <p>Bienvenue dans mon atelier.</p>
+        <p>Ici, les morceaux ne sont pas encore des vitrines.</p>
+        <p>Ce sont des fragments, des versions fragiles, des choses qui cherchent leur forme.</p>
+        <p>Votre écoute m'aide à décider ce qui reste, ce qui casse, ce qui renaît.</p>
+        <p class="atelier-intro__note">Privé et sous copyright — merci de ne pas partager, enregistrer ou redistribuer ces contenus.</p>
         <p class="atelier-protection-badge" aria-label="Contenu privé et protégé">
           <span class="protection-seal" aria-hidden="true"></span>
           Privé et sous copyright
@@ -52,8 +68,7 @@
     <section id="authView" class="panel hidden ritual-reveal" data-ritual>
       <h2>Connexion membre</h2>
       <ol class="access-steps" aria-label="Étapes d'accès">
-        <li class="is-done">Porte secrète validée</li>
-        <li class="is-current">Connexion email en cours</li>
+        <li class="is-current">Connexion email</li>
         <li>Validation membre du cercle</li>
       </ol>
       <p>Entrez votre email pour recevoir un lien de connexion.</p>
@@ -67,111 +82,123 @@
 
     <section id="memberView" class="panel hidden ritual-reveal" data-ritual>
       <div class="member-top">
-        <h2>Tracks actifs</h2>
+        <div>
+          <p class="section-kicker">Saison 01</p>
+          <h2>Les maquettes qui cherchent leur forme</h2>
+        </div>
         <button id="logoutBtn" class="ghost">Se déconnecter</button>
       </div>
       <p id="memberMeta" class="muted"></p>
-      <p id="memberPendingHelp" class="member-pending-help hidden">Vous êtes bien connectée. Votre accès membre est en attente de validation par l'admin. Vous recevrez l'accès dès validation.</p>
+      <div class="season-note">
+        <p class="season-note__title">Chapitre ouvert</p>
+        <p>Ces versions ne demandent pas un verdict parfait. Elles cherchent une présence, une mémoire, un frisson vrai. Écoutez comme on entre dans une pièce encore en désordre.</p>
+      </div>
+      <p id="memberPendingHelp" class="member-pending-help hidden">Vous êtes bien connectée. Votre place dans le cercle attend simplement ma validation. Dès que je l'ouvre, les maquettes apparaîtront ici.</p>
       <ul id="trackList" class="track-list"></ul>
-      <p id="emptyTracks" class="muted hidden">Aucun track actif pour le moment.</p>
+      <p id="emptyTracks" class="muted hidden">Aucune maquette ouverte pour le moment. Le prochain chapitre arrivera ici.</p>
+    </section>
 
-      <section id="adminPanel" class="admin-panel hidden">
-        <h3>Gestion du cercle</h3>
-        <p class="muted">Valider ou retirer des accès sans passer par Supabase.</p>
-        <form id="adminUnlockForm" class="stack">
-          <label for="adminPinInput">Code admin personnel</label>
-          <input id="adminPinInput" type="password" autocomplete="one-time-code" placeholder="Code admin" required>
-          <button type="submit">Déverrouiller l'admin</button>
-          <p id="adminUnlockStatus" class="muted"></p>
-        </form>
+    <section id="adminPanel" class="admin-panel hidden ritual-reveal" data-ritual>
+      <div class="admin-panel__head">
+        <div>
+          <p class="section-kicker">Console privée</p>
+          <h3>Administration du cercle</h3>
+        </div>
+        <p class="muted">Une table de travail séparée de l'écoute, pour garder l'Atelier membre intact.</p>
+      </div>
+      <form id="adminUnlockForm" class="stack">
+        <label for="adminPinInput">Code admin personnel</label>
+        <input id="adminPinInput" type="password" autocomplete="one-time-code" placeholder="Code admin" required>
+        <button type="submit">Déverrouiller l'admin</button>
+        <p id="adminUnlockStatus" class="muted"></p>
+      </form>
 
-        <div id="adminSecureContent" class="hidden">
-        <h3>Aujourd'hui</h3>
-        <div id="adminTodayCards" class="admin-today-cards">
-          <article class="admin-weekly-card">
-            <p class="admin-weekly-label">Live maintenant</p>
-            <p class="admin-weekly-value">0</p>
-          </article>
-          <article class="admin-weekly-card">
-            <p class="admin-weekly-label">Messages non traites</p>
-            <p class="admin-weekly-value">0</p>
-          </article>
-          <article class="admin-weekly-card">
-            <p class="admin-weekly-label">Ecoutes aujourd'hui</p>
-            <p class="admin-weekly-value">0</p>
-          </article>
-          <article class="admin-weekly-card">
-            <p class="admin-weekly-label">Membres actifs 7j</p>
-            <p class="admin-weekly-value">0</p>
-          </article>
-        </div>
+      <div id="adminSecureContent" class="hidden">
+      <h3>Aujourd'hui</h3>
+      <div id="adminTodayCards" class="admin-today-cards">
+        <article class="admin-weekly-card">
+          <p class="admin-weekly-label">Live maintenant</p>
+          <p class="admin-weekly-value">0</p>
+        </article>
+        <article class="admin-weekly-card">
+          <p class="admin-weekly-label">Messages non traites</p>
+          <p class="admin-weekly-value">0</p>
+        </article>
+        <article class="admin-weekly-card">
+          <p class="admin-weekly-label">Ecoutes aujourd'hui</p>
+          <p class="admin-weekly-value">0</p>
+        </article>
+        <article class="admin-weekly-card">
+          <p class="admin-weekly-label">Membres actifs 7j</p>
+          <p class="admin-weekly-value">0</p>
+        </article>
+      </div>
 
-        <div class="admin-tools">
-          <button type="button" id="copyAtelierLinkBtn" class="ghost">Copier le lien Atelier</button>
-          <button type="button" id="adminDensityToggle" class="ghost" aria-pressed="false">Mode compact : off</button>
-          <input id="adminSearchInput" type="search" placeholder="Rechercher un email">
-        </div>
-        <div class="admin-tabs">
-          <button type="button" id="tabPendingBtn" class="admin-tab is-active">En attente</button>
-          <button type="button" id="tabMembersBtn" class="admin-tab">Membres</button>
-        </div>
-        <div id="adminMembersList" class="admin-members-list"></div>
+      <div class="admin-tools">
+        <button type="button" id="copyAtelierLinkBtn" class="ghost">Copier le lien Atelier</button>
+        <button type="button" id="adminDensityToggle" class="ghost" aria-pressed="false">Mode compact : off</button>
+        <input id="adminSearchInput" type="search" placeholder="Rechercher un email">
+      </div>
+      <div class="admin-tabs">
+        <button type="button" id="tabPendingBtn" class="admin-tab is-active">En attente</button>
+        <button type="button" id="tabMembersBtn" class="admin-tab">Membres</button>
+      </div>
+      <div id="adminMembersList" class="admin-members-list"></div>
 
-        <h3>Résumé 7 jours</h3>
-        <div id="adminWeeklyStats" class="admin-weekly-stats">
-          <p class="muted">Chargement des indicateurs...</p>
-        </div>
+      <h3>Résumé 7 jours</h3>
+      <div id="adminWeeklyStats" class="admin-weekly-stats">
+        <p class="muted">Chargement des indicateurs...</p>
+      </div>
 
-        <h3>Live en écoute</h3>
-        <div id="adminLiveListeners" class="admin-live-listeners">
-          <p class="muted">Chargement des auditeurs live...</p>
-        </div>
+      <h3>Live en écoute</h3>
+      <div id="adminLiveListeners" class="admin-live-listeners">
+        <p class="muted">Chargement des auditeurs live...</p>
+      </div>
 
-        <h3>Messages reçus</h3>
-        <div class="admin-tools">
-          <button type="button" id="refreshInboxBtn" class="ghost">Actualiser les messages</button>
-          <button type="button" id="markInboxReadBtn" class="ghost">Tout marquer lu</button>
-        </div>
-        <div class="admin-tools">
-          <input id="adminInboxSearch" type="search" placeholder="Filtrer les messages">
-          <button type="button" id="toggleUnreadOnlyBtn" class="ghost">Non lus seulement</button>
-        </div>
-        <div class="admin-tools">
-          <select id="adminInboxTrackFilter" aria-label="Filtrer par maquette">
-            <option value="">Toutes les maquettes</option>
-          </select>
-          <select id="adminInboxSenderFilter" aria-label="Filtrer par expéditeur">
-            <option value="">Tous les expéditeurs</option>
-          </select>
-        </div>
-        <p id="adminInboxUnread" class="muted"></p>
-        <div id="adminInboxList" class="admin-inbox-list"></div>
+      <h3>Messages reçus</h3>
+      <div class="admin-tools">
+        <button type="button" id="refreshInboxBtn" class="ghost">Actualiser les messages</button>
+        <button type="button" id="markInboxReadBtn" class="ghost">Tout marquer lu</button>
+      </div>
+      <div class="admin-tools">
+        <input id="adminInboxSearch" type="search" placeholder="Filtrer les messages">
+        <button type="button" id="toggleUnreadOnlyBtn" class="ghost">Non lus seulement</button>
+      </div>
+      <div class="admin-tools">
+        <select id="adminInboxTrackFilter" aria-label="Filtrer par maquette">
+          <option value="">Toutes les maquettes</option>
+        </select>
+        <select id="adminInboxSenderFilter" aria-label="Filtrer par expéditeur">
+          <option value="">Tous les expéditeurs</option>
+        </select>
+      </div>
+      <p id="adminInboxUnread" class="muted"></p>
+      <div id="adminInboxList" class="admin-inbox-list"></div>
 
-        <h3>Votes agrégés</h3>
-        <div id="adminVotesSummary" class="admin-votes-summary">
-          <p class="muted">Chargement des votes...</p>
-        </div>
+      <h3>Votes agrégés</h3>
+      <div id="adminVotesSummary" class="admin-votes-summary">
+        <p class="muted">Chargement des votes...</p>
+      </div>
 
-        <h3>Cockpit maquettes</h3>
-        <div id="adminTrackCockpit" class="admin-track-cockpit">
-          <p class="muted">Chargement du cockpit...</p>
-        </div>
+      <h3>Cockpit maquettes</h3>
+      <div id="adminTrackCockpit" class="admin-track-cockpit">
+        <p class="muted">Chargement du cockpit...</p>
+      </div>
 
-        <h3>Statut technique</h3>
-        <div id="adminStatusPanel" class="admin-status-panel">
-          <p class="muted">Chargement du statut...</p>
-        </div>
+      <h3>Statut technique</h3>
+      <div id="adminStatusPanel" class="admin-status-panel">
+        <p class="muted">Chargement du statut...</p>
+      </div>
 
-        <h3>Journal admin</h3>
-        <div id="adminAuditLog" class="admin-audit-log">
-          <p class="muted">Chargement du journal...</p>
-        </div>
-        </div>
-      </section>
+      <h3>Journal admin</h3>
+      <div id="adminAuditLog" class="admin-audit-log">
+        <p class="muted">Chargement du journal...</p>
+      </div>
+      </div>
     </section>
 
     <section id="trackView" class="panel hidden ritual-reveal" data-ritual>
-      <button id="backBtn" class="ghost">Retour liste</button>
+      <button id="backBtn" class="ghost">Retour au chapitre</button>
       <h2 id="trackTitle">Titre</h2>
       <p id="trackDecisionStatus" class="track-status-pill">En test</p>
       <div id="trackIntentPanel" class="track-intent-panel hidden">
@@ -181,8 +208,8 @@
         <p id="trackFeedbackQuestion" class="track-intent-text"></p>
       </div>
       <p id="trackPlayCount" class="muted">Écoutes du cercle : -</p>
-      <p id="trackLikeCount" class="muted">J'aime du cercle : -</p>
-      <button id="trackLikeBtn" type="button" class="ghost">♡ J'aime</button>
+      <p id="trackLikeCount" class="muted">Traces coeur du cercle : -</p>
+      <button id="trackLikeBtn" type="button" class="ghost">♡ Laisser une trace coeur</button>
       <div class="track-protection-banner" role="note" aria-label="Protection du contenu">
         <span class="track-protection-banner__icon" aria-hidden="true">
           <span class="protection-seal protection-seal--large"></span>
@@ -193,27 +220,38 @@
         </div>
       </div>
       <div id="trackWatermark" class="track-watermark hidden" aria-hidden="true"></div>
-      <audio id="player" controls controlslist="nodownload noplaybackrate nofullscreen noremoteplayback" disableremoteplayback disablepictureinpicture preload="none"></audio>
-      <div class="vote-grid">
-        <button data-vote="develop">À garder</button>
-        <button data-vote="revise">À retravailler</button>
-        <button data-vote="leave">À écarter</button>
+      <div class="atelier-player-frame">
+        <p class="atelier-player-frame__whisper">Version fragile. Écoute avant de juger.</p>
+        <audio id="player" controls controlslist="nodownload noplaybackrate nofullscreen noremoteplayback" disableremoteplayback disablepictureinpicture preload="none"></audio>
       </div>
-      <p id="voteStatus" class="muted"></p>
-      <form id="messageForm" class="stack">
-        <label for="privateMessage">Message privé pour l'admin</label>
-        <select id="feedbackTag" aria-label="Axe principal du retour">
-          <option value="emotion">Emotion ressentie</option>
-          <option value="text">Texte / phrase qui reste</option>
-          <option value="melody">Melodie / refrain</option>
-          <option value="arrangement">Arrangement / energie</option>
-          <option value="scene">Potentiel scene</option>
-          <option value="doubt">Point de doute</option>
-        </select>
-        <textarea id="privateMessage" rows="4" placeholder="Ce que tu ressens, ce que tu garderais, ce que tu retravaillerais..."></textarea>
-        <button type="submit">Envoyer le message</button>
-      </form>
-      <p id="messageStatus" class="muted"></p>
+      <div class="listening-guide">
+        <p class="listening-guide__title">Après l'écoute</p>
+        <p>Choisissez le geste qui se rapproche le plus de votre ressenti, puis laissez-moi une trace plus libre si quelque chose reste.</p>
+      </div>
+      <div class="atelier-emotion-panel">
+        <p class="atelier-emotion-panel__title">Ton instinct compte plus que la bonne réponse.</p>
+        <div class="vote-grid">
+          <button data-vote="develop">À garder</button>
+          <button data-vote="revise">À retravailler</button>
+          <button data-vote="leave">À écarter</button>
+        </div>
+        <p class="atelier-emotion-panel__hint">Dis-moi ce qui a vibré, ce qui manque, ce qui ment.</p>
+        <p id="voteStatus" class="muted"></p>
+        <form id="messageForm" class="stack">
+          <label for="privateMessage">Trace privée pour Morjane</label>
+          <select id="feedbackTag" aria-label="Axe principal du retour">
+            <option value="emotion">Emotion ressentie</option>
+            <option value="text">Texte / phrase qui reste</option>
+            <option value="melody">Melodie / refrain</option>
+            <option value="arrangement">Arrangement / energie</option>
+            <option value="scene">Potentiel scene</option>
+            <option value="doubt">Point de doute</option>
+          </select>
+          <textarea id="privateMessage" rows="4" placeholder="Ce que tu as ressenti. Ce que tu garderais. Ce qui te sort du morceau. Même si c'est flou."></textarea>
+          <button type="submit">Laisser cette trace</button>
+        </form>
+        <p id="messageStatus" class="muted"></p>
+      </div>
       <div id="memberReplies" class="member-replies hidden"></div>
     </section>
 

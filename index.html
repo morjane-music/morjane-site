@@ -110,7 +110,10 @@ content="Morjane est une artiste réunionnaise, autrice-compositrice-interprète
   <header class="site-header">
 
     <div class="brand">
-      <img src="assets/images/logo.png" alt="Logo Morjane" class="brand-mark" id="atelierDoor" role="button" tabindex="0" aria-label="Entrer dans l'Atelier">
+      <a href="/atelier/" class="atelier-door" id="atelierDoor" aria-label="Atelier privé">
+        <img src="assets/images/logo.png" alt="Logo Morjane" class="brand-mark">
+        <span class="atelier-door__hint" aria-hidden="true">atelier</span>
+      </a>
       <span class="brand-name">MORJANE</span>
     </div>
 
@@ -130,6 +133,7 @@ content="Morjane est une artiste réunionnaise, autrice-compositrice-interprète
       <a href="#musique">Musique</a>
       <a href="#videos">Vidéos</a>
       <a href="#contact">Contact</a>
+      <a href="/atelier/" class="nav-atelier-link">Atelier</a>
       <a href="epk.html">EPK</a>
     </nav>
 
@@ -254,31 +258,46 @@ content="Morjane est une artiste réunionnaise, autrice-compositrice-interprète
 
     <section id="musique" class="section-simple section-musique reveal">
 
-      <div class="music-layout">
+      <p class="music-kicker">Morceaux</p>
+      <p class="music-manifesto">Des chansons sorties de ce qui déborde.</p>
 
-        <div class="music-image">
-          <picture>
-            <source srcset="assets/images/guitare.avif" type="image/avif">
-            <source srcset="assets/images/guitare.webp" type="image/webp">
-            <img src="assets/images/guitare.jpg" alt="Morjane à la guitare" loading="lazy" decoding="async">
-          </picture>
-        </div>
-
-        <div class="music-content">
-          <p class="music-manifesto">
-            J’écris pour rester debout.<br>
-            La scène comme point d’ancrage.
-          </p>
-
-          <p class="track-title">Flamboyante</p>
-
-          <a href="https://open.spotify.com/intl-fr/track/4GDU8GSymO4hRBeG2wSyrR"
+      <div class="music-focus">
+        <a class="music-focus-cover"
+           href="https://youtu.be/NmeI142swxo?si=fbTwV3VmMGocCdH1"
+           target="_blank"
+           rel="noopener noreferrer">
+          <img src="assets/images/cover-quelesilenceseffondre.png"
+               alt="Que le silence s'effondre - Axel Delapaix x Morjane"
+               loading="lazy"
+               decoding="async">
+        </a>
+        <div class="music-focus-content">
+          <p class="music-label">Nouveau clip</p>
+          <h2>Que le silence s'effondre</h2>
+          <p>Axel Delapaix x Morjane</p>
+          <a href="https://youtu.be/NmeI142swxo?si=fbTwV3VmMGocCdH1"
              target="_blank"
              rel="noopener noreferrer"
-             class="music-cta">
-            Écouter sur Spotify
-          </a>
+             class="music-cta">Voir le clip</a>
         </div>
+      </div>
+
+      <div class="music-traces">
+        <article>
+          <span>Single</span>
+          <strong>Flamboyante</strong>
+          <a href="https://open.spotify.com/intl-fr/track/4GDU8GSymO4hRBeG2wSyrR"
+             target="_blank"
+             rel="noopener noreferrer">Écouter sur Spotify</a>
+        </article>
+        <article>
+          <span>Collectif Sèr</span>
+          <strong>Sororité</strong>
+          <p>Écrit par Blue Noon, interprété par le collectif Sèr.</p>
+          <a href="https://youtu.be/ciT738e59PU?si=0s9N4H6ENQRgL904"
+             target="_blank"
+             rel="noopener noreferrer">Voir l'interprétation</a>
+        </article>
 
       </div>
 
@@ -287,6 +306,21 @@ content="Morjane est une artiste réunionnaise, autrice-compositrice-interprète
     <section id="videos" class="section-simple section-videos reveal">
 
       <div class="videos-grid">
+
+        <article class="video-card video-card-featured">
+          <a class="video-cover-link"
+             href="https://youtu.be/NmeI142swxo?si=fbTwV3VmMGocCdH1"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Voir le clip Que le silence s'effondre sur YouTube">
+            <img src="assets/images/cover-quelesilenceseffondre.png"
+                 alt="Cover Que le silence s'effondre - Axel Delapaix x Morjane"
+                 loading="lazy"
+                 decoding="async">
+            <span class="video-play-mark" aria-hidden="true">▶</span>
+          </a>
+          <p class="video-title">Que le silence s'effondre — Axel Delapaix x Morjane</p>
+        </article>
 
         <article class="video-card">
           <div class="video-frame">
@@ -316,6 +350,17 @@ content="Morjane est une artiste réunionnaise, autrice-compositrice-interprète
                     allowfullscreen></iframe>
           </div>
           <p class="video-title">Restitution Volumes</p>
+        </article>
+
+        <article class="video-card">
+          <div class="video-frame">
+            <iframe src="https://www.youtube.com/embed/ciT738e59PU"
+                    title="Collectif Sèr - Sororité"
+                    loading="lazy"
+                    allowfullscreen></iframe>
+          </div>
+          <p class="video-title">Collectif Sèr — Sororité</p>
+          <p class="video-note">Chanson écrite par Blue Noon, interprétée par le collectif Sèr suite aux ateliers passés ensemble.</p>
         </article>
 
       </div>
@@ -416,23 +461,9 @@ content="Morjane est une artiste réunionnaise, autrice-compositrice-interprète
 
   <p class="site-copyright">© Morjane</p>
   <p class="site-credit">Créé avec <a href="https://horscadrestudio.re" target="_blank" rel="noopener noreferrer">Hors Cadre Studio</a></p>
-  <p class="site-credit"><a href="/confidentialite.html">Confidentialité</a> · <a href="/cookies.html">Cookies</a></p>
+  <p class="site-credit"><a href="/atelier/">Atelier privé</a> · <a href="/confidentialite.html">Confidentialité</a> · <a href="/cookies.html">Cookies</a></p>
   
 </footer>
-
-  <div id="atelierModal" class="atelier-modal" aria-hidden="true">
-    <div class="atelier-modal__backdrop" data-close="1"></div>
-    <div class="atelier-modal__panel" role="dialog" aria-modal="true" aria-label="Acces Atelier">
-      <p class="atelier-modal__title">Entrer dans l'Atelier</p>
-      <p class="atelier-modal__subtitle">Accès réservé.</p>
-      <form id="atelierForm" class="atelier-modal__form">
-        <input id="atelierPass" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Mot de passe" required>
-        <button type="button" id="atelierPassToggle" class="atelier-pass-toggle">Afficher</button>
-        <button type="submit">Entrer</button>
-        <p id="atelierError" class="atelier-modal__error" role="status" aria-live="polite"></p>
-      </form>
-    </div>
-  </div>
 
   <script src="script.js"></script>
 

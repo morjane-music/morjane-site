@@ -233,87 +233,20 @@ if (traceTimeline) {
   animateTrace();
 }
 
-(function initAtelierDoor() {
+(function initAtelierDoorPeek() {
   const door = document.getElementById("atelierDoor");
-  const modal = document.getElementById("atelierModal");
-  const backdrop = modal ? modal.querySelector("[data-close='1']") : null;
-  const form = document.getElementById("atelierForm");
-  const input = document.getElementById("atelierPass");
-  const passToggle = document.getElementById("atelierPassToggle");
-  const errorEl = document.getElementById("atelierError");
-
-  if (!door || !modal || !form || !input || !errorEl) {
+  if (!door || !window.matchMedia("(hover: none), (pointer: coarse)").matches) {
     return;
   }
 
-  function openModal() {
-    modal.classList.add("is-open");
-    modal.setAttribute("aria-hidden", "false");
-    errorEl.textContent = "";
-    setTimeout(() => input.focus(), 50);
-  }
-
-  function closeModal() {
-    modal.classList.remove("is-open");
-    modal.setAttribute("aria-hidden", "true");
-    input.value = "";
-  }
-
-  function openFromKeyboard(event) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openModal();
+  door.addEventListener("click", (event) => {
+    if (door.classList.contains("is-peeking")) {
+      return;
     }
-  }
-
-  door.addEventListener("click", openModal);
-  door.addEventListener("keydown", openFromKeyboard);
-
-  if (backdrop) {
-    backdrop.addEventListener("click", closeModal);
-  }
-
-  window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      closeModal();
-    }
-  });
-
-  form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    errorEl.textContent = "";
-
-    try {
-      const res = await fetch("/.netlify/functions/check-atelier-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pass: input.value }),
-      });
-
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        if (res.status === 404) {
-          errorEl.textContent = "Function Netlify introuvable.";
-        } else if (payload.error === "missing_env") {
-          errorEl.textContent = "Configuration serveur incomplete.";
-        } else {
-          errorEl.textContent = `Accès refusé (${payload.error || res.status}).`;
-        }
-        return;
-      }
-
-      closeModal();
-      window.location.href = "/atelier";
-    } catch (_) {
-      errorEl.textContent = "Erreur reseau.";
-    }
+    door.classList.add("is-peeking");
+    setTimeout(() => {
+      window.location.href = door.href;
+    }, 520);
   });
-
-  if (passToggle) {
-    passToggle.addEventListener("click", () => {
-      const show = input.type === "password";
-      input.type = show ? "text" : "password";
-      passToggle.textContent = show ? "Masquer" : "Afficher";
-    });
-  }
 })();

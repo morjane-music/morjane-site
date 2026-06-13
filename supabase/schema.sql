@@ -64,6 +64,34 @@ begin
 end;
 $$;
 
+create or replace function public.atelier_is_member(uid uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.atelier_profiles p
+    where p.id = uid and p.member_status in ('member', 'founder')
+  );
+$$;
+
+create or replace function public.atelier_is_admin(uid uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.atelier_profiles p
+    where p.id = uid and p.role = 'admin'
+  );
+$$;
+
 do $$
 begin
   if not exists (
@@ -287,34 +315,6 @@ begin
 end
 $$;
 
-create or replace function public.atelier_is_member(uid uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1
-    from public.atelier_profiles p
-    where p.id = uid and p.member_status in ('member', 'founder')
-  );
-$$;
-
-create or replace function public.atelier_is_admin(uid uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1
-    from public.atelier_profiles p
-    where p.id = uid and p.role = 'admin'
-  );
-$$;
-
 alter table public.atelier_profiles enable row level security;
 alter table public.atelier_seasons enable row level security;
 alter table public.atelier_tracks enable row level security;
@@ -385,34 +385,26 @@ select track_id, count(*)::bigint as like_count
 from public.atelier_track_likes
 group by track_id;
 
-do $$
-begin
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'atelier_profiles' and policyname = 'atelier_profiles_insert_own'
-  ) then
-    create policy atelier_profiles_insert_own
-    on public.atelier_profiles
-    for insert to authenticated
-    with check (auth.uid() = id);
-  end if;
-end
-$$;
+revoke insert, update on public.atelier_profiles from authenticated;
+grant insert (id, email) on public.atelier_profiles to authenticated;
+grant update (id, email) on public.atelier_profiles to authenticated;
 
-do $$
-begin
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'atelier_profiles' and policyname = 'atelier_profiles_update_own'
-  ) then
-    create policy atelier_profiles_update_own
-    on public.atelier_profiles
-    for update to authenticated
-    using (auth.uid() = id)
-    with check (auth.uid() = id);
-  end if;
-end
-$$;
+drop policy if exists atelier_profiles_insert_own on public.atelier_profiles;
+create policy atelier_profiles_insert_own
+on public.atelier_profiles
+for insert to authenticated
+with check (
+  auth.uid() = id
+  and role = 'member'
+  and member_status = 'none'
+);
+
+drop policy if exists atelier_profiles_update_own on public.atelier_profiles;
+create policy atelier_profiles_update_own
+on public.atelier_profiles
+for update to authenticated
+using (auth.uid() = id)
+with check (auth.uid() = id);
 
 do $$
 begin

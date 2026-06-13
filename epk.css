@@ -717,6 +717,10 @@
   opacity: 1;
 }
 
+.epk-page .nav-atelier-link {
+  display: none;
+}
+
 /* ===== MENU MOBILE ===== */
 
 .epk-burger {
@@ -753,6 +757,29 @@
   .epk-page .epk-nav .epk-back {
     width: 100%;
     text-align: center;
+  }
+
+  .epk-page .epk-nav .nav-atelier-link {
+    display: inline-flex;
+    justify-content: center;
+    position: relative;
+    color: rgba(201, 152, 82, 0.9);
+    font-family: "Cormorant Garamond", serif;
+    font-size: 23px;
+    font-style: italic;
+    letter-spacing: 0.16em;
+    text-transform: lowercase;
+  }
+
+  .epk-page .epk-nav .nav-atelier-link::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -8px;
+    width: 42px;
+    height: 1px;
+    transform: translateX(-50%);
+    background: rgba(201, 152, 82, 0.36);
   }
 
   .epk-page .epk-nav.is-open {

@@ -81,7 +81,10 @@
 
   <header class="site-header">
     <div class="brand">
-      <img src="assets/images/logo.png" alt="Logo Morjane" class="brand-mark" id="atelierDoor" role="button" tabindex="0" aria-label="Entrer dans l'Atelier">
+      <a href="/atelier/" class="atelier-door" id="atelierDoor" aria-label="Atelier privé">
+        <img src="assets/images/logo.png" alt="Logo Morjane" class="brand-mark">
+        <span class="atelier-door__hint" aria-hidden="true">atelier</span>
+      </a>
       <span class="brand-name">MORJANE</span>
     </div>
 
@@ -96,6 +99,7 @@
       <a href="#photos">Photos</a>
       <a href="#videos">Live</a>
       <a href="#contact">Contact</a>
+      <a href="/atelier/" class="nav-atelier-link">Atelier</a>
       <a href="mailto:booking@morjane.re" class="epk-mail">
   booking@morjane.re
 </a>
@@ -311,23 +315,9 @@
 
 <p class="epk-copyright">© Morjane</p>
 <p class="epk-credit">Créé avec <a href="https://horscadrestudio.re" target="_blank" rel="noopener noreferrer">Hors Cadre Studio</a></p>
-<p class="epk-credit"><a href="/confidentialite.html">Confidentialité</a> · <a href="/cookies.html">Cookies</a></p>
+<p class="epk-credit"><a href="/atelier/">Atelier privé</a> · <a href="/confidentialite.html">Confidentialité</a> · <a href="/cookies.html">Cookies</a></p>
 
 </footer>
-
-  <div id="atelierModal" class="atelier-modal" aria-hidden="true">
-    <div class="atelier-modal__backdrop" data-close="1"></div>
-    <div class="atelier-modal__panel" role="dialog" aria-modal="true" aria-label="Acces Atelier">
-      <p class="atelier-modal__title">Entrer dans l'Atelier</p>
-      <p class="atelier-modal__subtitle">Accès réservé.</p>
-      <form id="atelierForm" class="atelier-modal__form">
-        <input id="atelierPass" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Mot de passe" required>
-        <button type="button" id="atelierPassToggle" class="atelier-pass-toggle">Afficher</button>
-        <button type="submit">Entrer</button>
-        <p id="atelierError" class="atelier-modal__error" role="status" aria-live="polite"></p>
-      </form>
-    </div>
-  </div>
 
   <script src="epk.js" defer></script>
 

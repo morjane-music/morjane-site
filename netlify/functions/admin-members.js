@@ -138,6 +138,21 @@ exports.handler = async (event) => {
       };
     }
 
+    if (action === "revoke" && userId === adminUserId) {
+      await trackFunctionEvent(supabase, {
+        function_name: "admin-members",
+        status: "error",
+        error_code: "self_revoke_blocked",
+        latency_ms: Date.now() - startedAt,
+        meta: { method: "POST" },
+      });
+      return {
+        statusCode: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ok: false, error: "self_revoke_blocked" }),
+      };
+    }
+
     const update = action === "approve"
       ? { member_status: "member", role: "member" }
       : { member_status: "none", role: "member" };

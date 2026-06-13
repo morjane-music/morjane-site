@@ -1,4 +1,4 @@
-# Morjane - Atelier Gate + Supabase
+# Morjane - Atelier + Supabase
 
 ## Environment variables (Netlify)
 
@@ -7,15 +7,14 @@
 - `SUPABASE_ANON_KEY`
 
 ### Secret (Functions only)
-- `ATELIER_PASSWORD`
 - `ATELIER_COOKIE_SECRET`
 - `ATELIER_ADMIN_PIN`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
 ## What is implemented
-- V1 gate: logo click -> password modal -> Netlify function sets signed `atelier_gate` cookie.
-- `/atelier` route guarded by `check-atelier-gate`.
-- V1.1 base: Supabase magic-link login, member-only tracks, vote upsert, private admin message insert.
+- V1 entry: logo hint "atelier" -> `/atelier/` -> Supabase magic-link login.
+- Member validation is handled in the private admin panel before tracks/audio are visible.
+- V1.1 base: member-only tracks, vote upsert, private admin message insert.
 - Protected audio via Netlify `get-audio-url` generating a signed Storage URL (300s) from private bucket `atelier-audio`.
 - Admin Atelier: validation membres, inbox messages (non lus + traité), votes agrégés, journal admin.
 - Monitoring Atelier: événements techniques de functions + statut admin (taux d’échec 24h/7j, liens magic envoyés).
@@ -28,10 +27,14 @@
 5. Install dependencies:
    - `npm install`
 
+## Existing Supabase projects
+- Run `supabase/fix-profile-rls.sql` once on any existing database to lock profile role/status writes to the service role/admin functions.
+- If the Atelier product feedback columns are missing, run:
+  - `supabase/atelier-product-upgrade.sql`
+  - `supabase/fix-atelier-message-admin-columns.sql`
+
 ## Files
 - `_redirects`
-- `netlify/functions/check-atelier-password.js`
-- `netlify/functions/check-atelier-gate.js`
 - `netlify/functions/get-public-config.js`
 - `netlify/functions/get-audio-url.js`
 - `netlify/functions/log-track-play.js`

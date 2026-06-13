@@ -5,6 +5,8 @@ const authView = document.getElementById("authView");
 const memberView = document.getElementById("memberView");
 const trackView = document.getElementById("trackView");
 const authStatus = document.getElementById("authStatus");
+const ritualEntry = document.getElementById("ritualEntry");
+const ritualEntryBtn = document.getElementById("ritualEntryBtn");
 const memberMeta = document.getElementById("memberMeta");
 const circleCount = document.getElementById("circleCount");
 const trackList = document.getElementById("trackList");
@@ -87,6 +89,7 @@ const adminTodayState = {
   activeMembers7d: 0,
 };
 const ADMIN_DENSITY_STORAGE_KEY = "atelier_admin_compact_density";
+const RITUAL_ENTRY_STORAGE_KEY = "atelier_ritual_entry_seen";
 
 function applyAdminDensityMode(isCompact) {
   document.body.classList.toggle("admin-compact", Boolean(isCompact));
@@ -104,6 +107,72 @@ function initAdminDensityMode() {
     compact = false;
   }
   applyAdminDensityMode(compact);
+}
+
+function closeRitualEntry() {
+  if (!ritualEntry) {
+    return;
+  }
+  ritualEntry.classList.add("is-leaving");
+  document.body.classList.remove("atelier-entry-open");
+  try {
+    sessionStorage.setItem(RITUAL_ENTRY_STORAGE_KEY, "1");
+  } catch (_) {
+    // ignore storage errors
+  }
+  setTimeout(() => {
+    ritualEntry.classList.add("is-hidden");
+    ritualEntry.setAttribute("aria-hidden", "true");
+  }, 520);
+}
+
+function initRitualEntry() {
+  if (!ritualEntry) {
+    return;
+  }
+
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let alreadySeen = false;
+  try {
+    alreadySeen = sessionStorage.getItem(RITUAL_ENTRY_STORAGE_KEY) === "1";
+  } catch (_) {
+    alreadySeen = false;
+  }
+
+  if (alreadySeen || reducedMotion) {
+    ritualEntry.classList.add("is-hidden");
+    ritualEntry.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  document.body.classList.add("atelier-entry-open");
+  ritualEntry.setAttribute("aria-hidden", "false");
+  ritualEntryBtn?.addEventListener("click", closeRitualEntry, { once: true });
+  setTimeout(closeRitualEntry, 5200);
+}
+
+function initScrollReveals() {
+  const revealEls = Array.from(document.querySelectorAll("[data-ritual]"));
+  if (!revealEls.length) {
+    return;
+  }
+
+  if (!("IntersectionObserver" in window)) {
+    revealEls.forEach((el) => el.classList.add("is-visible"));
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) {
+        return;
+      }
+      entry.target.classList.add("is-visible");
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+
+  revealEls.forEach((el) => observer.observe(el));
 }
 
 function formatTrackTitle(rawTitle) {
@@ -179,9 +248,9 @@ async function loadCircleCount() {
 
 function getAudienceStatusLabel(status) {
   if (status === "member" || status === "founder") {
-    return "membre du cercle privé";
+    return "dans le cercle prive";
   }
-  return "accès limité";
+  return "sur le seuil de l'Atelier";
 }
 
 function startMagicLinkCooldown(seconds = 60) {
@@ -379,7 +448,13 @@ function createAdminMemberRow(member) {
   const revokeBtn = document.createElement("button");
   revokeBtn.type = "button";
   revokeBtn.textContent = "Retirer";
-  revokeBtn.addEventListener("click", () => updateMemberStatus(member.id, "revoke"));
+  const isSelf = member.id && member.id === profile?.id;
+  if (isSelf) {
+    revokeBtn.disabled = true;
+    revokeBtn.title = "Impossible de retirer votre propre acces admin.";
+  } else {
+    revokeBtn.addEventListener("click", () => updateMemberStatus(member.id, "revoke"));
+  }
   row.appendChild(revokeBtn);
 
   return row;
@@ -737,10 +812,14 @@ function renderAdminVotesSummary(summary = []) {
   summary.forEach((row) => {
     const card = document.createElement("article");
     card.className = "admin-vote-item";
-    card.innerHTML = `
-      <p class="admin-vote-title">${formatTrackTitle(row.track_title)}</p>
-      <p class="admin-vote-meta">Total votes : ${row.total} | À garder : ${row.keep} | À retravailler : ${row.revise} | À écarter : ${row.discard}</p>
-    `;
+    const title = document.createElement("p");
+    title.className = "admin-vote-title";
+    title.textContent = formatTrackTitle(row.track_title);
+    const meta = document.createElement("p");
+    meta.className = "admin-vote-meta";
+    meta.textContent = `Total votes : ${row.total} | A garder : ${row.keep} | A retravailler : ${row.revise} | A ecarter : ${row.discard}`;
+    card.appendChild(title);
+    card.appendChild(meta);
     adminVotesSummary.appendChild(card);
   });
 }
@@ -779,33 +858,57 @@ function renderAdminTrackCockpit(tracks = []) {
   tracks.forEach((track) => {
     const card = document.createElement("article");
     card.className = "admin-track-item";
-    card.innerHTML = `
-      <div class="admin-track-head">
-        <div>
-          <p class="admin-status-title">${formatTrackTitle(track.title)}</p>
-          <p class="admin-status-meta">${getDecisionStatusLabel(track.decision_status)} | ${track.plays || 0} ecoutes | ${track.likes || 0} likes | ${track.messages || 0} messages</p>
-          <p class="admin-status-meta">Votes: garder ${track.votes?.develop || 0} | retravailler ${track.votes?.revise || 0} | ecarter ${track.votes?.leave || 0}</p>
-        </div>
-      </div>
-      <label>Statut artistique</label>
-      <select data-track-status>
-        <option value="testing">En test</option>
-        <option value="kept">Retenue</option>
-        <option value="rework">A retravailler</option>
-        <option value="paused">En pause</option>
-        <option value="released">Sortie</option>
-        <option value="archived">Archivee</option>
-      </select>
-      <label>Note de Morjane</label>
-      <textarea data-track-intent rows="3" placeholder="Ce que tu cherches avec cette maquette..."></textarea>
-      <label>Question posee au cercle</label>
-      <textarea data-track-question rows="2" placeholder="Ex: Est-ce que le refrain tient ?"></textarea>
-      <button type="button" class="ghost" data-track-save>Enregistrer</button>
-    `;
-    const status = card.querySelector("[data-track-status]");
-    const intent = card.querySelector("[data-track-intent]");
-    const question = card.querySelector("[data-track-question]");
-    const save = card.querySelector("[data-track-save]");
+    const head = document.createElement("div");
+    head.className = "admin-track-head";
+    const headContent = document.createElement("div");
+    const title = document.createElement("p");
+    title.className = "admin-status-title";
+    title.textContent = formatTrackTitle(track.title);
+    const stats = document.createElement("p");
+    stats.className = "admin-status-meta";
+    stats.textContent = `${getDecisionStatusLabel(track.decision_status)} | ${track.plays || 0} ecoutes | ${track.likes || 0} likes | ${track.messages || 0} messages`;
+    const votes = document.createElement("p");
+    votes.className = "admin-status-meta";
+    votes.textContent = `Votes: garder ${track.votes?.develop || 0} | retravailler ${track.votes?.revise || 0} | ecarter ${track.votes?.leave || 0}`;
+    headContent.appendChild(title);
+    headContent.appendChild(stats);
+    headContent.appendChild(votes);
+    head.appendChild(headContent);
+
+    const statusLabel = document.createElement("label");
+    statusLabel.textContent = "Statut artistique";
+    const status = document.createElement("select");
+    [
+      ["testing", "En test"],
+      ["kept", "Retenue"],
+      ["rework", "A retravailler"],
+      ["paused", "En pause"],
+      ["released", "Sortie"],
+      ["archived", "Archivee"],
+    ].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      status.appendChild(option);
+    });
+
+    const intentLabel = document.createElement("label");
+    intentLabel.textContent = "Note de Morjane";
+    const intent = document.createElement("textarea");
+    intent.rows = 3;
+    intent.placeholder = "Ce que tu cherches avec cette maquette...";
+
+    const questionLabel = document.createElement("label");
+    questionLabel.textContent = "Question posee au cercle";
+    const question = document.createElement("textarea");
+    question.rows = 2;
+    question.placeholder = "Ex: Est-ce que le refrain tient ?";
+
+    const save = document.createElement("button");
+    save.type = "button";
+    save.className = "ghost";
+    save.textContent = "Enregistrer";
+
     status.value = track.decision_status || "testing";
     intent.value = track.intent_note || "";
     question.value = track.feedback_question || "";
@@ -816,6 +919,14 @@ function renderAdminTrackCockpit(tracks = []) {
         feedback_question: question.value,
       });
     });
+    card.appendChild(head);
+    card.appendChild(statusLabel);
+    card.appendChild(status);
+    card.appendChild(intentLabel);
+    card.appendChild(intent);
+    card.appendChild(questionLabel);
+    card.appendChild(question);
+    card.appendChild(save);
     adminTrackCockpit.appendChild(card);
   });
 }
@@ -874,7 +985,7 @@ function renderMemberReplies(replies = []) {
     hide(memberReplies);
     return;
   }
-  memberReplies.innerHTML = "<p class=\"member-replies-title\">Reponse de Morjane</p>";
+  memberReplies.innerHTML = "<p class=\"member-replies-title\">Mot de Morjane</p>";
   replies.forEach((reply) => {
     const item = document.createElement("p");
     item.className = "member-reply-item";
@@ -926,21 +1037,30 @@ function renderAdminStatus(data) {
   adminStatusPanel.innerHTML = "";
   const top = document.createElement("article");
   top.className = "admin-status-item";
-  top.innerHTML = `
-    <p class="admin-status-title">Synthèse</p>
-    <p class="admin-status-meta">Échecs fonctions 24h : ${uptime.errors24h || 0}/${uptime.total24h || 0} (${Math.round((uptime.failureRate24h || 0) * 100)}%)</p>
-    <p class="admin-status-meta">Liens magiques (7 jours) : ${magic.sent || 0} envoyés, ${magic.error || 0} en erreur</p>
-    <p class="admin-status-meta">Messages non traités : ${pending}</p>
-  `;
+  [
+    ["admin-status-title", "Synthese"],
+    ["admin-status-meta", `Echecs fonctions 24h : ${uptime.errors24h || 0}/${uptime.total24h || 0} (${Math.round((uptime.failureRate24h || 0) * 100)}%)`],
+    ["admin-status-meta", `Liens magiques (7 jours) : ${magic.sent || 0} envoyes, ${magic.error || 0} en erreur`],
+    ["admin-status-meta", `Messages non traites : ${pending}`],
+  ].forEach(([className, text]) => {
+    const line = document.createElement("p");
+    line.className = className;
+    line.textContent = text;
+    top.appendChild(line);
+  });
   adminStatusPanel.appendChild(top);
 
   functions.forEach((fn) => {
     const card = document.createElement("article");
     card.className = "admin-status-item";
-    card.innerHTML = `
-      <p class="admin-status-title">${fn.function_name}</p>
-      <p class="admin-status-meta">OK: ${fn.ok} | Erreurs: ${fn.error} | Taux échec: ${Math.round((fn.error_rate || 0) * 100)}%</p>
-    `;
+    const title = document.createElement("p");
+    title.className = "admin-status-title";
+    title.textContent = fn.function_name || "Function";
+    const meta = document.createElement("p");
+    meta.className = "admin-status-meta";
+    meta.textContent = `OK: ${fn.ok} | Erreurs: ${fn.error} | Taux echec: ${Math.round((fn.error_rate || 0) * 100)}%`;
+    card.appendChild(title);
+    card.appendChild(meta);
     adminStatusPanel.appendChild(card);
   });
 }
@@ -992,15 +1112,29 @@ function renderAdminLiveListeners(listeners = []) {
     const card = document.createElement("article");
     card.className = "admin-live-item";
     const seen = row.last_seen_at ? formatInboxDate(row.last_seen_at) : "-";
-    card.innerHTML = `
-      <div class="admin-live-avatar">${initial}</div>
-      <div class="admin-live-content">
-        <p class="admin-status-title">${email}</p>
-        <p class="admin-status-meta">${formatTrackTitle(row.track_title || "Maquette")}</p>
-        <p class="admin-status-meta">Derniere activite : ${seen}</p>
-      </div>
-      <span class="admin-live-pill ${statusClass}">${statusLabel}</span>
-    `;
+    const avatar = document.createElement("div");
+    avatar.className = "admin-live-avatar";
+    avatar.textContent = initial;
+    const content = document.createElement("div");
+    content.className = "admin-live-content";
+    const title = document.createElement("p");
+    title.className = "admin-status-title";
+    title.textContent = email;
+    const track = document.createElement("p");
+    track.className = "admin-status-meta";
+    track.textContent = formatTrackTitle(row.track_title || "Maquette");
+    const activity = document.createElement("p");
+    activity.className = "admin-status-meta";
+    activity.textContent = `Derniere activite : ${seen}`;
+    const pill = document.createElement("span");
+    pill.className = `admin-live-pill ${statusClass}`;
+    pill.textContent = statusLabel;
+    content.appendChild(title);
+    content.appendChild(track);
+    content.appendChild(activity);
+    card.appendChild(avatar);
+    card.appendChild(content);
+    card.appendChild(pill);
     adminLiveListeners.appendChild(card);
   });
 }
@@ -1075,11 +1209,18 @@ function renderAdminAuditLog(logs = []) {
   logs.slice(0, 25).forEach((row) => {
     const card = document.createElement("article");
     card.className = "admin-audit-item";
-    card.innerHTML = `
-      <p class="admin-audit-title">${actionLabel(row.action)}</p>
-      <p class="admin-audit-meta">${formatInboxDate(row.created_at)} — ${row.admin_email}</p>
-      <p class="admin-audit-meta">Cible: ${row.target_type}${row.target_id ? ` (${row.target_id})` : ""}</p>
-    `;
+    const title = document.createElement("p");
+    title.className = "admin-audit-title";
+    title.textContent = actionLabel(row.action);
+    const meta = document.createElement("p");
+    meta.className = "admin-audit-meta";
+    meta.textContent = `${formatInboxDate(row.created_at)} - ${row.admin_email}`;
+    const target = document.createElement("p");
+    target.className = "admin-audit-meta";
+    target.textContent = `Cible: ${row.target_type}${row.target_id ? ` (${row.target_id})` : ""}`;
+    card.appendChild(title);
+    card.appendChild(meta);
+    card.appendChild(target);
     adminAuditLog.appendChild(card);
   });
 }
@@ -1229,6 +1370,7 @@ function stopWatermark() {
     hide(trackWatermark);
   }
   document.body.classList.remove("is-listening");
+  document.body.classList.remove("atelier-listening");
 }
 
 function startWatermark() {
@@ -1243,6 +1385,7 @@ function startWatermark() {
     clearInterval(watermarkTimer);
   }
   document.body.classList.add("is-listening");
+  document.body.classList.add("atelier-listening");
   watermarkTimer = setInterval(() => {
     refreshWatermarkText();
     moveWatermark();
@@ -1283,11 +1426,6 @@ async function fetchPublicConfig() {
   return data;
 }
 
-async function checkGate() {
-  const res = await fetch("/.netlify/functions/check-atelier-gate", { method: "GET" });
-  return res.ok;
-}
-
 async function hydrateSessionFromUrl() {
   const currentUrl = new URL(window.location.href);
   const hasCode = currentUrl.searchParams.get("code");
@@ -1316,20 +1454,14 @@ async function hydrateSessionFromUrl() {
 }
 
 async function ensureAtelierAccess() {
-  const gateOk = await checkGate();
-  if (gateOk) {
-    setGateStatus("Accès confirmé.");
-    return true;
-  }
-
   const sessionResult = await supabase.auth.getSession();
   if (sessionResult.data.session) {
-    setGateStatus("Accès membre confirmé.");
+    setGateStatus("Tu fais partie du cercle.");
     return true;
   }
 
-  window.location.href = "/";
-  return false;
+  setGateStatus("Atelier privé.");
+  return true;
 }
 
 async function loadSessionAndProfile() {
@@ -1348,7 +1480,7 @@ async function loadSessionAndProfile() {
     if (adminPanel) {
       hide(adminPanel);
     }
-    authStatus.textContent = "Connectez-vous pour accéder aux titres.";
+    authStatus.textContent = "Connectez-vous pour entrer dans le chapitre ouvert.";
     return;
   }
 
@@ -1364,7 +1496,7 @@ async function loadSessionAndProfile() {
     if (adminPanel) {
       hide(adminPanel);
     }
-    memberMeta.textContent = "Compte connecté mais sans accès membre. Contactez l'admin.";
+    memberMeta.textContent = "Vous etes sur le seuil. Votre acces au cercle doit encore etre ouvert.";
     trackList.innerHTML = "";
     emptyTracks.classList.remove("hidden");
     return;
@@ -1527,9 +1659,9 @@ function renderTrackLikeState() {
   }
   const isLiked = userLikedTrackIds.has(selectedTrack.id);
   trackLikeBtn.classList.toggle("is-active", isLiked);
-  trackLikeBtn.textContent = isLiked ? "♥ J'aime" : "♡ J'aime";
+  trackLikeBtn.textContent = isLiked ? "♥ Trace coeur laissee" : "♡ Laisser une trace coeur";
   if (trackLikeCount) {
-    trackLikeCount.textContent = `J'aime du cercle : ${getTrackLikeCount(selectedTrack.id)}`;
+    trackLikeCount.textContent = `Traces coeur du cercle : ${getTrackLikeCount(selectedTrack.id)}`;
   }
 }
 
@@ -1552,8 +1684,12 @@ function renderTrackList() {
     const li = document.createElement("li");
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "track-card";
+    btn.className = "track-card atelier-card atelier-track-card";
     btn.addEventListener("click", () => selectTrack(track.id));
+
+    const fragmentLabel = document.createElement("span");
+    fragmentLabel.className = "track-card__fragment-label";
+    fragmentLabel.textContent = "fragment en test";
 
     const top = document.createElement("span");
     top.className = "track-card__top";
@@ -1568,17 +1704,23 @@ function renderTrackList() {
 
     const meta = document.createElement("span");
     meta.className = "track-list__meta";
-    meta.textContent = `Écoutes : ${getTrackPlayCount(track.id)} · J'aime : ${getTrackLikeCount(track.id)}`;
+    meta.textContent = `Écoutes du cercle : ${getTrackPlayCount(track.id)} · Traces coeur : ${getTrackLikeCount(track.id)}`;
 
     const hint = document.createElement("span");
     hint.className = "track-card__hint";
-    hint.textContent = track.feedback_question || track.intent_note || "Ouvrir la maquette et laisser une trace";
+    hint.textContent = track.feedback_question || track.intent_note || "Entrer dans cette version et laisser une trace";
 
+    const cta = document.createElement("span");
+    cta.className = "track-card__cta";
+    cta.textContent = "Écouter le fragment";
+
+    btn.appendChild(fragmentLabel);
     top.appendChild(title);
     top.appendChild(status);
     btn.appendChild(top);
     btn.appendChild(meta);
     btn.appendChild(hint);
+    btn.appendChild(cta);
     li.appendChild(btn);
     trackList.appendChild(li);
   });
@@ -1597,8 +1739,8 @@ async function selectTrack(trackId) {
   const hasIntent = Boolean(selectedTrack.intent_note || selectedTrack.feedback_question);
   if (trackIntentPanel && trackIntentNote && trackFeedbackQuestion) {
     if (hasIntent) {
-      trackIntentNote.textContent = selectedTrack.intent_note || "Je vous laisse ecouter librement cette version.";
-      trackFeedbackQuestion.textContent = selectedTrack.feedback_question || "Qu'est-ce que cette maquette vous fait garder en tete ?";
+      trackIntentNote.textContent = selectedTrack.intent_note || "Je vous laisse ecouter librement cette version, sans chercher la bonne reponse.";
+      trackFeedbackQuestion.textContent = selectedTrack.feedback_question || "Qu'est-ce que cette maquette garde en vous apres l'ecoute ?";
       show(trackIntentPanel);
     } else {
       hide(trackIntentPanel);
@@ -1717,14 +1859,14 @@ async function toggleTrackLike() {
 
 async function submitVote(choice) {
   if (!selectedTrack || !profile) {
-    voteStatus.textContent = "Selectionne un titre avant de voter.";
+    voteStatus.textContent = "Choisissez d'abord une maquette du chapitre.";
     return;
   }
 
   const now = Date.now();
   if (now < voteCooldownUntil) {
     const remaining = Math.ceil((voteCooldownUntil - now) / 1000);
-    voteStatus.textContent = `Patiente ${remaining}s avant un nouveau vote.`;
+    voteStatus.textContent = `Patiente ${remaining}s avant de changer ce geste.`;
     return;
   }
 
@@ -1745,12 +1887,12 @@ async function submitVote(choice) {
   };
 
   const { error } = await supabase.from("atelier_votes").upsert(payload, { onConflict: "track_id,user_id" });
-  voteStatus.textContent = error ? `Vote refuse. ${error.message || ""}`.trim() : "Vote enregistre.";
+  voteStatus.textContent = error ? `Geste refuse. ${error.message || ""}`.trim() : "Geste garde. Merci d'avoir ecoute jusqu'a l'endroit juste.";
 }
 
 async function submitMessage(content, tag = "emotion") {
   if (!selectedTrack || !profile) {
-    messageStatus.textContent = "Sélectionne un titre avant d'envoyer un message.";
+    messageStatus.textContent = "Choisissez d'abord une maquette avant de laisser une trace.";
     return;
   }
 
@@ -1772,11 +1914,11 @@ async function submitMessage(content, tag = "emotion") {
   }
 
   if (error) {
-    messageStatus.textContent = `Message refusé. ${error.message || ""}`.trim();
+    messageStatus.textContent = `Trace refusee. ${error.message || ""}`.trim();
     return;
   }
 
-  messageStatus.textContent = "Message envoyé à l'admin.";
+  messageStatus.textContent = "Trace recue. Elle reste entre vous et Morjane.";
   privateMessage.value = "";
 }
 
@@ -1796,7 +1938,7 @@ magicLinkForm.addEventListener("submit", async (event) => {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${window.location.origin}/atelier`,
+      emailRedirectTo: `${window.location.origin}/atelier/`,
     },
   });
 
@@ -1917,7 +2059,7 @@ if (adminSearchInput) {
 
 if (copyAtelierLinkBtn) {
   copyAtelierLinkBtn.addEventListener("click", async () => {
-    const atelierUrl = `${window.location.origin}/atelier`;
+    const atelierUrl = `${window.location.origin}/atelier/`;
     try {
       await navigator.clipboard.writeText(atelierUrl);
       copyAtelierLinkBtn.textContent = "Lien copié";
@@ -2024,6 +2166,8 @@ if (trackLikeBtn) {
 
 async function boot() {
   initAdminDensityMode();
+  initRitualEntry();
+  initScrollReveals();
   setTimeout(() => {
     document.body.classList.add("ritual-ready");
   }, 120);
