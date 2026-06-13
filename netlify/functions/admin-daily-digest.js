@@ -11,6 +11,78 @@ async function countQuery(query) {
   return result.count || 0;
 }
 
+function buildDigestText(payload) {
+  return [
+    "Atelier Morjane - digest quotidien",
+    "",
+    `Demandes 24h : ${payload.access_requests_24h}`,
+    `Acces en attente : ${payload.pending_access}`,
+    `Messages 24h : ${payload.messages_24h}`,
+    `Ecoutes 24h : ${payload.plays_24h}`,
+    `Coeurs 24h : ${payload.likes_24h}`,
+    `Auditeurs actifs 24h : ${payload.active_listeners_24h}`,
+    `Live maintenant : ${payload.live_now}`,
+    "",
+    `Depuis : ${payload.since}`,
+  ].join("\n");
+}
+
+function buildDigestHtml(payload) {
+  const rows = [
+    ["Demandes 24h", payload.access_requests_24h],
+    ["Acces en attente", payload.pending_access],
+    ["Messages 24h", payload.messages_24h],
+    ["Ecoutes 24h", payload.plays_24h],
+    ["Coeurs 24h", payload.likes_24h],
+    ["Auditeurs actifs 24h", payload.active_listeners_24h],
+    ["Live maintenant", payload.live_now],
+  ];
+  return `
+    <div style="font-family:Inter,Arial,sans-serif;background:#090706;color:#f4efe7;padding:24px">
+      <h1 style="font-size:20px;margin:0 0 16px">Atelier Morjane</h1>
+      <p style="color:#c99852;margin:0 0 18px">Digest quotidien</p>
+      <table style="width:100%;border-collapse:collapse">
+        ${rows.map(([label, value]) => `
+          <tr>
+            <td style="padding:10px;border-bottom:1px solid rgba(201,152,82,.25);color:#c8bcae">${label}</td>
+            <td style="padding:10px;border-bottom:1px solid rgba(201,152,82,.25);text-align:right;font-weight:700">${value}</td>
+          </tr>
+        `).join("")}
+      </table>
+      <p style="color:#9d9183;font-size:12px;margin-top:18px">Depuis ${payload.since}</p>
+    </div>
+  `;
+}
+
+async function sendDigestEmail(payload) {
+  const apiKey = process.env.RESEND_API_KEY || "";
+  const to = process.env.ATELIER_ADMIN_EMAIL || "";
+  if (!apiKey || !to) {
+    return false;
+  }
+
+  const from = process.env.ATELIER_DIGEST_FROM_EMAIL || "Atelier Morjane <atelier@morjane.re>";
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to,
+      subject: `Atelier Morjane - ${payload.messages_24h} messages, ${payload.plays_24h} ecoutes`,
+      text: buildDigestText(payload),
+      html: buildDigestHtml(payload),
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`resend_${res.status}`);
+  }
+  return true;
+}
+
 exports.handler = async () => {
   const startedAt = Date.now();
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -70,7 +142,7 @@ exports.handler = async () => {
     };
 
     const webhookUrl = process.env.ATELIER_ADMIN_DIGEST_WEBHOOK_URL || "";
-    let delivered = false;
+    let delivered = await sendDigestEmail(payload);
     if (webhookUrl) {
       const res = await fetch(webhookUrl, {
         method: "POST",
