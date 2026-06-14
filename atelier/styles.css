@@ -112,6 +112,17 @@ body.is-listening::before {
   font-size: 14px;
 }
 
+.living-threshold {
+  max-width: 620px;
+  margin: 14px auto 0;
+  color: rgba(244, 239, 231, 0.68);
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(20px, 4vw, 29px);
+  font-style: italic;
+  line-height: 1.35;
+  text-align: center;
+}
+
 .atelier-circle-presence {
   display: flex;
   align-items: center;
