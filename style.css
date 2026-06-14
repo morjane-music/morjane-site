@@ -839,13 +839,15 @@ body.has-scrolled .site-header {
 
 .video-feature-copy h3 {
   margin: 0;
-  max-width: 12ch;
+  max-width: 16ch;
   color: rgba(236,224,200,0.9);
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(31px, 3vw, 46px);
-  font-style: italic;
-  font-weight: 400;
-  line-height: 1.02;
+  font-family: Montserrat, sans-serif;
+  font-size: clamp(24px, 2.2vw, 36px);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 0.98;
+  text-transform: uppercase;
   text-shadow: 0 0 22px rgba(201,152,82,0.08);
 }
 
@@ -1179,6 +1181,28 @@ body.on-image .cursor-light {
     padding-top: 56px;
   }
 
+  .site-header {
+    padding: 8px 18px;
+  }
+
+  .brand {
+    gap: 10px;
+  }
+
+  .brand-mark {
+    width: 40px;
+  }
+
+  .brand-name {
+    font-size: 12px;
+    letter-spacing: 0.28em;
+  }
+
+  .section-simple {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
   img {
     max-width: 100%;
     height: auto;
@@ -1206,8 +1230,9 @@ body.on-image .cursor-light {
   }
 
   .main-nav a {
+    margin-left: 0;
     font-size: 20px;
-    letter-spacing: 0.3em;
+    letter-spacing: 0.22em;
   }
 
   .main-nav .nav-atelier-link {
@@ -1267,7 +1292,7 @@ body.on-image .cursor-light {
     right: 24px;
     bottom: 24px;
     max-width: 280px;
-    font-size: 22px;
+    font-size: 20px;
   }
 
   .section-manifeste {
@@ -1345,8 +1370,16 @@ body.on-image .cursor-light {
     padding-left: 0;
   }
 
+  .music-focus-content h2 {
+    font-size: clamp(30px, 11vw, 42px);
+  }
+
   .music-traces {
     grid-template-columns: 1fr;
+  }
+
+  .music-traces article {
+    min-height: 156px;
   }
 
   .videos-head {
@@ -1358,6 +1391,10 @@ body.on-image .cursor-light {
   .videos-head h2,
   .videos-head p:last-child {
     grid-column: auto;
+  }
+
+  .videos-head h2 {
+    font-size: clamp(34px, 11vw, 48px);
   }
 
   .video-card-featured {
@@ -1375,11 +1412,24 @@ body.on-image .cursor-light {
     min-height: auto;
     font-size: 14px;
     overflow: visible;
+    gap: 10px;
+  }
+
+  .video-feature-index,
+  .video-feature-credit,
+  .video-feature-cta {
+    letter-spacing: 0.11em;
   }
 
   .video-feature-copy h3 {
     max-width: 100%;
-    font-size: 32px;
+    font-size: 23px;
+    line-height: 1.05;
+  }
+
+  .video-feature-line {
+    max-width: 100%;
+    font-size: 19px;
   }
 
   .video-cover-link {
@@ -1398,6 +1448,11 @@ body.on-image .cursor-light {
 
   .contact-form textarea {
     width: 100%;
+  }
+
+  .site-footer {
+    padding-left: 24px;
+    padding-right: 24px;
   }
 
   .cursor-light {
