@@ -10,6 +10,8 @@ updateScrollState();
 window.addEventListener('scroll', updateScrollState, { passive: true });
 
 if (toggle && nav) {
+  nav.classList.remove('open');
+  document.body.classList.remove('menu-open');
   toggle.setAttribute('aria-expanded', 'false');
 
   toggle.addEventListener('click', () => {
