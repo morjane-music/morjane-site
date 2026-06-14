@@ -40,10 +40,6 @@ body {
   position: relative;
 }
 
-body.atelier-entry-open {
-  overflow: hidden;
-}
-
 body::after {
   content: "";
   position: fixed;
@@ -82,107 +78,6 @@ body.is-listening::before {
 
 .atelier-shell {
   isolation: isolate;
-}
-
-.atelier-ritual-entry {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background:
-    radial-gradient(circle at 50% 46%, rgba(184, 137, 69, 0.14), transparent 28%),
-    linear-gradient(180deg, #050505, #0b0a08 58%, #050505);
-  color: var(--ink);
-  transition: opacity 0.5s ease, visibility 0.5s ease;
-  animation: entryAutoRelease 0.6s ease 5.6s forwards;
-}
-
-.atelier-ritual-entry.is-hidden {
-  display: none;
-}
-
-.atelier-ritual-entry.is-leaving {
-  opacity: 0;
-  visibility: hidden;
-}
-
-.atelier-crack-light {
-  position: absolute;
-  width: min(72vw, 430px);
-  height: 72vh;
-  max-height: 620px;
-  opacity: 0;
-  filter: blur(0.2px);
-  background:
-    linear-gradient(94deg, transparent 0 45%, rgba(184, 137, 69, 0.18) 48%, rgba(244, 239, 231, 0.72) 50%, rgba(184, 137, 69, 0.2) 52%, transparent 56%),
-    radial-gradient(ellipse at 50% 50%, rgba(184, 137, 69, 0.2), transparent 62%);
-  clip-path: polygon(48% 0, 55% 16%, 49% 32%, 57% 48%, 46% 64%, 53% 82%, 49% 100%, 43% 82%, 50% 65%, 41% 49%, 47% 32%, 42% 16%);
-  animation: crackReveal 2.4s ease forwards;
-}
-
-.atelier-ritual-entry__content {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  gap: 14px;
-  justify-items: center;
-  text-align: center;
-}
-
-.atelier-ritual-entry__line {
-  margin: 0;
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.atelier-ritual-entry__line--first {
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(34px, 10vw, 72px);
-  font-style: italic;
-  animation: ritualLine 0.9s ease 0.45s forwards;
-}
-
-.atelier-ritual-entry__line--second {
-  max-width: 560px;
-  color: rgba(244, 239, 231, 0.78);
-  font-size: clamp(15px, 4vw, 20px);
-  line-height: 1.5;
-  animation: ritualLine 0.9s ease 1.35s forwards;
-}
-
-.atelier-ritual-entry__button {
-  margin-top: 12px;
-  opacity: 0;
-  background: rgba(184, 137, 69, 0.14);
-  animation: ritualLine 0.9s ease 2.05s forwards;
-}
-
-@keyframes crackReveal {
-  0% {
-    opacity: 0;
-    transform: scaleY(0.65);
-  }
-  100% {
-    opacity: 1;
-    transform: scaleY(1);
-  }
-}
-
-@keyframes ritualLine {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes entryAutoRelease {
-  to {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
 }
 
 .atelier-wrap::before {
@@ -1807,10 +1702,6 @@ body.atelier-listening .atelier-player-frame {
   .atelier-circle-presence {
     align-items: flex-start;
     flex-wrap: wrap;
-  }
-
-  .atelier-ritual-entry {
-    padding: 18px;
   }
 
   .track-card__top {

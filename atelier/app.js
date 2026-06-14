@@ -5,8 +5,6 @@ const authView = document.getElementById("authView");
 const memberView = document.getElementById("memberView");
 const trackView = document.getElementById("trackView");
 const authStatus = document.getElementById("authStatus");
-const ritualEntry = document.getElementById("ritualEntry");
-const ritualEntryBtn = document.getElementById("ritualEntryBtn");
 const memberMeta = document.getElementById("memberMeta");
 const memberPersonalStats = document.getElementById("memberPersonalStats");
 const memberWaveNote = document.getElementById("memberWaveNote");
@@ -95,7 +93,6 @@ const adminTodayState = {
   activeMembers7d: 0,
 };
 const ADMIN_DENSITY_STORAGE_KEY = "atelier_admin_compact_density";
-const RITUAL_ENTRY_STORAGE_KEY = "atelier_ritual_entry_seen";
 const ADMIN_MEMBER_STATUS_LABELS = {
   new: "nouveau",
   waiting: "a relancer",
@@ -136,48 +133,6 @@ function initAdminDensityMode() {
     compact = false;
   }
   applyAdminDensityMode(compact);
-}
-
-function closeRitualEntry() {
-  if (!ritualEntry) {
-    return;
-  }
-  ritualEntry.classList.add("is-leaving");
-  document.body.classList.remove("atelier-entry-open");
-  try {
-    sessionStorage.setItem(RITUAL_ENTRY_STORAGE_KEY, "1");
-  } catch (_) {
-    // ignore storage errors
-  }
-  setTimeout(() => {
-    ritualEntry.classList.add("is-hidden");
-    ritualEntry.setAttribute("aria-hidden", "true");
-  }, 520);
-}
-
-function initRitualEntry() {
-  if (!ritualEntry) {
-    return;
-  }
-
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let alreadySeen = false;
-  try {
-    alreadySeen = sessionStorage.getItem(RITUAL_ENTRY_STORAGE_KEY) === "1";
-  } catch (_) {
-    alreadySeen = false;
-  }
-
-  if (alreadySeen || reducedMotion) {
-    ritualEntry.classList.add("is-hidden");
-    ritualEntry.setAttribute("aria-hidden", "true");
-    return;
-  }
-
-  document.body.classList.add("atelier-entry-open");
-  ritualEntry.setAttribute("aria-hidden", "false");
-  ritualEntryBtn?.addEventListener("click", closeRitualEntry, { once: true });
-  setTimeout(closeRitualEntry, 5200);
 }
 
 function initScrollReveals() {
@@ -2756,7 +2711,6 @@ if (trackLikeBtn) {
 
 async function boot() {
   initAdminDensityMode();
-  initRitualEntry();
   initScrollReveals();
   setTimeout(() => {
     document.body.classList.add("ritual-ready");
