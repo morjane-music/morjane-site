@@ -668,6 +668,8 @@ body.has-scrolled .site-header {
   position: relative;
   display: inline-flex;
   width: fit-content;
+  margin-right: 18px;
+  margin-top: 10px;
   color: rgba(201,152,82,0.9);
   letter-spacing: 0.14em;
   text-decoration: none;
@@ -681,6 +683,14 @@ body.has-scrolled .site-header {
   width: calc(100% - 0.28em);
   height: 1px;
   background: rgba(201,152,82,0.45);
+}
+
+.music-cta-secondary {
+  color: rgba(232,223,211,0.66);
+}
+
+.music-cta-secondary::after {
+  background: rgba(232,223,211,0.24);
 }
 
 .music-traces {
