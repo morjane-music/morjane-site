@@ -425,6 +425,41 @@ button.ghost {
   text-transform: uppercase;
 }
 
+.acte-chooser {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.acte-chooser__button {
+  min-width: 140px;
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border-color: rgba(201, 152, 82, 0.24);
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(232, 223, 211, 0.68);
+}
+
+.acte-chooser__button span {
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.acte-chooser__button small {
+  color: rgba(201, 152, 82, 0.72);
+  font-size: 11px;
+}
+
+.acte-chooser__button.is-active {
+  border-color: rgba(201, 152, 82, 0.54);
+  background: rgba(201, 152, 82, 0.1);
+  color: rgba(245, 228, 198, 0.96);
+}
+
 .track-list {
   display: grid;
   gap: 18px;
@@ -465,6 +500,15 @@ button.ghost {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.track-season__empty {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(201, 152, 82, 0.18);
+  border-radius: 12px;
+  color: rgba(232, 223, 211, 0.58);
+  background: rgba(0, 0, 0, 0.22);
 }
 
 .track-list button,
@@ -1665,6 +1709,17 @@ body.atelier-listening .atelier-player-frame {
 
   .track-list {
     margin-top: 8px;
+  }
+
+  .acte-chooser {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+
+  .acte-chooser__button {
+    min-width: 0;
+    padding: 9px 8px;
   }
 
   .track-season__tracks {

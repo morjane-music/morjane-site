@@ -11,6 +11,7 @@ const memberWaveNote = document.getElementById("memberWaveNote");
 const circleCount = document.getElementById("circleCount");
 const trackList = document.getElementById("trackList");
 const emptyTracks = document.getElementById("emptyTracks");
+const acteChooser = document.getElementById("acteChooser");
 const memberPendingHelp = document.getElementById("memberPendingHelp");
 const adminPanel = document.getElementById("adminPanel");
 const adminUnlockForm = document.getElementById("adminUnlockForm");
@@ -86,6 +87,7 @@ let voteCooldownUntil = 0;
 let adminUnlocked = false;
 let presenceHeartbeatTimer = null;
 let adminLiveRefreshTimer = null;
+let selectedActeSlug = "acte-i";
 const adminTodayState = {
   liveNow: 0,
   pendingMessages: 0,
@@ -116,6 +118,20 @@ const WAVE_PUBLIC_NOTES = {
   presse: "Vague presse : fragments confidentiels pour comprendre la direction avant l'annonce publique.",
   fans: "Vague fans fideles : ton role est de dire ce qui reste apres l'ecoute.",
 };
+const ATELIER_ACTES = [
+  {
+    slug: "acte-i",
+    title: "ACTE I",
+    description: "Les morceaux du premier seuil.",
+    sort_order: 10,
+  },
+  {
+    slug: "acte-ii",
+    title: "ACTE II",
+    description: "Les fragments qui arrivent.",
+    sort_order: 20,
+  },
+];
 
 function applyAdminDensityMode(isCompact) {
   document.body.classList.toggle("admin-compact", Boolean(isCompact));
@@ -194,7 +210,29 @@ function getSeasonFallbackTitle(seasonId) {
   return `Acte ${String(seasonId).padStart(2, "0")}`;
 }
 
+function normalizeActeSlug(season) {
+  const slug = String(season?.slug || "").trim().toLowerCase();
+  const title = String(season?.title || "").trim().toLowerCase();
+  const id = Number(season?.id || 0);
+  if (slug === "acte-i" || slug === "acte-1" || title === "acte i" || title === "acte 1" || id === 1) {
+    return "acte-i";
+  }
+  if (slug === "acte-ii" || slug === "acte-2" || title === "acte ii" || title === "acte 2" || id === 2) {
+    return "acte-ii";
+  }
+  return slug || `season-${id || "unknown"}`;
+}
+
+function getActeDefinition(slug) {
+  return ATELIER_ACTES.find((acte) => acte.slug === slug) || null;
+}
+
 function formatSeasonTitle(season) {
+  const knownActe = getActeDefinition(normalizeActeSlug(season));
+  if (knownActe) {
+    return knownActe.title;
+  }
+
   const title = String(season?.title || "").trim();
   if (title) {
     return title;
@@ -212,12 +250,27 @@ function formatSeasonTitle(season) {
 
 function getTrackSeason(track) {
   const nestedSeason = track?.atelier_seasons || track?.season || null;
-  return {
+  const rawSeason = {
     id: nestedSeason?.id || track?.season_id || 0,
     slug: nestedSeason?.slug || "",
     title: nestedSeason?.title || "",
     description: nestedSeason?.description || "",
     sort_order: Number(nestedSeason?.sort_order || track?.season_id || 0),
+  };
+  const knownActe = getActeDefinition(normalizeActeSlug(rawSeason));
+  if (knownActe) {
+    return {
+      ...rawSeason,
+      slug: knownActe.slug,
+      title: knownActe.title,
+      description: rawSeason.description || knownActe.description,
+      sort_order: knownActe.sort_order,
+    };
+  }
+
+  return {
+    ...rawSeason,
+    slug: normalizeActeSlug(rawSeason),
   };
 }
 
@@ -242,6 +295,30 @@ function groupTracksBySeason(trackRows) {
         return String(b.created_at || "").localeCompare(String(a.created_at || ""));
       }),
     }));
+}
+
+function getVisibleActeGroups() {
+  const groupedBySlug = new Map();
+  groupTracksBySeason(tracks).forEach((group) => {
+    groupedBySlug.set(normalizeActeSlug(group.season), group);
+  });
+
+  return ATELIER_ACTES.map((acte) => {
+    const existing = groupedBySlug.get(acte.slug);
+    if (existing) {
+      return existing;
+    }
+    return {
+      season: {
+        id: 0,
+        slug: acte.slug,
+        title: acte.title,
+        description: acte.description,
+        sort_order: acte.sort_order,
+      },
+      tracks: [],
+    };
+  });
 }
 
 function getFeedbackTagLabel(tag) {
@@ -2050,6 +2127,9 @@ async function loadSessionAndProfile() {
     }
     memberMeta.textContent = "Ta demande est recue. L'Atelier ouvre par vagues.";
     trackList.innerHTML = "";
+    if (acteChooser) {
+      acteChooser.innerHTML = "";
+    }
     emptyTracks.classList.add("hidden");
     return;
   }
@@ -2276,35 +2356,83 @@ function createTrackCard(track) {
   return li;
 }
 
+function renderActeChooser(groups) {
+  if (!acteChooser) {
+    return;
+  }
+  acteChooser.innerHTML = "";
+  groups.forEach((group) => {
+    const slug = normalizeActeSlug(group.season);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "acte-chooser__button";
+    button.classList.toggle("is-active", slug === selectedActeSlug);
+    button.setAttribute("aria-pressed", slug === selectedActeSlug ? "true" : "false");
+
+    const label = document.createElement("span");
+    label.textContent = formatSeasonTitle(group.season);
+
+    const count = document.createElement("small");
+    count.textContent = `${group.tracks.length} fragment${group.tracks.length > 1 ? "s" : ""}`;
+
+    button.appendChild(label);
+    button.appendChild(count);
+    button.addEventListener("click", () => {
+      selectedActeSlug = slug;
+      renderTrackList();
+    });
+    acteChooser.appendChild(button);
+  });
+}
+
 function renderTrackList() {
   trackList.innerHTML = "";
-  groupTracksBySeason(tracks).forEach((group) => {
-    const seasonItem = document.createElement("li");
-    seasonItem.className = "track-season";
+  const groups = getVisibleActeGroups();
+  if (!groups.some((group) => normalizeActeSlug(group.season) === selectedActeSlug)) {
+    selectedActeSlug = "acte-i";
+  }
+  renderActeChooser(groups);
 
-    const heading = document.createElement("div");
-    heading.className = "track-season__head";
+  const group = groups.find((item) => normalizeActeSlug(item.season) === selectedActeSlug) || groups[0];
+  if (!group) {
+    return;
+  }
 
-    const title = document.createElement("h3");
-    title.textContent = formatSeasonTitle(group.season);
-    heading.appendChild(title);
+  const seasonItem = document.createElement("li");
+  seasonItem.className = "track-season";
 
-    if (group.season.description) {
-      const description = document.createElement("p");
-      description.textContent = group.season.description;
-      heading.appendChild(description);
-    }
+  const heading = document.createElement("div");
+  heading.className = "track-season__head";
 
-    const innerList = document.createElement("ul");
-    innerList.className = "track-season__tracks";
-    group.tracks.forEach((track) => {
-      innerList.appendChild(createTrackCard(track));
-    });
+  const title = document.createElement("h3");
+  title.textContent = formatSeasonTitle(group.season);
+  heading.appendChild(title);
 
-    seasonItem.appendChild(heading);
-    seasonItem.appendChild(innerList);
+  if (group.season.description) {
+    const description = document.createElement("p");
+    description.textContent = group.season.description;
+    heading.appendChild(description);
+  }
+
+  seasonItem.appendChild(heading);
+
+  if (group.tracks.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "track-season__empty";
+    empty.textContent = "Aucun fragment ouvert dans cet acte pour le moment.";
+    seasonItem.appendChild(empty);
     trackList.appendChild(seasonItem);
+    return;
+  }
+
+  const innerList = document.createElement("ul");
+  innerList.className = "track-season__tracks";
+  group.tracks.forEach((track) => {
+    innerList.appendChild(createTrackCard(track));
   });
+
+  seasonItem.appendChild(innerList);
+  trackList.appendChild(seasonItem);
 }
 
 async function selectTrack(trackId) {
