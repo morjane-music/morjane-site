@@ -113,7 +113,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const signed = await adminClient.storage.from("atelier-audio").createSignedUrl(track.storage_path, 300);
+  const signed = await adminClient.storage.from("atelier-audio").createSignedUrl(track.storage_path, 3600);
   if (signed.error || !signed.data?.signedUrl) {
     await trackFunctionEvent(adminClient, {
       function_name: "get-audio-url",

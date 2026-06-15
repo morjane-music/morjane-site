@@ -27,6 +27,44 @@ where not exists (
     and s.slug = 'acte-ii'
 );
 
+with audio as (
+  select name
+  from storage.objects
+  where bucket_id = 'atelier-audio'
+    and (
+      name ilike 'season-1/track01%'
+      or name ilike 'acte-i/track01%'
+      or name ilike 'acte_i/track01%'
+      or name ilike 'acte i/track01%'
+      or name ilike 'acte1/track01%'
+      or name ilike 'acte 1/track01%'
+      or name ilike 'acte-1/track01%'
+      or name ilike 'acte_1/track01%'
+      or name ilike '%en%bas%'
+      or name ilike '%track01%'
+      or name ilike '%track-01%'
+      or name ilike '%track_01%'
+    )
+  order by
+    case
+      when name ilike '%en%bas%' then 0
+      when name ilike 'acte i/track01%' then 1
+      when name ilike 'acte-i/track01%' then 2
+      when name ilike 'acte1/track01%' then 3
+      when name ilike 'season-1/track01%' then 4
+      else 5
+    end,
+    name
+  limit 1
+)
+update public.atelier_tracks
+set
+  storage_path = audio.name,
+  status = 'active',
+  sort_order = case when sort_order = 0 then 10 else sort_order end
+from audio
+where lower(title) in ('en bas', 'track 01', 'track01', 'track test 01');
+
 update public.atelier_tracks
 set
   title = 'Vérité coupée',

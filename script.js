@@ -33,6 +33,16 @@ links.forEach(link => {
   });
 });
 
+document.querySelectorAll('[data-support-context]').forEach(link => {
+  link.addEventListener('click', () => {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'support_click', {
+        context: link.dataset.supportContext || 'unknown'
+      });
+    }
+  });
+});
+
 const revealSections = document.querySelectorAll('.reveal');
 
 const revealObserver = new IntersectionObserver(

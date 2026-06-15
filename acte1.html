@@ -324,6 +324,18 @@
         </div>
       </div>
     </section>
+
+    <section class="acte-section support-section" aria-labelledby="support-title">
+      <div class="section-head">
+        <p class="section-kicker">Soutien</p>
+        <h2 id="support-title">Soutenir le projet</h2>
+      </div>
+      <div class="support-panel">
+        <p>ACTE I est construit en indépendant : chansons, enregistrements, visuels, clips, site immersif et tout ce qui gravite autour de l'univers Morjane.</p>
+        <p>Si ce projet résonne en toi, tu peux aider à lui donner une suite.</p>
+        <a class="support-link" href="https://ko-fi.com/morjane" target="_blank" rel="noopener noreferrer" data-support-context="acte1">Soutenir le projet</a>
+      </div>
+    </section>
   </main>
 
   <footer class="acte-footer">
@@ -331,5 +343,16 @@
     <p class="footer-meta">© Morjane</p>
     <p class="footer-credit">Créé par <a href="https://horscadrestudio.re" target="_blank" rel="noopener noreferrer">Hors Cadre Studio</a></p>
   </footer>
+  <script>
+    document.querySelectorAll('[data-support-context]').forEach((link) => {
+      link.addEventListener('click', () => {
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'support_click', {
+            context: link.dataset.supportContext || 'unknown'
+          });
+        }
+      });
+    });
+  </script>
 </body>
 </html>

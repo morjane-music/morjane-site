@@ -184,10 +184,50 @@ function formatTrackTitle(rawTitle) {
   const genericMatch = title.match(/^(?:track(?:\s*test)?|tracktest|track)\s*0*(\d{1,2})$/i);
   if (genericMatch) {
     const num = genericMatch[1].padStart(2, "0");
-    return `Maquette ${num} - Morjane`;
+    return `Version ${num} - Morjane`;
   }
 
   return title;
+}
+
+function updateMediaSession(track) {
+  if (!("mediaSession" in navigator) || !track) {
+    return;
+  }
+
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: formatTrackTitle(track.title),
+      artist: "Morjane",
+      album: "Atelier",
+    });
+
+    navigator.mediaSession.setActionHandler("play", async () => {
+      await player?.play();
+    });
+    navigator.mediaSession.setActionHandler("pause", () => {
+      player?.pause();
+    });
+    navigator.mediaSession.setActionHandler("seekbackward", () => {
+      if (player) player.currentTime = Math.max(0, player.currentTime - 10);
+    });
+    navigator.mediaSession.setActionHandler("seekforward", () => {
+      if (player) player.currentTime = Math.min(player.duration || player.currentTime + 10, player.currentTime + 10);
+    });
+  } catch (_) {
+    // Some browsers expose Media Session only partially.
+  }
+}
+
+function clearMediaSession() {
+  if (!("mediaSession" in navigator)) {
+    return;
+  }
+  try {
+    navigator.mediaSession.metadata = null;
+  } catch (_) {
+    // no-op
+  }
 }
 
 function getDecisionStatusLabel(status) {
@@ -1495,7 +1535,7 @@ async function updateTrackCockpit(trackId, payload) {
       return;
     }
     await loadAdminTrackCockpit();
-    await loadTracks();
+    await loadTracks({ preserveTrackView: true });
     await loadAdminAuditLog();
   } catch (_) {
     // no-op
@@ -2089,10 +2129,18 @@ async function loadSessionAndProfile() {
     return;
   }
 
-  await loadTracks();
+  await loadTracks({ preserveTrackView: true });
 }
 
-async function loadTracks() {
+async function loadTracks(options = {}) {
+  const shouldPreserveTrackView = Boolean(
+    options.preserveTrackView &&
+    selectedTrack &&
+    trackView &&
+    !trackView.classList.contains("hidden")
+  );
+  const selectedTrackId = selectedTrack?.id || null;
+
   let { data, error } = await supabase
     .from("atelier_tracks")
     .select("id, title, status, season_id, intent_note, feedback_question, decision_status, sort_order, created_at, atelier_seasons(id, slug, title, description, sort_order)")
@@ -2116,12 +2164,20 @@ async function loadTracks() {
   }
 
   tracks = data || [];
+  if (selectedTrackId) {
+    selectedTrack = tracks.find((track) => track.id === selectedTrackId) || selectedTrack;
+  }
   trackPlayCounts = await loadTrackPlayCounts(tracks.map((track) => track.id));
   trackLikeCounts = await loadTrackLikeCounts(tracks.map((track) => track.id));
   userLikedTrackIds = await loadUserLikes(tracks.map((track) => track.id));
   hide(authView);
-  show(memberView);
-  hide(trackView);
+  if (shouldPreserveTrackView && tracks.some((track) => track.id === selectedTrackId)) {
+    hide(memberView);
+    show(trackView);
+  } else {
+    show(memberView);
+    hide(trackView);
+  }
   if (memberPendingHelp) {
     hide(memberPendingHelp);
   }
@@ -2138,7 +2194,7 @@ async function loadTracks() {
   }
 
   if (canManageMembers()) {
-    if (adminPanel) {
+    if (adminPanel && !shouldPreserveTrackView) {
       show(adminPanel);
     }
     renderAdminTodayCards();
@@ -2447,6 +2503,8 @@ async function selectTrack(trackId) {
     }
 
     player.src = data.url;
+    player.preload = "auto";
+    updateMediaSession(selectedTrack);
     voteStatus.textContent = "";
     await loadMemberReplies();
   } catch (_) {
@@ -2694,6 +2752,7 @@ logoutBtn.addEventListener("click", async () => {
   selectedTrack = null;
   adminUnlocked = false;
   stopWatermark();
+  clearMediaSession();
   player.removeAttribute("src");
   player.load();
   await loadSessionAndProfile();
@@ -2704,6 +2763,7 @@ backBtn.addEventListener("click", () => {
   stopPresenceHeartbeat();
   player.pause();
   stopWatermark();
+  clearMediaSession();
   player.removeAttribute("src");
   player.load();
   hide(trackView);
@@ -2718,15 +2778,24 @@ if (player) {
     if (player.currentTime < 2) {
       playLoggedForCurrentTrack = false;
     }
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = "playing";
+    }
     startPresenceHeartbeat();
     startWatermark();
   });
   player.addEventListener("pause", () => {
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = "paused";
+    }
     sendPresenceHeartbeat(false);
     stopPresenceHeartbeat();
     stopWatermark();
   });
   player.addEventListener("ended", () => {
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = "none";
+    }
     sendPresenceHeartbeat(false);
     stopPresenceHeartbeat();
     stopWatermark();
@@ -2877,6 +2946,16 @@ if (trackLikeBtn) {
     await toggleTrackLike();
   });
 }
+
+document.querySelectorAll("[data-support-context]").forEach((link) => {
+  link.addEventListener("click", () => {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "support_click", {
+        context: link.dataset.supportContext || "unknown",
+      });
+    }
+  });
+});
 
 async function boot() {
   initAdminDensityMode();
