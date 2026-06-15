@@ -39,6 +39,41 @@ where lower(title) in ('track 03', 'track03', 'track test 03', 'track 3', 'track
    or storage_path ilike '%track_03.%'
    or storage_path ilike '%track 03.%';
 
+with audio as (
+  select name
+  from storage.objects
+  where bucket_id = 'atelier-audio'
+    and (
+      name ilike 'season-1/track02%'
+      or name ilike 'acte-i/track02%'
+      or name ilike 'acte_i/track02%'
+      or name ilike 'acte i/track02%'
+      or name ilike 'acte-1/track02%'
+      or name ilike 'acte_1/track02%'
+      or name ilike '%cosmos%'
+      or name ilike '%track02%'
+      or name ilike '%track-02%'
+      or name ilike '%track_02%'
+    )
+  order by
+    case
+      when name ilike '%cosmos%' then 0
+      when name ilike 'acte i/track02%' then 1
+      when name ilike 'acte-i/track02%' then 2
+      when name ilike 'season-1/track02%' then 3
+      else 4
+    end,
+    name
+  limit 1
+)
+update public.atelier_tracks
+set
+  storage_path = audio.name,
+  status = 'active',
+  sort_order = case when sort_order = 0 then 20 else sort_order end
+from audio
+where lower(title) = 'cosmos';
+
 with acte_i as (
   select id from public.atelier_seasons where slug = 'acte-i' limit 1
 ),
