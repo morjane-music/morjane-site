@@ -1436,9 +1436,15 @@ function renderAdminTrackCockpit(tracks = []) {
     const votes = document.createElement("p");
     votes.className = "admin-status-meta";
     votes.textContent = `Votes: garder ${track.votes?.develop || 0} | retravailler ${track.votes?.revise || 0} | ecarter ${track.votes?.leave || 0}`;
+    const audioStatus = document.createElement("p");
+    audioStatus.className = "admin-status-meta";
+    audioStatus.textContent = track.audio_ok
+      ? `Audio OK : ${track.storage_path || "chemin non renseigne"}`
+      : `Audio a verifier : ${track.storage_path || "chemin non renseigne"}`;
     headContent.appendChild(title);
     headContent.appendChild(stats);
     headContent.appendChild(votes);
+    headContent.appendChild(audioStatus);
     head.appendChild(headContent);
 
     const statusLabel = document.createElement("label");
@@ -2498,7 +2504,7 @@ async function selectTrack(trackId) {
     const data = await res.json();
 
     if (!res.ok || !data.url) {
-      voteStatus.textContent = "Audio indisponible.";
+      voteStatus.textContent = "Cette version n'est pas disponible pour le moment.";
       return;
     }
 

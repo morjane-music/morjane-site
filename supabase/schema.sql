@@ -187,7 +187,7 @@ alter table public.atelier_seasons
 insert into public.atelier_seasons (slug, title, description, status, sort_order)
 values
   ('acte-i', 'ACTE I', 'Les morceaux du premier seuil.', 'active', 10),
-  ('acte-ii', 'ACTE II', 'Les fragments qui arrivent.', 'active', 20)
+  ('acte-ii', 'ACTE II', 'Les chansons qui arrivent.', 'active', 20)
 on conflict (slug) do update
 set
   title = excluded.title,

@@ -30,6 +30,40 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@300;400;500;700&family=Cormorant+Garamond:ital@1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="acte1.css">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "MusicAlbum",
+      "@id": "https://morjane.re/acte1#album",
+      "name": "Acte I : Dans la Fissure",
+      "numTracks": 7,
+      "byArtist": {
+        "@type": "MusicGroup",
+        "@id": "https://morjane.re/#artist",
+        "name": "Morjane",
+        "url": "https://morjane.re/"
+      },
+      "genre": ["Chanson", "Rap mélodique", "Projet narratif"],
+      "description": "EP narratif de Morjane autour des fissures humaines, de la musique et d'une expérience immersive.",
+      "url": "https://morjane.re/acte1"
+    },
+    {
+      "@type": "CreativeWork",
+      "@id": "https://morjane.re/acte1#project",
+      "name": "Acte I : Dans la Fissure",
+      "creator": {
+        "@id": "https://morjane.re/#artist"
+      },
+      "isPartOf": {
+        "@id": "https://morjane.re/#website"
+      },
+      "description": "Projet musical, narratif et immersif construit en indépendant par Morjane."
+    }
+  ]
+}
+  </script>
 </head>
 <body>
   <header class="acte-header">
@@ -88,7 +122,7 @@
       <div class="quick-actions">
         <a href="mailto:booking@morjane.re">Me recontacter</a>
         <a href="assets/epk/Morjane-EPK.pdf" target="_blank" rel="noopener noreferrer">EPK</a>
-        <a href="#maquettes">Maquettes</a>
+        <a href="#versions">Versions ouvertes</a>
         <a href="https://open.spotify.com/intl-fr/artist/0B5Ta7mUfgxXd8OlZ3C2Zw?si=rn4_GbKzRgGsvfd9tIYLjw" target="_blank" rel="noopener noreferrer">Spotify</a>
         <a href="https://www.youtube.com/@Morjane_music" target="_blank" rel="noopener noreferrer">YouTube</a>
       </div>
@@ -118,20 +152,20 @@
     </section>
 
     <section class="fold-list" aria-label="Approfondir le projet">
-      <details class="section-fold" id="maquettes">
+      <details class="section-fold" id="versions">
         <summary>
           <span>Écoute rapide</span>
-          <strong>Maquettes audio</strong>
+          <strong>Versions ouvertes</strong>
         </summary>
         <div class="fold-content">
           <div class="copy">
-            <p>Deux maquettes de travail pour entrer directement dans la matière sonore du projet.</p>
+            <p>Deux versions pour entrer directement dans la matière sonore du projet.</p>
           </div>
-          <div class="audio-list" aria-label="Maquettes audio d'Acte I">
+          <div class="audio-list" aria-label="Versions audio d'Acte I">
             <article class="audio-card">
               <div>
                 <h3>Cosmos</h3>
-                <p>Maquette</p>
+                <p>Version ouverte</p>
               </div>
               <audio controls preload="none" src="assets/Cosmos.mp3">
                 Votre navigateur ne permet pas l'écoute audio.
@@ -140,7 +174,7 @@
             <article class="audio-card">
               <div>
                 <h3>En bas</h3>
-                <p>Maquette</p>
+                <p>Version ouverte</p>
               </div>
               <audio controls preload="none" src="assets/En_bas.mp3">
                 Votre navigateur ne permet pas l'écoute audio.
@@ -332,7 +366,7 @@
       </div>
       <div class="support-panel">
         <p>ACTE I est construit en indépendant : chansons, enregistrements, visuels, clips, site immersif et tout ce qui gravite autour de l'univers Morjane.</p>
-        <p>Si ce projet résonne en toi, tu peux aider à lui donner une suite.</p>
+        <p>Si ce projet résonne en toi, tu peux accompagner la suite.</p>
         <a class="support-link" href="https://ko-fi.com/morjane" target="_blank" rel="noopener noreferrer" data-support-context="acte1">Soutenir le projet</a>
       </div>
     </section>

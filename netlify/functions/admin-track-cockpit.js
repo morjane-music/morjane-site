@@ -160,7 +160,7 @@ exports.handler = async (event) => {
   const [tracksRes, votesRes, playsRes, likesRes, messagesRes] = await Promise.all([
     supabase
       .from("atelier_tracks")
-      .select("id, title, status, intent_note, feedback_question, decision_status, created_at")
+      .select("id, title, status, storage_path, intent_note, feedback_question, decision_status, created_at")
       .order("created_at", { ascending: false })
       .limit(20),
     supabase.from("atelier_votes").select("track_id, choice").limit(5000),
@@ -204,17 +204,26 @@ exports.handler = async (event) => {
   for (const like of likesRes.data || []) increment(likesByTrack, like.track_id);
   for (const message of messagesRes.data || []) increment(messagesByTrack, message.track_id);
 
-  const tracks = (tracksRes.data || []).map((track) => ({
-    id: track.id,
-    title: track.title,
-    status: track.status,
-    intent_note: track.intent_note || "",
-    feedback_question: track.feedback_question || "",
-    decision_status: track.decision_status || "testing",
-    votes: votesByTrack.get(track.id) || { develop: 0, revise: 0, leave: 0 },
-    plays: playsByTrack.get(track.id) || 0,
-    likes: likesByTrack.get(track.id) || 0,
-    messages: messagesByTrack.get(track.id) || 0,
+  const tracks = await Promise.all((tracksRes.data || []).map(async (track) => {
+    const signed = track.storage_path
+      ? await supabase.storage.from("atelier-audio").createSignedUrl(track.storage_path, 60)
+      : { error: { message: "missing_storage_path" } };
+
+    return {
+      id: track.id,
+      title: track.title,
+      status: track.status,
+      storage_path: track.storage_path || "",
+      audio_ok: Boolean(signed.data?.signedUrl && !signed.error),
+      audio_error: signed.error?.message || "",
+      intent_note: track.intent_note || "",
+      feedback_question: track.feedback_question || "",
+      decision_status: track.decision_status || "testing",
+      votes: votesByTrack.get(track.id) || { develop: 0, revise: 0, leave: 0 },
+      plays: playsByTrack.get(track.id) || 0,
+      likes: likesByTrack.get(track.id) || 0,
+      messages: messagesByTrack.get(track.id) || 0,
+    };
   }));
 
   await trackFunctionEvent(supabase, {
