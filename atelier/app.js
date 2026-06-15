@@ -867,7 +867,7 @@ function renderMemberPersonalStats(stats = {}) {
   const likes = Number(stats.likes || 0);
   memberPersonalStats.innerHTML = `
     <article>
-      <span>Chapitre</span>
+      <span>Acte ouvert</span>
       <strong>ACTE I</strong>
     </article>
     <article>
