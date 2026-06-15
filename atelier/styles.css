@@ -427,9 +427,42 @@ button.ghost {
 
 .track-list {
   display: grid;
+  gap: 18px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.track-season {
+  list-style: none;
+}
+
+.track-season__head {
+  margin-bottom: 10px;
+}
+
+.track-season__head h3 {
+  margin: 0;
+  color: rgba(245, 228, 198, 0.96);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.track-season__head p {
+  max-width: 540px;
+  margin: 5px 0 0;
+  color: rgba(232, 223, 211, 0.58);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.track-season__tracks {
+  display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 12px;
-  margin: 10px 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -1631,8 +1664,11 @@ body.atelier-listening .atelier-player-frame {
   }
 
   .track-list {
-    grid-template-columns: 1fr;
     margin-top: 8px;
+  }
+
+  .track-season__tracks {
+    grid-template-columns: 1fr;
   }
 
   .member-top,

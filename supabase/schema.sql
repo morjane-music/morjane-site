@@ -18,7 +18,10 @@ create table if not exists public.atelier_profiles (
 create table if not exists public.atelier_seasons (
   id bigserial primary key,
   slug text not null unique,
+  title text,
+  description text,
   status text not null default 'draft' check (status in ('draft', 'active', 'archived')),
+  sort_order integer not null default 0,
   created_at timestamptz not null default now()
 );
 
@@ -32,6 +35,7 @@ create table if not exists public.atelier_tracks (
   intent_note text,
   feedback_question text,
   decision_status text not null default 'testing' check (decision_status in ('testing', 'kept', 'rework', 'paused', 'released', 'archived')),
+  sort_order integer not null default 0,
   created_at timestamptz not null default now()
 );
 
@@ -172,7 +176,23 @@ alter table public.atelier_messages
 alter table public.atelier_tracks
   add column if not exists intent_note text,
   add column if not exists feedback_question text,
-  add column if not exists decision_status text not null default 'testing' check (decision_status in ('testing', 'kept', 'rework', 'paused', 'released', 'archived'));
+  add column if not exists decision_status text not null default 'testing' check (decision_status in ('testing', 'kept', 'rework', 'paused', 'released', 'archived')),
+  add column if not exists sort_order integer not null default 0;
+
+alter table public.atelier_seasons
+  add column if not exists title text,
+  add column if not exists description text,
+  add column if not exists sort_order integer not null default 0;
+
+insert into public.atelier_seasons (slug, title, description, status, sort_order)
+values
+  ('acte-i', 'ACTE I', 'Les morceaux du premier seuil.', 'active', 10),
+  ('acte-ii', 'ACTE II', 'Les fragments qui arrivent.', 'active', 20)
+on conflict (slug) do update
+set
+  title = excluded.title,
+  description = excluded.description,
+  sort_order = excluded.sort_order;
 
 alter table public.atelier_profiles
   add column if not exists audience_status text not null default 'new' check (audience_status in ('new', 'waiting', 'approved', 'vip', 'refused', 'archived')),

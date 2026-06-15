@@ -185,6 +185,65 @@ function getDecisionStatusLabel(status) {
   }[status] || "En test");
 }
 
+function getSeasonFallbackTitle(seasonId) {
+  if (!seasonId) {
+    return "Fragments";
+  }
+  if (Number(seasonId) === 1) return "ACTE I";
+  if (Number(seasonId) === 2) return "ACTE II";
+  return `Acte ${String(seasonId).padStart(2, "0")}`;
+}
+
+function formatSeasonTitle(season) {
+  const title = String(season?.title || "").trim();
+  if (title) {
+    return title;
+  }
+
+  const slug = String(season?.slug || "").trim();
+  if (slug === "acte-i") return "ACTE I";
+  if (slug === "acte-ii") return "ACTE II";
+  if (slug) {
+    return slug.replace(/-/g, " ").toUpperCase();
+  }
+
+  return getSeasonFallbackTitle(season?.id);
+}
+
+function getTrackSeason(track) {
+  const nestedSeason = track?.atelier_seasons || track?.season || null;
+  return {
+    id: nestedSeason?.id || track?.season_id || 0,
+    slug: nestedSeason?.slug || "",
+    title: nestedSeason?.title || "",
+    description: nestedSeason?.description || "",
+    sort_order: Number(nestedSeason?.sort_order || track?.season_id || 0),
+  };
+}
+
+function groupTracksBySeason(trackRows) {
+  const groups = new Map();
+  (trackRows || []).forEach((track) => {
+    const season = getTrackSeason(track);
+    const key = String(season.id || season.slug || "default");
+    if (!groups.has(key)) {
+      groups.set(key, { season, tracks: [] });
+    }
+    groups.get(key).tracks.push(track);
+  });
+
+  return Array.from(groups.values())
+    .sort((a, b) => Number(a.season.sort_order || 0) - Number(b.season.sort_order || 0))
+    .map((group) => ({
+      ...group,
+      tracks: group.tracks.sort((a, b) => {
+        const orderDiff = Number(a.sort_order || 0) - Number(b.sort_order || 0);
+        if (orderDiff !== 0) return orderDiff;
+        return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+      }),
+    }));
+}
+
 function getFeedbackTagLabel(tag) {
   return ({
     emotion: "Emotion",
@@ -2001,18 +2060,17 @@ async function loadSessionAndProfile() {
 async function loadTracks() {
   let { data, error } = await supabase
     .from("atelier_tracks")
-    .select("id, title, status, season_id, intent_note, feedback_question, decision_status")
+    .select("id, title, status, season_id, intent_note, feedback_question, decision_status, sort_order, created_at, atelier_seasons(id, slug, title, description, sort_order)")
     .eq("status", "active")
-    .order("id", { ascending: false })
-    .limit(3);
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
 
-  if (error && /intent_note|feedback_question|decision_status/i.test(String(error.message || ""))) {
+  if (error && /title|description|sort_order|atelier_seasons|created_at|intent_note|feedback_question|decision_status/i.test(String(error.message || ""))) {
     const fallback = await supabase
       .from("atelier_tracks")
       .select("id, title, status, season_id")
       .eq("status", "active")
-      .order("id", { ascending: false })
-      .limit(3);
+      .order("id", { ascending: false });
     data = fallback.data;
     error = fallback.error;
   }
@@ -2173,51 +2231,79 @@ function pulseLikeButton() {
   }, 700);
 }
 
+function createTrackCard(track) {
+  const li = document.createElement("li");
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "track-card atelier-card atelier-track-card";
+  btn.addEventListener("click", () => selectTrack(track.id));
+
+  const fragmentLabel = document.createElement("span");
+  fragmentLabel.className = "track-card__fragment-label";
+  fragmentLabel.textContent = "fragment en test";
+
+  const top = document.createElement("span");
+  top.className = "track-card__top";
+
+  const title = document.createElement("span");
+  title.className = "track-list__title";
+  title.textContent = formatTrackTitle(track.title);
+
+  const status = document.createElement("span");
+  status.className = "track-card__status";
+  status.textContent = getDecisionStatusLabel(track.decision_status);
+
+  const meta = document.createElement("span");
+  meta.className = "track-list__meta";
+  meta.textContent = `Écoutes du cercle : ${getTrackPlayCount(track.id)} · Traces coeur : ${getTrackLikeCount(track.id)}`;
+
+  const hint = document.createElement("span");
+  hint.className = "track-card__hint";
+  hint.textContent = track.feedback_question || track.intent_note || "Entrer dans cette version et laisser une trace";
+
+  const cta = document.createElement("span");
+  cta.className = "track-card__cta";
+  cta.textContent = "Écouter le fragment";
+
+  btn.appendChild(fragmentLabel);
+  top.appendChild(title);
+  top.appendChild(status);
+  btn.appendChild(top);
+  btn.appendChild(meta);
+  btn.appendChild(hint);
+  btn.appendChild(cta);
+  li.appendChild(btn);
+  return li;
+}
+
 function renderTrackList() {
   trackList.innerHTML = "";
-  tracks.forEach((track) => {
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "track-card atelier-card atelier-track-card";
-    btn.addEventListener("click", () => selectTrack(track.id));
+  groupTracksBySeason(tracks).forEach((group) => {
+    const seasonItem = document.createElement("li");
+    seasonItem.className = "track-season";
 
-    const fragmentLabel = document.createElement("span");
-    fragmentLabel.className = "track-card__fragment-label";
-    fragmentLabel.textContent = "fragment en test";
+    const heading = document.createElement("div");
+    heading.className = "track-season__head";
 
-    const top = document.createElement("span");
-    top.className = "track-card__top";
+    const title = document.createElement("h3");
+    title.textContent = formatSeasonTitle(group.season);
+    heading.appendChild(title);
 
-    const title = document.createElement("span");
-    title.className = "track-list__title";
-    title.textContent = formatTrackTitle(track.title);
+    if (group.season.description) {
+      const description = document.createElement("p");
+      description.textContent = group.season.description;
+      heading.appendChild(description);
+    }
 
-    const status = document.createElement("span");
-    status.className = "track-card__status";
-    status.textContent = getDecisionStatusLabel(track.decision_status);
+    const innerList = document.createElement("ul");
+    innerList.className = "track-season__tracks";
+    group.tracks.forEach((track) => {
+      innerList.appendChild(createTrackCard(track));
+    });
 
-    const meta = document.createElement("span");
-    meta.className = "track-list__meta";
-    meta.textContent = `Écoutes du cercle : ${getTrackPlayCount(track.id)} · Traces coeur : ${getTrackLikeCount(track.id)}`;
-
-    const hint = document.createElement("span");
-    hint.className = "track-card__hint";
-    hint.textContent = track.feedback_question || track.intent_note || "Entrer dans cette version et laisser une trace";
-
-    const cta = document.createElement("span");
-    cta.className = "track-card__cta";
-    cta.textContent = "Écouter le fragment";
-
-    btn.appendChild(fragmentLabel);
-    top.appendChild(title);
-    top.appendChild(status);
-    btn.appendChild(top);
-    btn.appendChild(meta);
-    btn.appendChild(hint);
-    btn.appendChild(cta);
-    li.appendChild(btn);
-    trackList.appendChild(li);
+    seasonItem.appendChild(heading);
+    seasonItem.appendChild(innerList);
+    trackList.appendChild(seasonItem);
   });
 }
 
