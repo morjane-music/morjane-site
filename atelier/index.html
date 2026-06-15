@@ -9,10 +9,10 @@
   <link rel="canonical" href="https://morjane.re/atelier">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#0b0b0b">
-  <meta name="description" content="Atelier maquettes privé de Morjane. Écoute, retours et votes dans un cercle restreint.">
+  <meta name="description" content="Atelier privé de Morjane. Accès anticipé aux chansons, écoute confidentielle et retours dans un cercle restreint.">
   <meta property="og:locale" content="fr_FR">
-  <meta property="og:title" content="L'Atelier Maquettes - Morjane">
-  <meta property="og:description" content="Cercle privé: morceaux en cours, retours confidentiels, versions fragiles.">
+  <meta property="og:title" content="L'Atelier - Morjane">
+  <meta property="og:description" content="Cercle privé: versions ouvertes, écoute anticipée et retours confidentiels.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://morjane.re/atelier">
   <meta property="og:image" content="https://morjane.re/assets/images/atelier/atelier-bg-fissure.png">
@@ -43,7 +43,7 @@
       <div class="atelier-intro ritual-reveal" data-ritual>
         <p class="atelier-intro__badge">Cercle d'écoute</p>
         <p>Bienvenue dans mon atelier.</p>
-        <p>Ce que tu vas entendre cherche encore sa forme.</p>
+        <p>Ce que tu vas entendre n'a pas encore sa forme definitive.</p>
         <p class="atelier-protection-badge" aria-label="Contenu privé et protégé">
           <span class="protection-seal" aria-hidden="true"></span>
           Privé et sous copyright
@@ -70,7 +70,7 @@
       <div class="member-top">
         <div>
           <p class="section-kicker">Atelier d'écoute</p>
-          <h2>Les maquettes qui cherchent leur forme</h2>
+          <h2>Les chansons avant leur sortie</h2>
         </div>
         <button id="logoutBtn" class="ghost">Se déconnecter</button>
       </div>
@@ -79,12 +79,12 @@
       <div id="memberWaveNote" class="season-note member-wave-note hidden"></div>
       <div class="season-note atelier-listening-note">
         <p class="season-note__title">Ecoute privée</p>
-        <p>Ces versions cherchent encore leur forme. Ne partage pas les fichiers. Réponds avec instinct : une trace sincère vaut mieux qu'un avis parfait.</p>
+        <p>Tu entends ces chansons avant leur sortie. Le cercle aide a voir ce qui tient, ce qui manque et ce qui reste.</p>
       </div>
-      <p id="memberPendingHelp" class="member-pending-help hidden">Ta demande est recue. L'Atelier ouvre par vagues pour garder l'ecoute intime et utile. Si ton acces est valide, tu recevras un lien et les maquettes apparaitront ici.</p>
+      <p id="memberPendingHelp" class="member-pending-help hidden">Ta demande est recue. L'Atelier ouvre par vagues pour garder l'ecoute intime et utile. Si ton acces est valide, tu recevras un lien et les chansons apparaitront ici.</p>
       <div id="acteChooser" class="acte-chooser" aria-label="Choisir un acte"></div>
       <ul id="trackList" class="track-list"></ul>
-      <p id="emptyTracks" class="muted hidden">Aucune maquette ouverte pour le moment. Le prochain chapitre arrivera ici.</p>
+      <p id="emptyTracks" class="muted hidden">Aucune version ouverte pour le moment. Le prochain acte arrivera ici.</p>
     </section>
 
     <section id="adminPanel" class="admin-panel hidden ritual-reveal" data-ritual>
@@ -169,8 +169,8 @@
         <button type="button" id="toggleUnreadOnlyBtn" class="ghost">Non lus seulement</button>
       </div>
       <div class="admin-tools">
-        <select id="adminInboxTrackFilter" aria-label="Filtrer par maquette">
-          <option value="">Toutes les maquettes</option>
+        <select id="adminInboxTrackFilter" aria-label="Filtrer par morceau">
+          <option value="">Tous les morceaux</option>
         </select>
         <select id="adminInboxSenderFilter" aria-label="Filtrer par expéditeur">
           <option value="">Tous les expéditeurs</option>
@@ -190,7 +190,7 @@
       <section class="admin-section hidden" data-admin-panel-section="decisions">
       <h3>Top signaux</h3>
       <div id="adminSignalBoard" class="admin-signal-board"><p class="muted">Chargement des signaux...</p></div>
-      <h3>Cockpit maquettes</h3>
+      <h3>Cockpit morceaux</h3>
       <div id="adminTrackCockpit" class="admin-track-cockpit">
         <p class="muted">Chargement du cockpit...</p>
       </div>
@@ -210,10 +210,10 @@
     </section>
 
     <section id="trackView" class="panel hidden ritual-reveal" data-ritual>
-      <button id="backBtn" class="ghost">Retour au chapitre</button>
+      <button id="backBtn" class="ghost">Retour a l'acte</button>
       <h2 id="trackTitle">Titre</h2>
       <p id="trackDecisionStatus" class="track-status-pill">En test</p>
-      <div id="trackTimeline" class="track-timeline" aria-label="Evolution de la maquette"></div>
+      <div id="trackTimeline" class="track-timeline" aria-label="Evolution du morceau"></div>
       <div id="trackIntentPanel" class="track-intent-panel hidden">
         <p class="track-intent-label">Note de Morjane</p>
         <p id="trackIntentNote" class="track-intent-text"></p>
@@ -234,7 +234,7 @@
       </div>
       <div id="trackWatermark" class="track-watermark hidden" aria-hidden="true"></div>
       <div class="atelier-player-frame">
-        <p class="atelier-player-frame__whisper">Version fragile. Écoute avant de juger.</p>
+        <p class="atelier-player-frame__whisper">Version ouverte. Ecoute avant qu'elle se fige.</p>
         <audio id="player" controls controlslist="nodownload noplaybackrate nofullscreen noremoteplayback" disableremoteplayback disablepictureinpicture preload="none"></audio>
       </div>
       <div class="listening-guide">

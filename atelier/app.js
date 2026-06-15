@@ -115,7 +115,7 @@ const ADMIN_MEMBER_SEGMENT_LABELS = {
 const WAVE_PUBLIC_NOTES = {
   proches: "Vague proches : ecoute instinctive, sans posture. Ce que tu ressens en premier compte.",
   pros: "Vague pros : aide-moi a voir ce qui tient artistiquement, en scene et en sortie.",
-  presse: "Vague presse : fragments confidentiels pour comprendre la direction avant l'annonce publique.",
+  presse: "Vague presse : versions confidentielles pour comprendre la direction avant l'annonce publique.",
   fans: "Vague fans fideles : ton role est de dire ce qui reste apres l'ecoute.",
 };
 const ATELIER_ACTES = [
@@ -128,7 +128,7 @@ const ATELIER_ACTES = [
   {
     slug: "acte-ii",
     title: "ACTE II",
-    description: "Les fragments qui arrivent.",
+    description: "Les chansons qui arrivent.",
     sort_order: 20,
   },
 ];
@@ -203,7 +203,7 @@ function getDecisionStatusLabel(status) {
 
 function getSeasonFallbackTitle(seasonId) {
   if (!seasonId) {
-    return "Fragments";
+    return "Versions";
   }
   if (Number(seasonId) === 1) return "ACTE I";
   if (Number(seasonId) === 2) return "ACTE II";
@@ -861,57 +861,12 @@ function renderMemberPersonalStats(stats = {}) {
   if (!memberPersonalStats) {
     return;
   }
-  const availableTracks = tracks.length;
-  const traces = Number(stats.messages || 0);
-  const plays = Number(stats.plays || 0);
-  const likes = Number(stats.likes || 0);
-  memberPersonalStats.innerHTML = `
-    <article>
-      <span>Acte ouvert</span>
-      <strong>ACTE I</strong>
-    </article>
-    <article>
-      <span>Fragments</span>
-      <strong>${availableTracks}</strong>
-    </article>
-    <article>
-      <span>Derniere ecoute</span>
-      <strong>${formatShortDate(stats.last_play_at)}</strong>
-    </article>
-    <article>
-      <span>Traces</span>
-      <strong>${traces}</strong>
-    </article>
-    <article>
-      <span>Ecoutes</span>
-      <strong>${plays}</strong>
-    </article>
-    <article>
-      <span>Coeurs</span>
-      <strong>${likes}</strong>
-    </article>
-  `;
-  show(memberPersonalStats);
+  memberPersonalStats.innerHTML = "";
+  hide(memberPersonalStats);
 }
 
 async function loadMemberPersonalStats() {
-  if (!session?.access_token || !memberPersonalStats) {
-    return;
-  }
-  try {
-    const res = await fetch("/.netlify/functions/member-stats", {
-      method: "GET",
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      renderMemberPersonalStats({});
-      return;
-    }
-    renderMemberPersonalStats(data.stats || {});
-  } catch (_) {
-    renderMemberPersonalStats({});
-  }
+  renderMemberPersonalStats({});
 }
 
 function populateInboxFilters() {
@@ -925,7 +880,7 @@ function populateInboxFilters() {
   const currentTrack = adminInboxTrackFilter.value;
   const currentSender = adminInboxSenderFilter.value;
 
-  adminInboxTrackFilter.innerHTML = "<option value=\"\">Toutes les maquettes</option>";
+  adminInboxTrackFilter.innerHTML = "<option value=\"\">Tous les morceaux</option>";
   tracks.forEach((title) => {
     const option = document.createElement("option");
     option.value = title;
@@ -972,7 +927,7 @@ function exportInboxCsv() {
     return;
   }
   const rows = [
-    ["date", "email", "maquette", "axe", "message", "note_admin", "reponse_morjane", "statut"],
+    ["date", "email", "morceau", "axe", "message", "note_admin", "reponse_morjane", "statut"],
     ...adminInboxCache.map((item) => [
       item.created_at,
       item.sender_email,
@@ -1101,7 +1056,7 @@ function renderTrackTimeline(status) {
     return;
   }
   const steps = [
-    ["testing", "fragment"],
+    ["testing", "en mouvement"],
     ["rework", "reecriture"],
     ["kept", "retenu"],
   ];
@@ -1421,7 +1376,7 @@ function renderAdminTrackCockpit(tracks = []) {
     return;
   }
   if (!tracks.length) {
-    adminTrackCockpit.innerHTML = "<p class=\"muted\">Aucune maquette trouvee.</p>";
+    adminTrackCockpit.innerHTML = "<p class=\"muted\">Aucun morceau trouve.</p>";
     return;
   }
 
@@ -1467,7 +1422,7 @@ function renderAdminTrackCockpit(tracks = []) {
     intentLabel.textContent = "Note de Morjane";
     const intent = document.createElement("textarea");
     intent.rows = 3;
-    intent.placeholder = "Ce que tu cherches avec cette maquette...";
+    intent.placeholder = "Ce que tu cherches avec ce morceau...";
 
     const questionLabel = document.createElement("label");
     questionLabel.textContent = "Question posee au cercle";
@@ -2106,7 +2061,7 @@ async function loadSessionAndProfile() {
     if (adminPanel) {
       hide(adminPanel);
     }
-    authStatus.textContent = "Connectez-vous pour entrer dans le chapitre ouvert.";
+    authStatus.textContent = "Connectez-vous pour entrer dans l'acte ouvert.";
     return;
   }
 
@@ -2320,7 +2275,7 @@ function createTrackCard(track) {
 
   const fragmentLabel = document.createElement("span");
   fragmentLabel.className = "track-card__fragment-label";
-  fragmentLabel.textContent = "fragment en test";
+  fragmentLabel.textContent = "version ouverte";
 
   const top = document.createElement("span");
   top.className = "track-card__top";
@@ -2343,7 +2298,7 @@ function createTrackCard(track) {
 
   const cta = document.createElement("span");
   cta.className = "track-card__cta";
-  cta.textContent = "Écouter le fragment";
+  cta.textContent = "Écouter la version";
 
   btn.appendChild(fragmentLabel);
   top.appendChild(title);
@@ -2373,7 +2328,7 @@ function renderActeChooser(groups) {
     label.textContent = formatSeasonTitle(group.season);
 
     const count = document.createElement("small");
-    count.textContent = `${group.tracks.length} fragment${group.tracks.length > 1 ? "s" : ""}`;
+    count.textContent = `${group.tracks.length} version${group.tracks.length > 1 ? "s" : ""}`;
 
     button.appendChild(label);
     button.appendChild(count);
@@ -2419,7 +2374,7 @@ function renderTrackList() {
   if (group.tracks.length === 0) {
     const empty = document.createElement("p");
     empty.className = "track-season__empty";
-    empty.textContent = "Aucun fragment ouvert dans cet acte pour le moment.";
+    empty.textContent = "Aucune version ouverte dans cet acte pour le moment.";
     seasonItem.appendChild(empty);
     trackList.appendChild(seasonItem);
     return;
@@ -2450,7 +2405,7 @@ async function selectTrack(trackId) {
   if (trackIntentPanel && trackIntentNote && trackFeedbackQuestion) {
     if (hasIntent) {
       trackIntentNote.textContent = selectedTrack.intent_note || "Je vous laisse ecouter librement cette version, sans chercher la bonne reponse.";
-      trackFeedbackQuestion.textContent = selectedTrack.feedback_question || "Qu'est-ce que cette maquette garde en vous apres l'ecoute ?";
+      trackFeedbackQuestion.textContent = selectedTrack.feedback_question || "Qu'est-ce que cette chanson garde en vous apres l'ecoute ?";
       show(trackIntentPanel);
     } else {
       hide(trackIntentPanel);
@@ -2576,7 +2531,7 @@ async function toggleTrackLike() {
 
 async function submitVote(choice) {
   if (!selectedTrack || !profile) {
-    voteStatus.textContent = "Choisissez d'abord une maquette du chapitre.";
+    voteStatus.textContent = "Choisissez d'abord une chanson dans l'acte.";
     return;
   }
 
@@ -2609,7 +2564,7 @@ async function submitVote(choice) {
 
 async function submitMessage(content, tag = "emotion") {
   if (!selectedTrack || !profile) {
-    messageStatus.textContent = "Choisissez d'abord une maquette avant de laisser une trace.";
+    messageStatus.textContent = "Choisissez d'abord une chanson avant de laisser une trace.";
     return;
   }
 
