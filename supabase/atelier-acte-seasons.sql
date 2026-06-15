@@ -31,6 +31,7 @@ update public.atelier_tracks
 set
   title = 'Vérité coupée',
   season_id = (select id from public.atelier_seasons where slug = 'acte-i'),
+  status = 'active',
   sort_order = case when sort_order = 0 then 30 else sort_order end
 where lower(title) in ('track 03', 'track03', 'track test 03')
    or storage_path ilike '%track03.%'
@@ -38,6 +39,17 @@ where lower(title) in ('track 03', 'track03', 'track test 03')
 
 update public.atelier_tracks
 set
+  title = case
+    when lower(title) in ('track01', 'track 01', 'track test 01') then 'Sous contrôle'
+    else title
+  end,
   season_id = (select id from public.atelier_seasons where slug = 'acte-ii'),
+  status = 'active',
   sort_order = case when sort_order = 0 then 10 else sort_order end
-where lower(title) in ('sous contrôle', 'sous controle');
+where lower(title) in ('sous contrôle', 'sous controle')
+   or storage_path ilike '%acte-ii%track01%'
+   or storage_path ilike '%acte_ii%track01%'
+   or storage_path ilike '%acte2%track01%'
+   or storage_path ilike '%acte-2%track01%'
+   or storage_path ilike '%season-2/track01%'
+   or storage_path ilike '%season-2\\track01%';

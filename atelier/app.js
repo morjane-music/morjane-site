@@ -791,7 +791,7 @@ function renderMemberPersonalStats(stats = {}) {
   memberPersonalStats.innerHTML = `
     <article>
       <span>Chapitre</span>
-      <strong>Saison 01</strong>
+      <strong>ACTE I</strong>
     </article>
     <article>
       <span>Fragments</span>
