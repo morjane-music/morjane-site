@@ -148,6 +148,56 @@ where not exists (
 
 update public.atelier_tracks
 set
+  title = 'Là où j''me sens vraie',
+  season_id = (select id from public.atelier_seasons where slug = 'acte-i'),
+  status = 'active',
+  sort_order = case when sort_order = 0 then 40 else sort_order end
+where lower(title) in ('track 04', 'track04', 'track test 04', 'track 4', 'track4', 'track test 4', 'là où j''me sens vraie', 'la ou j''me sens vraie')
+   or storage_path ilike '%track04.%'
+   or storage_path ilike '%track-04.%'
+   or storage_path ilike '%track_04.%'
+   or storage_path ilike '%track 04.%';
+
+with acte_i as (
+  select id from public.atelier_seasons where slug = 'acte-i' limit 1
+),
+audio as (
+  select name
+  from storage.objects
+  where bucket_id = 'atelier-audio'
+    and (
+      name ilike 'season-1/track04%'
+      or name ilike 'acte-i/track04%'
+      or name ilike 'acte_i/track04%'
+      or name ilike 'acte i/track04%'
+      or name ilike 'acte1/track04%'
+      or name ilike 'acte 1/track04%'
+      or name ilike '%track04%'
+      or name ilike '%track-04%'
+      or name ilike '%track_04%'
+      or name ilike '%vraie%'
+    )
+  order by name
+  limit 1
+)
+insert into public.atelier_tracks (season_id, title, storage_path, status, influence_mode, sort_order)
+select
+  acte_i.id,
+  'Là où j''me sens vraie',
+  audio.name,
+  'active',
+  'open',
+  40
+from acte_i, audio
+where not exists (
+  select 1
+  from public.atelier_tracks t
+  where lower(t.title) in ('là où j''me sens vraie', 'la ou j''me sens vraie')
+     or t.storage_path = audio.name
+);
+
+update public.atelier_tracks
+set
   title = case
     when lower(title) in ('track01', 'track 01', 'track test 01') then 'Sous contrôle'
     else title
