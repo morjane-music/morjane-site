@@ -439,6 +439,14 @@ function startMagicLinkCooldown(seconds = 60) {
   }, 1000);
 }
 
+function getAtelierEmailRedirectUrl() {
+  const host = window.location.hostname;
+  if (host === "localhost" || host === "127.0.0.1") {
+    return `${window.location.origin}/atelier/`;
+  }
+  return "https://morjane.re/atelier/";
+}
+
 function canManageMembers() {
   return profile?.role === "admin";
 }
@@ -2703,7 +2711,7 @@ magicLinkForm.addEventListener("submit", async (event) => {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${window.location.origin}/atelier/`,
+      emailRedirectTo: getAtelierEmailRedirectUrl(),
     },
   });
 
