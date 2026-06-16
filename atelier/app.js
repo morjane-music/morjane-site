@@ -98,25 +98,25 @@ const ADMIN_DENSITY_STORAGE_KEY = "atelier_admin_compact_density";
 const ADMIN_MEMBER_STATUS_LABELS = {
   new: "nouveau",
   waiting: "a relancer",
-  approved: "valide",
+  approved: "validé",
   vip: "VIP / founder",
-  refused: "refuse",
-  archived: "archive",
+  refused: "refusé",
+  archived: "archivé",
 };
 const ADMIN_MEMBER_SEGMENT_LABELS = {
   listener: "auditeur",
   pro: "pro",
   press: "presse",
-  creator: "createur",
+  creator: "créateur",
   friend: "proche",
-  team: "equipe",
+  team: "équipe",
 };
 
 const WAVE_PUBLIC_NOTES = {
-  proches: "Vague proches : ecoute instinctive, sans posture. Ce que tu ressens en premier compte.",
-  pros: "Vague pros : aide-moi a voir ce qui tient artistiquement, en scene et en sortie.",
+  proches: "Vague proches : écoute instinctive, sans posture. Ce que tu ressens en premier compte.",
+  pros: "Vague pros : aide-moi à voir ce qui tient artistiquement, en scène et en sortie.",
   presse: "Vague presse : versions confidentielles pour comprendre la direction avant l'annonce publique.",
-  fans: "Vague fans fideles : ton role est de dire ce qui reste apres l'ecoute.",
+  fans: "Vague fans fidèles : ton rôle est de dire ce qui reste après l'écoute.",
 };
 const ATELIER_ACTES = [
   {
@@ -234,10 +234,10 @@ function getDecisionStatusLabel(status) {
   return ({
     testing: "En test",
     kept: "Retenue",
-    rework: "A retravailler",
+    rework: "À retravailler",
     paused: "En pause",
     released: "Sortie",
-    archived: "Archivee",
+    archived: "Archivée",
   }[status] || "En test");
 }
 
@@ -365,9 +365,9 @@ function getFeedbackTagLabel(tag) {
   return ({
     emotion: "Emotion",
     text: "Texte",
-    melody: "Melodie",
+    melody: "Mélodie",
     arrangement: "Arrangement",
-    scene: "Scene",
+    scene: "Scène",
     doubt: "Doute",
   }[tag] || tag || "Retour");
 }
@@ -408,7 +408,7 @@ async function loadCircleCount() {
 
 function getAudienceStatusLabel(status) {
   if (status === "member" || status === "founder") {
-    return "dans le cercle prive";
+    return "dans le cercle privé";
   }
   return "sur le seuil de l'Atelier";
 }
@@ -540,11 +540,11 @@ function renderAdminTodayCards() {
       <p class="admin-weekly-value">${Number(adminTodayState.liveNow || 0)}</p>
     </article>
     <article class="admin-weekly-card">
-      <p class="admin-weekly-label">Messages non traites</p>
+      <p class="admin-weekly-label">Messages non traités</p>
       <p class="admin-weekly-value">${Number(adminTodayState.pendingMessages || 0)}</p>
     </article>
     <article class="admin-weekly-card">
-      <p class="admin-weekly-label">Ecoutes aujourd'hui</p>
+      <p class="admin-weekly-label">Écoutes aujourd'hui</p>
       <p class="admin-weekly-value">${Number(adminTodayState.playsToday || 0)}</p>
     </article>
     <article class="admin-weekly-card">
@@ -567,7 +567,7 @@ function renderAdminWeeklyStats(data) {
       <p class="admin-weekly-value">${members}</p>
     </article>
     <article class="admin-weekly-card">
-      <p class="admin-weekly-label">Ecoutes qualifiees</p>
+      <p class="admin-weekly-label">Écoutes qualifiées</p>
       <p class="admin-weekly-value">${plays}</p>
     </article>
     <article class="admin-weekly-card">
@@ -619,7 +619,7 @@ function createBasicAdminMemberRow(member) {
   const isSelf = member.id && member.id === profile?.id;
   if (isSelf) {
     revokeBtn.disabled = true;
-    revokeBtn.title = "Impossible de retirer votre propre acces admin.";
+    revokeBtn.title = "Impossible de retirer votre propre accès admin.";
   } else {
     revokeBtn.addEventListener("click", () => updateMemberStatus(member.id, "revoke"));
   }
@@ -668,7 +668,7 @@ function createMemberAction(label, action, userId) {
     const confirmations = {
       refuse: "Confirmer le refus de cette demande ?",
       archive: "Archiver ce profil ?",
-      revoke: "Retirer l'acces de ce membre ?",
+      revoke: "Retirer l'accès de ce membre ?",
     };
     if (confirmations[action] && !window.confirm(confirmations[action])) {
       return;
@@ -752,13 +752,13 @@ function createAdminMemberRow(member) {
   const note = document.createElement("textarea");
   note.className = "admin-note-input";
   note.rows = 2;
-  note.placeholder = "Note interne equipe";
+  note.placeholder = "Note interne équipe";
   note.value = member.admin_note || "";
 
   const actions = document.createElement("div");
   actions.className = "admin-member-actions";
   actions.appendChild(createMemberAction("Valider", "approve", member.id));
-  actions.appendChild(createMemberAction("Envoyer acces", "send_access_email", member.id));
+  actions.appendChild(createMemberAction("Envoyer accès", "send_access_email", member.id));
 
   const secondary = document.createElement("details");
   secondary.className = "admin-action-menu";
@@ -771,7 +771,7 @@ function createAdminMemberRow(member) {
   const revokeBtn = createMemberAction("Retirer", "revoke", member.id);
   if (member.id && member.id === profile?.id) {
     revokeBtn.disabled = true;
-    revokeBtn.title = "Impossible de retirer votre propre acces admin.";
+    revokeBtn.title = "Impossible de retirer votre propre accès admin.";
   }
   secondary.appendChild(revokeBtn);
   actions.appendChild(secondary);
@@ -1083,7 +1083,7 @@ function renderWaveNote() {
     return;
   }
   const wave = String(profile?.access_wave || "").trim().toLowerCase();
-  const note = WAVE_PUBLIC_NOTES[wave] || (wave ? `Vague ${wave} : ton ecoute aide a choisir ce qui continue.` : "");
+  const note = WAVE_PUBLIC_NOTES[wave] || (wave ? `Vague ${wave} : ton écoute aide à choisir ce qui continue.` : "");
   if (!note) {
     hide(memberWaveNote);
     return;
@@ -1254,7 +1254,7 @@ function renderAdminInbox() {
       const replyInput = document.createElement("textarea");
       replyInput.className = "admin-note-input";
       replyInput.rows = 2;
-      replyInput.placeholder = "Reponse courte au membre";
+      replyInput.placeholder = "Réponse courte au membre";
       replyInput.value = item.admin_reply || "";
 
       const actions = document.createElement("div");
@@ -1264,7 +1264,7 @@ function renderAdminInbox() {
       const actionBtn = document.createElement("button");
       actionBtn.type = "button";
       actionBtn.className = "ghost";
-      actionBtn.textContent = item.admin_status === "processed" ? "Remettre non traite" : "Marquer traite";
+      actionBtn.textContent = item.admin_status === "processed" ? "Remettre non traité" : "Marquer traité";
       actionBtn.addEventListener("click", async () => {
         await updateMessageStatus(item.id, item.admin_status === "processed" ? "mark_new" : "mark_processed");
       });
@@ -1282,7 +1282,7 @@ function renderAdminInbox() {
       const saveReplyBtn = document.createElement("button");
       saveReplyBtn.type = "button";
       saveReplyBtn.className = "ghost";
-      saveReplyBtn.textContent = "Enregistrer reponse";
+      saveReplyBtn.textContent = "Enregistrer réponse";
       saveReplyBtn.addEventListener("click", async () => {
         await updateMessageStatus(item.id, "set_reply", replyInput.value || "");
       });
@@ -1369,7 +1369,7 @@ async function loadAdminInbox() {
     renderAdminInbox();
     renderAdminSignalBoard();
   } catch (_) {
-    adminInboxList.innerHTML = "<p class=\"muted\">Erreur reseau.</p>";
+    adminInboxList.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
   }
 }
 
@@ -1391,7 +1391,7 @@ function renderAdminVotesSummary(summary = []) {
     title.textContent = formatTrackTitle(row.track_title);
     const meta = document.createElement("p");
     meta.className = "admin-vote-meta";
-    meta.textContent = `Total votes : ${row.total} | A garder : ${row.keep} | A retravailler : ${row.revise} | A ecarter : ${row.discard}`;
+    meta.textContent = `Total votes : ${row.total} | À garder : ${row.keep} | À retravailler : ${row.revise} | À écarter : ${row.discard}`;
     card.appendChild(title);
     card.appendChild(meta);
     adminVotesSummary.appendChild(card);
@@ -1440,10 +1440,10 @@ function renderAdminTrackCockpit(tracks = []) {
     title.textContent = formatTrackTitle(track.title);
     const stats = document.createElement("p");
     stats.className = "admin-status-meta";
-    stats.textContent = `${getDecisionStatusLabel(track.decision_status)} | ${track.plays || 0} ecoutes | ${track.likes || 0} likes | ${track.messages || 0} messages`;
+    stats.textContent = `${getDecisionStatusLabel(track.decision_status)} | ${track.plays || 0} écoutes | ${track.likes || 0} likes | ${track.messages || 0} messages`;
     const votes = document.createElement("p");
     votes.className = "admin-status-meta";
-    votes.textContent = `Votes: garder ${track.votes?.develop || 0} | retravailler ${track.votes?.revise || 0} | ecarter ${track.votes?.leave || 0}`;
+    votes.textContent = `Votes : garder ${track.votes?.develop || 0} | retravailler ${track.votes?.revise || 0} | écarter ${track.votes?.leave || 0}`;
     const audioStatus = document.createElement("p");
     audioStatus.className = "admin-status-meta";
     audioStatus.textContent = track.audio_ok
@@ -1461,10 +1461,10 @@ function renderAdminTrackCockpit(tracks = []) {
     [
       ["testing", "En test"],
       ["kept", "Retenue"],
-      ["rework", "A retravailler"],
+      ["rework", "À retravailler"],
       ["paused", "En pause"],
       ["released", "Sortie"],
-      ["archived", "Archivee"],
+      ["archived", "Archivée"],
     ].forEach(([value, label]) => {
       const option = document.createElement("option");
       option.value = value;
@@ -1528,7 +1528,7 @@ async function loadAdminTrackCockpit() {
     }
     renderAdminTrackCockpit(Array.isArray(data.tracks) ? data.tracks : []);
   } catch (_) {
-    adminTrackCockpit.innerHTML = "<p class=\"muted\">Erreur reseau.</p>";
+    adminTrackCockpit.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
   }
 }
 
@@ -1620,8 +1620,8 @@ function renderAdminStatus(data) {
   [
     ["admin-status-title", "Synthese"],
     ["admin-status-meta", `Echecs fonctions 24h : ${uptime.errors24h || 0}/${uptime.total24h || 0} (${Math.round((uptime.failureRate24h || 0) * 100)}%)`],
-    ["admin-status-meta", `Liens magiques (7 jours) : ${magic.sent || 0} envoyes, ${magic.error || 0} en erreur`],
-    ["admin-status-meta", `Messages non traites : ${pending}`],
+    ["admin-status-meta", `Liens magiques (7 jours) : ${magic.sent || 0} envoyés, ${magic.error || 0} en erreur`],
+    ["admin-status-meta", `Messages non traités : ${pending}`],
   ].forEach(([className, text]) => {
     const line = document.createElement("p");
     line.className = className;
@@ -1673,7 +1673,7 @@ function renderAdminLiveListeners(listeners = []) {
   if (!listeners.length) {
     adminTodayState.liveNow = 0;
     renderAdminTodayCards();
-    adminLiveListeners.innerHTML = "<p class=\"muted\">Personne n'ecoute en ce moment.</p>";
+    adminLiveListeners.innerHTML = "<p class=\"muted\">Personne n'écoute en ce moment.</p>";
     return;
   }
 
@@ -1744,7 +1744,7 @@ async function loadAdminLiveListeners() {
   } catch (_) {
     adminTodayState.liveNow = 0;
     renderAdminTodayCards();
-    adminLiveListeners.innerHTML = "<p class=\"muted\">Erreur reseau.</p>";
+    adminLiveListeners.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
   }
 }
 
@@ -1782,15 +1782,15 @@ function renderAdminAuditLog(logs = []) {
     member_revoked: "Accès retiré",
     message_processed: "Message marqué traité",
     message_reopened: "Message rouvert",
-    message_replied: "Reponse message",
-    track_cockpit_updated: "Maquette mise a jour",
-    member_approve: "Membre valide",
-    member_revoke: "Acces retire",
+    message_replied: "Réponse message",
+    track_cockpit_updated: "Morceau mis à jour",
+    member_approve: "Membre validé",
+    member_revoke: "Accès retiré",
     member_vip: "VIP / proche",
-    member_refuse: "Demande refusee",
-    member_archive: "Profil archive",
-    member_set_meta: "Fiche membre mise a jour",
-    member_access_email_sent: "Email d'acces envoye",
+    member_refuse: "Demande refusée",
+    member_archive: "Profil archivé",
+    member_set_meta: "Fiche membre mise à jour",
+    member_access_email_sent: "Email d'accès envoyé",
   }[action] || action);
 
   logs.slice(0, 25).forEach((row) => {
@@ -2134,7 +2134,7 @@ async function loadSessionAndProfile() {
     if (adminPanel) {
       hide(adminPanel);
     }
-    memberMeta.textContent = "Ta demande est recue. L'Atelier ouvre par vagues.";
+    memberMeta.textContent = "Ta demande est reçue. L'Atelier ouvre par vagues.";
     trackList.innerHTML = "";
     if (acteChooser) {
       acteChooser.innerHTML = "";
@@ -2317,9 +2317,9 @@ function renderTrackLikeState() {
   }
   const isLiked = userLikedTrackIds.has(selectedTrack.id);
   trackLikeBtn.classList.toggle("is-active", isLiked);
-  trackLikeBtn.textContent = isLiked ? "♥ Trace coeur laissee" : "♡ Laisser une trace coeur";
+  trackLikeBtn.textContent = isLiked ? "♥ Trace cœur laissée" : "♡ Laisser une trace cœur";
   if (trackLikeCount) {
-    trackLikeCount.textContent = `Traces coeur du cercle : ${getTrackLikeCount(selectedTrack.id)}`;
+    trackLikeCount.textContent = `Traces cœur du cercle : ${getTrackLikeCount(selectedTrack.id)}`;
   }
 }
 
@@ -2360,7 +2360,7 @@ function createTrackCard(track) {
 
   const meta = document.createElement("span");
   meta.className = "track-list__meta";
-  meta.textContent = `Écoutes du cercle : ${getTrackPlayCount(track.id)} · Traces coeur : ${getTrackLikeCount(track.id)}`;
+  meta.textContent = `Écoutes du cercle : ${getTrackPlayCount(track.id)} · Traces cœur : ${getTrackLikeCount(track.id)}`;
 
   const hint = document.createElement("span");
   hint.className = "track-card__hint";
@@ -2474,8 +2474,8 @@ async function selectTrack(trackId) {
   const hasIntent = Boolean(selectedTrack.intent_note || selectedTrack.feedback_question);
   if (trackIntentPanel && trackIntentNote && trackFeedbackQuestion) {
     if (hasIntent) {
-      trackIntentNote.textContent = selectedTrack.intent_note || "Je vous laisse ecouter librement cette version, sans chercher la bonne reponse.";
-      trackFeedbackQuestion.textContent = selectedTrack.feedback_question || "Qu'est-ce que cette chanson garde en vous apres l'ecoute ?";
+      trackIntentNote.textContent = selectedTrack.intent_note || "Je vous laisse écouter librement cette version, sans chercher la bonne réponse.";
+      trackFeedbackQuestion.textContent = selectedTrack.feedback_question || "Qu'est-ce que cette chanson garde en vous après l'écoute ?";
       show(trackIntentPanel);
     } else {
       hide(trackIntentPanel);
@@ -2631,7 +2631,7 @@ async function submitVote(choice) {
   };
 
   const { error } = await supabase.from("atelier_votes").upsert(payload, { onConflict: "track_id,user_id" });
-  voteStatus.textContent = error ? `Geste refuse. ${error.message || ""}`.trim() : "Geste garde. Merci d'avoir ecoute jusqu'a l'endroit juste.";
+  voteStatus.textContent = error ? `Geste refusé. ${error.message || ""}`.trim() : "Geste gardé. Merci d'avoir écouté jusqu'à l'endroit juste.";
 }
 
 async function submitMessage(content, tag = "emotion") {
@@ -2641,7 +2641,7 @@ async function submitMessage(content, tag = "emotion") {
   }
 
   if (!session?.access_token) {
-    messageStatus.textContent = "Votre session a expire. Reconnectez-vous pour laisser une trace.";
+    messageStatus.textContent = "Votre session a expiré. Reconnectez-vous pour laisser une trace.";
     return;
   }
 
@@ -2680,9 +2680,9 @@ async function submitMessage(content, tag = "emotion") {
     if (data.error === "rate_limited") {
       messageStatus.textContent = "Patiente un instant avant de laisser une nouvelle trace.";
     } else if (data.error === "missing_token" || data.error === "invalid_token") {
-      messageStatus.textContent = "Votre session a expire. Reconnectez-vous pour laisser une trace.";
+      messageStatus.textContent = "Votre session a expiré. Reconnectez-vous pour laisser une trace.";
     } else if (data.error === "forbidden") {
-      messageStatus.textContent = "Votre acces au cercle n'est pas encore ouvert pour laisser une trace.";
+      messageStatus.textContent = "Votre accès au cercle n'est pas encore ouvert pour laisser une trace.";
     } else if (data.error === "invalid_message") {
       messageStatus.textContent = "Trace trop courte ou trop longue.";
     } else {
@@ -2691,7 +2691,7 @@ async function submitMessage(content, tag = "emotion") {
     return;
   }
 
-  messageStatus.textContent = "Trace recue. Elle reste entre vous et Morjane.";
+  messageStatus.textContent = "Trace reçue. Elle reste entre vous et Morjane.";
   privateMessage.value = "";
 }
 
