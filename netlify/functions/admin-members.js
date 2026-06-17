@@ -100,7 +100,10 @@ async function sendAccessEmail(supabase, userId) {
   if (profile.error || !to) {
     return { ok: false, error: "missing_email" };
   }
-  const from = process.env.ATELIER_DIGEST_FROM_EMAIL || "Atelier Morjane <atelier@morjane.re>";
+  const from = process.env.ATELIER_FROM_EMAIL
+    || process.env.ATELIER_DIGEST_FROM_EMAIL
+    || process.env.RESEND_FROM_EMAIL
+    || "Atelier Morjane <atelier@morjane.re>";
   const url = "https://morjane.re/atelier/";
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -117,7 +120,11 @@ async function sendAccessEmail(supabase, userId) {
     }),
   });
   if (!res.ok) {
-    return { ok: false, error: `resend_${res.status}` };
+    const detail = await res.json().catch(() => ({}));
+    if (res.status === 403) {
+      return { ok: false, error: "resend_forbidden_sender", detail: detail.message || detail.error || "" };
+    }
+    return { ok: false, error: `resend_${res.status}`, detail: detail.message || detail.error || "" };
   }
   return { ok: true, email: to };
 }

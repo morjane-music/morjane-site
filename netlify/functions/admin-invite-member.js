@@ -90,7 +90,10 @@ async function sendInvitationEmail(email, actionLink, status, segment) {
     return { ok: false, error: "missing_resend_key" };
   }
 
-  const from = process.env.ATELIER_DIGEST_FROM_EMAIL || "Atelier Morjane <atelier@morjane.re>";
+  const from = process.env.ATELIER_FROM_EMAIL
+    || process.env.ATELIER_DIGEST_FROM_EMAIL
+    || process.env.RESEND_FROM_EMAIL
+    || "Atelier Morjane <atelier@morjane.re>";
   const subject = "Morjane t'ouvre l'Atelier";
   const statusLine = status === "priority" ? "Ton acces prioritaire est pret." : "Ton acces est pret.";
   const text = [
@@ -126,7 +129,23 @@ async function sendInvitationEmail(email, actionLink, status, segment) {
   });
 
   if (!res.ok) {
-    return { ok: false, error: `resend_${res.status}` };
+    const detail = await res.json().catch(() => ({}));
+    const message = String(detail.message || detail.error || "").toLowerCase();
+    if (res.status === 403) {
+      return {
+        ok: false,
+        error: "resend_forbidden_sender",
+        detail: detail.message || detail.error || "",
+      };
+    }
+    if (message.includes("domain") || message.includes("from")) {
+      return {
+        ok: false,
+        error: "resend_sender_not_verified",
+        detail: detail.message || detail.error || "",
+      };
+    }
+    return { ok: false, error: `resend_${res.status}`, detail: detail.message || detail.error || "" };
   }
   return { ok: true };
 }

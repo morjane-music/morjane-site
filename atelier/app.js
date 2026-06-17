@@ -2167,6 +2167,8 @@ async function sendAdminInvite() {
         link_failed: "Lien d'invitation impossible à générer.",
         profile_upsert_failed: "Profil impossible à préparer.",
         admin_gate_required: "Déverrouille d'abord l'admin.",
+        resend_forbidden_sender: "Resend refuse l'expéditeur. Vérifie ATELIER_FROM_EMAIL dans Netlify.",
+        resend_sender_not_verified: "L'expéditeur Resend n'est pas vérifié.",
       };
       if (adminInviteStatusText) {
         adminInviteStatusText.textContent = labels[data.error] || `Invitation impossible (${data.error || res.status}).`;

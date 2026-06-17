@@ -8,7 +8,10 @@ async function sendAccessRequestEmail(email) {
     return false;
   }
 
-  const from = process.env.ATELIER_DIGEST_FROM_EMAIL || "Atelier Morjane <atelier@morjane.re>";
+  const from = process.env.ATELIER_FROM_EMAIL
+    || process.env.ATELIER_DIGEST_FROM_EMAIL
+    || process.env.RESEND_FROM_EMAIL
+    || "Atelier Morjane <atelier@morjane.re>";
   const atelierUrl = "https://morjane.re/atelier/";
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
