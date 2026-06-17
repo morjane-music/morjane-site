@@ -3,7 +3,7 @@
 
 insert into public.atelier_seasons (slug, title, description, status, sort_order)
 values
-  ('acte-0', 'ACTE 0', 'Les premieres fissures.', 'active', 0),
+  ('acte-0', 'ACTE 0', 'Les premieres fissures.', 'active', 30),
   ('hors-acte', 'HORS ACTE', 'Les chansons qui gravitent autour du seuil.', 'active', 40)
 on conflict (slug) do update
 set

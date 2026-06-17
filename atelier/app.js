@@ -155,13 +155,6 @@ const SOURCE_LABELS = {
 };
 const ATELIER_ACTES = [
   {
-    slug: "acte-0",
-    title: "ACTE 0",
-    description: "Les premières fissures.",
-    sort_order: 0,
-    restricted: true,
-  },
-  {
     slug: "acte-i",
     title: "ACTE I",
     description: "Les morceaux du premier seuil.",
@@ -172,6 +165,13 @@ const ATELIER_ACTES = [
     title: "ACTE II",
     description: "Les chansons qui arrivent.",
     sort_order: 20,
+  },
+  {
+    slug: "acte-0",
+    title: "ACTE 0",
+    description: "Les premières fissures.",
+    sort_order: 30,
+    restricted: true,
   },
   {
     slug: "hors-acte",
