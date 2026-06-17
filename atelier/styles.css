@@ -1180,6 +1180,37 @@ body.admin-compact .admin-note-input {
   background: rgba(0, 0, 0, 0.3);
 }
 
+.admin-invite-form {
+  display: grid;
+  gap: 9px;
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid rgba(201, 152, 82, 0.22);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.admin-invite-form h3 {
+  margin: 0;
+}
+
+.admin-invite-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) repeat(2, minmax(120px, 0.7fr)) auto;
+  gap: 8px;
+}
+
+.admin-invite-form input,
+.admin-invite-form select,
+.admin-invite-form textarea {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.42);
+  color: var(--ink);
+  padding: 8px 10px;
+}
+
 .admin-member-content {
   display: grid;
   gap: 8px;
@@ -1904,6 +1935,10 @@ body.atelier-listening .atelier-player-frame {
   }
 
   .admin-member-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-invite-grid {
     grid-template-columns: 1fr;
   }
 

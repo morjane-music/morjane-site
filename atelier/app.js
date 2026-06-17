@@ -40,6 +40,12 @@ const adminLiveListeners = document.getElementById("adminLiveListeners");
 const adminTodayCards = document.getElementById("adminTodayCards");
 const adminDensityToggle = document.getElementById("adminDensityToggle");
 const adminSearchInput = document.getElementById("adminSearchInput");
+const adminInviteForm = document.getElementById("adminInviteForm");
+const adminInviteEmail = document.getElementById("adminInviteEmail");
+const adminInviteSegment = document.getElementById("adminInviteSegment");
+const adminInviteStatus = document.getElementById("adminInviteStatus");
+const adminInviteNote = document.getElementById("adminInviteNote");
+const adminInviteStatusText = document.getElementById("adminInviteStatusText");
 const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
 const trackTitle = document.getElementById("trackTitle");
@@ -2127,6 +2133,59 @@ async function updateMemberMeta(userId, fields) {
   }
 }
 
+async function sendAdminInvite() {
+  if (!canManageMembers() || !session?.access_token || !adminInviteEmail) {
+    return;
+  }
+
+  const email = adminInviteEmail.value.trim().toLowerCase();
+  if (!email) {
+    if (adminInviteStatusText) adminInviteStatusText.textContent = "Email requis.";
+    return;
+  }
+
+  if (adminInviteStatusText) adminInviteStatusText.textContent = "Invitation en cours...";
+  try {
+    const res = await fetch("/.netlify/functions/admin-invite-member", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        email,
+        audience_segment: adminInviteSegment?.value || "public",
+        member_status: adminInviteStatus?.value || "member",
+        admin_note: adminInviteNote?.value || "",
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const labels = {
+        invalid_email: "Email invalide.",
+        missing_resend_key: "Clé Resend manquante côté Netlify.",
+        link_failed: "Lien d'invitation impossible à générer.",
+        profile_upsert_failed: "Profil impossible à préparer.",
+        admin_gate_required: "Déverrouille d'abord l'admin.",
+      };
+      if (adminInviteStatusText) {
+        adminInviteStatusText.textContent = labels[data.error] || `Invitation impossible (${data.error || res.status}).`;
+      }
+      return;
+    }
+
+    if (adminInviteStatusText) adminInviteStatusText.textContent = `Invitation envoyée à ${data.email || email}.`;
+    adminInviteEmail.value = "";
+    if (adminInviteNote) adminInviteNote.value = "";
+    await loadAdminMembers();
+    await loadCircleCount();
+    await loadAdminAuditLog();
+    await loadAdminStatus();
+  } catch (_) {
+    if (adminInviteStatusText) adminInviteStatusText.textContent = "Erreur réseau.";
+  }
+}
+
 if (player) {
   player.controlsList = "nodownload noplaybackrate";
   player.disablePictureInPicture = true;
@@ -3014,6 +3073,13 @@ if (tabPendingBtn && tabMembersBtn) {
 if (adminSearchInput) {
   adminSearchInput.addEventListener("input", () => {
     renderAdminMembers();
+  });
+}
+
+if (adminInviteForm) {
+  adminInviteForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await sendAdminInvite();
   });
 }
 

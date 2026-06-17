@@ -1,6 +1,38 @@
 const { createClient } = require("@supabase/supabase-js");
 const { trackFunctionEvent } = require("./_lib/atelier-observability");
 
+async function sendAccessRequestEmail(email) {
+  const apiKey = process.env.RESEND_API_KEY || "";
+  const to = process.env.ATELIER_ADMIN_EMAIL || "";
+  if (!apiKey || !to || !email) {
+    return false;
+  }
+
+  const from = process.env.ATELIER_DIGEST_FROM_EMAIL || "Atelier Morjane <atelier@morjane.re>";
+  const atelierUrl = "https://morjane.re/atelier/";
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to,
+      subject: "Nouvelle demande Atelier Morjane",
+      text: [
+        "Nouvelle demande d'acces a l'Atelier Morjane.",
+        "",
+        `Email : ${email}`,
+        `Admin : ${atelierUrl}`,
+      ].join("\n"),
+      html: `<p>Nouvelle demande d'acces a l'Atelier Morjane.</p><p><strong>${email}</strong></p><p><a href="${atelierUrl}">Ouvrir l'Atelier</a></p>`,
+    }),
+  });
+
+  return res.ok;
+}
+
 exports.handler = async (event) => {
   const startedAt = Date.now();
   if (event.httpMethod !== "POST") {
@@ -54,11 +86,26 @@ exports.handler = async (event) => {
     };
   }
 
+  let notified = false;
+  if (result === "sent") {
+    const existingProfile = email
+      ? await supabase
+          .from("atelier_profiles")
+          .select("member_status")
+          .eq("email", email)
+          .maybeSingle()
+      : { data: null, error: null };
+    const alreadyInside = ["member", "priority", "founder"].includes(existingProfile.data?.member_status);
+    if (!alreadyInside) {
+      notified = await sendAccessRequestEmail(email);
+    }
+  }
+
   await trackFunctionEvent(supabase, {
     function_name: "log-magic-link-event",
     status: "ok",
     latency_ms: Date.now() - startedAt,
-    meta: { result },
+    meta: { result, notified },
   });
 
   return {
@@ -67,4 +114,3 @@ exports.handler = async (event) => {
     body: JSON.stringify({ ok: true }),
   };
 };
-

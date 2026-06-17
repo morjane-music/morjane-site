@@ -137,6 +137,25 @@
         <button type="button" id="tabMembersBtn" class="admin-tab">Cercle actif</button>
       </div>
       <section class="admin-section" data-admin-panel-section="requests">
+      <form id="adminInviteForm" class="admin-invite-form">
+        <h3>Inviter quelqu'un</h3>
+        <div class="admin-invite-grid">
+          <input id="adminInviteEmail" type="email" placeholder="email@exemple.com" autocomplete="email">
+          <select id="adminInviteSegment" aria-label="Profil d'écoute">
+            <option value="public">Public</option>
+            <option value="proche">Proche</option>
+            <option value="artiste">Artiste</option>
+            <option value="pro">Pro</option>
+          </select>
+          <select id="adminInviteStatus" aria-label="Accès">
+            <option value="member">Membre</option>
+            <option value="priority">Prioritaire</option>
+          </select>
+          <button type="submit" class="ghost">Inviter</button>
+        </div>
+        <textarea id="adminInviteNote" rows="2" placeholder="Note interne facultative"></textarea>
+        <p id="adminInviteStatusText" class="muted"></p>
+      </form>
       <div id="adminMembersSummary" class="admin-member-summary"></div>
       <div id="adminMembersList" class="admin-members-list"></div>
       </section>

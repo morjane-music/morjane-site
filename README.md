@@ -10,9 +10,9 @@
 - `ATELIER_COOKIE_SECRET`
 - `ATELIER_ADMIN_PIN`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `RESEND_API_KEY` optional, to send the daily Atelier admin digest by email.
-- `ATELIER_ADMIN_EMAIL` optional, recipient for the daily Atelier admin digest.
-- `ATELIER_DIGEST_FROM_EMAIL` optional, sender for the digest. Defaults to `Atelier Morjane <atelier@morjane.re>`.
+- `RESEND_API_KEY` optional, to send the daily Atelier admin digest, admin access notifications, and invitation emails.
+- `ATELIER_ADMIN_EMAIL` optional, recipient for the daily Atelier admin digest and new access request alerts.
+- `ATELIER_DIGEST_FROM_EMAIL` optional, sender for Atelier emails. Defaults to `Atelier Morjane <atelier@morjane.re>`.
 - `ATELIER_ADMIN_DIGEST_WEBHOOK_URL` optional, for the daily Atelier admin digest webhook.
 
 ## What is implemented
