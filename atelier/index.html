@@ -201,6 +201,26 @@
         <p class="muted">Chargement des votes...</p>
       </div>
       <h3>Accès par morceau</h3>
+      <div class="admin-preview-box">
+        <div>
+          <p class="admin-access-title">Prévisualiser l'Atelier</p>
+          <p class="muted">Voir rapidement ce qu'un profil peut écouter, sans changer les droits.</p>
+        </div>
+        <div class="admin-preview-controls">
+          <select id="adminPreviewSegment" aria-label="Profil à prévisualiser">
+            <option value="public">Public</option>
+            <option value="proche">Proche</option>
+            <option value="artiste">Artiste</option>
+            <option value="pro">Pro</option>
+          </select>
+          <select id="adminPreviewStatus" aria-label="Accès à prévisualiser">
+            <option value="member">Membre</option>
+            <option value="priority">Prioritaire</option>
+            <option value="founder">Fondateur</option>
+          </select>
+        </div>
+        <div id="adminPreviewList" class="admin-preview-list"></div>
+      </div>
       <form id="adminTrackCreateForm" class="admin-track-create">
         <h3>Ajouter un morceau</h3>
         <div class="admin-track-create-grid">
@@ -219,6 +239,7 @@
       </section>
       <section class="admin-section hidden" data-admin-panel-section="decisions">
       <h3>Top signaux</h3>
+      <button type="button" id="exportSignalCsvBtn" class="ghost">Exporter les signaux CSV</button>
       <div id="adminSignalBoard" class="admin-signal-board"><p class="muted">Chargement des signaux...</p></div>
       </section>
       <section class="admin-section hidden" data-admin-panel-section="system">

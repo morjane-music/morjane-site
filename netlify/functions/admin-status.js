@@ -84,7 +84,7 @@ exports.handler = async (event) => {
   const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const supabase = auth.adminClient;
 
-  const [events24hRes, events7dRes, magicRes, initialPendingRes, playsTodayRes, activeMembers7dRes, liveNowRes] = await Promise.all([
+  const [events24hRes, events7dRes, magicRes, initialPendingRes, playsTodayRes, activeMembers7dRes, liveNowRes, pendingMembersRes, tracksRes] = await Promise.all([
     supabase
       .from("atelier_function_events")
       .select("function_name, status", { count: "exact" })
@@ -118,6 +118,15 @@ exports.handler = async (event) => {
       .select("user_id", { count: "exact", head: true })
       .eq("is_listening", true)
       .gte("last_seen_at", new Date(Date.now() - 30 * 1000).toISOString()),
+    supabase
+      .from("atelier_profiles")
+      .select("id", { count: "exact", head: true })
+      .in("member_status", ["pending", "none"]),
+    supabase
+      .from("atelier_tracks")
+      .select("id, title, status, storage_path")
+      .neq("status", "archived")
+      .limit(200),
   ]);
 
   let pendingRes = initialPendingRes;
@@ -129,7 +138,7 @@ exports.handler = async (event) => {
       .select("id", { count: "exact", head: true });
   }
 
-  if (events24hRes.error || events7dRes.error || magicRes.error || pendingRes.error || playsTodayRes.error || activeMembers7dRes.error) {
+  if (events24hRes.error || events7dRes.error || magicRes.error || pendingRes.error || playsTodayRes.error || activeMembers7dRes.error || pendingMembersRes.error || tracksRes.error) {
     await trackFunctionEvent(supabase, {
       function_name: "admin-status",
       status: "error",
@@ -175,6 +184,14 @@ exports.handler = async (event) => {
   const playsToday = playsTodayRes.count || 0;
   const activeMembers7d = new Set((activeMembers7dRes.data || []).map((row) => row.user_id).filter(Boolean)).size;
   const liveNow = liveNowRes.error ? 0 : (liveNowRes.count || 0);
+  const trackChecks = await Promise.all((tracksRes.data || []).map(async (track) => {
+    if (!track.storage_path) {
+      return { track, audio_ok: false, error: "missing_storage_path" };
+    }
+    const signed = await supabase.storage.from("atelier-audio").createSignedUrl(track.storage_path, 60);
+    return { track, audio_ok: Boolean(signed.data?.signedUrl && !signed.error), error: signed.error?.message || "" };
+  }));
+  const brokenTracks = trackChecks.filter((item) => item.track.status === "active" && !item.audio_ok);
 
   await trackFunctionEvent(supabase, {
     function_name: "admin-status",
@@ -208,6 +225,17 @@ exports.handler = async (event) => {
         liveNow,
       },
       pendingMessages: pendingRes.count || 0,
+      health: {
+        pendingMembers: pendingMembersRes.count || 0,
+        tracksChecked: trackChecks.length,
+        brokenAudioCount: brokenTracks.length,
+        brokenAudio: brokenTracks.slice(0, 8).map((item) => ({
+          id: item.track.id,
+          title: item.track.title,
+          storage_path: item.track.storage_path || "",
+          error: item.error || "audio_unavailable",
+        })),
+      },
       functions: summaryByFunction,
     }),
   };

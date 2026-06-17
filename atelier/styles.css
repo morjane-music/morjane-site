@@ -425,6 +425,14 @@ button.ghost {
   text-transform: uppercase;
 }
 
+.season-note__memory {
+  margin-top: 7px !important;
+  color: rgba(232, 223, 211, 0.62);
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.06rem;
+  font-style: italic;
+}
+
 .acte-chooser {
   display: flex;
   flex-wrap: wrap;
@@ -1323,6 +1331,42 @@ body.admin-compact .admin-note-input {
   border: 1px solid rgba(201, 152, 82, 0.22);
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.34);
+}
+
+.admin-preview-box {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid rgba(201, 152, 82, 0.18);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.admin-preview-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-preview-controls select {
+  min-width: 150px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.42);
+  color: var(--ink);
+  padding: 8px 10px;
+}
+
+.admin-preview-list {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-preview-line {
+  margin: 0;
+  color: rgba(232, 223, 211, 0.78);
+  font-size: 13px;
 }
 
 .admin-track-create h3 {

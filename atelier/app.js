@@ -39,7 +39,11 @@ const adminTrackSeasonSelect = document.getElementById("adminTrackSeasonSelect")
 const adminTrackPathInput = document.getElementById("adminTrackPathInput");
 const adminTrackOrderInput = document.getElementById("adminTrackOrderInput");
 const adminTrackCreateStatus = document.getElementById("adminTrackCreateStatus");
+const adminPreviewSegment = document.getElementById("adminPreviewSegment");
+const adminPreviewStatus = document.getElementById("adminPreviewStatus");
+const adminPreviewList = document.getElementById("adminPreviewList");
 const adminSignalBoard = document.getElementById("adminSignalBoard");
+const exportSignalCsvBtn = document.getElementById("exportSignalCsvBtn");
 const adminStatusPanel = document.getElementById("adminStatusPanel");
 const adminAuditLog = document.getElementById("adminAuditLog");
 const adminLiveListeners = document.getElementById("adminLiveListeners");
@@ -91,6 +95,7 @@ let playLoggedForCurrentTrack = false;
 let watermarkTimer = null;
 let adminMembersCache = [];
 let adminInboxCache = [];
+let adminTrackCache = [];
 let adminLastSeenIso = null;
 let adminInboxUnreadOnly = false;
 let adminViewMode = "pending";
@@ -107,6 +112,7 @@ const adminTodayState = {
   activeMembers7d: 0,
 };
 const ADMIN_DENSITY_STORAGE_KEY = "atelier_admin_compact_density";
+const ATELIER_LAST_VISIT_STORAGE_KEY = "atelier_last_visit_at";
 const ADMIN_MEMBER_STATUS_LABELS = {
   new: "nouveau",
   waiting: "à relancer",
@@ -389,8 +395,8 @@ function getTrackSeason(track) {
   const nestedSeason = track?.atelier_seasons || track?.season || null;
   const rawSeason = {
     id: nestedSeason?.id || track?.season_id || 0,
-    slug: nestedSeason?.slug || "",
-    title: nestedSeason?.title || "",
+    slug: nestedSeason?.slug || track?.season_slug || "",
+    title: nestedSeason?.title || track?.season_title || "",
     description: nestedSeason?.description || "",
     sort_order: Number(nestedSeason?.sort_order || track?.season_id || 0),
   };
@@ -517,6 +523,28 @@ function normalizeAudienceSegment(value) {
 
 function getAudienceSegmentCopy(value) {
   return AUDIENCE_SEGMENT_COPY[normalizeAudienceSegment(value)] || AUDIENCE_SEGMENT_COPY.public;
+}
+
+function getLastVisitMemoryLine() {
+  try {
+    const previous = localStorage.getItem(ATELIER_LAST_VISIT_STORAGE_KEY);
+    if (!previous) return "";
+    const previousDate = new Date(previous);
+    if (Number.isNaN(previousDate.getTime())) return "";
+    const days = Math.floor((Date.now() - previousDate.getTime()) / (24 * 60 * 60 * 1000));
+    if (days < 1) return "";
+    return days === 1 ? "Tu étais déjà passé ici hier." : `Tu étais déjà passé ici il y a ${days} jours.`;
+  } catch (_) {
+    return "";
+  }
+}
+
+function rememberAtelierVisit() {
+  try {
+    localStorage.setItem(ATELIER_LAST_VISIT_STORAGE_KEY, new Date().toISOString());
+  } catch (_) {
+    // ignore storage errors
+  }
 }
 
 function getMemberSource(member) {
@@ -1273,6 +1301,43 @@ function renderAdminSignalBoard() {
   });
 }
 
+function exportSignalCsv() {
+  const rows = [["morceau", "signal_dominant", "signaux_faibles", "meilleur_retour", "doute"]];
+  const byTrack = new Map();
+  adminInboxCache.forEach((item) => {
+    const title = item.track_title || "Maquette";
+    if (!byTrack.has(title)) {
+      byTrack.set(title, { title, tags: new Map(), messages: [] });
+    }
+    const bucket = byTrack.get(title);
+    (item.feedback_tags || []).forEach((tag) => bucket.tags.set(tag, (bucket.tags.get(tag) || 0) + 1));
+    if (item.content) bucket.messages.push(item);
+  });
+
+  [...byTrack.values()].forEach((track) => {
+    const topTag = [...track.tags.entries()].sort((a, b) => b[1] - a[1])[0];
+    const best = [...track.messages].sort((a, b) => String(b.content || "").length - String(a.content || "").length)[0];
+    const doubt = track.messages.find((item) => (item.feedback_tags || []).includes("doubt") || (item.feedback_tags || []).includes("weak"));
+    const weakSignals = getRecurringTerms(track.messages).map(([word, count]) => `${word} (${count})`).join(", ");
+    rows.push([
+      formatTrackTitle(track.title),
+      topTag ? `${getFeedbackTagLabel(topTag[0])} (${topTag[1]})` : "",
+      weakSignals,
+      best?.content || "",
+      doubt?.content || "",
+    ]);
+  });
+
+  const csv = rows.map((row) => row.map((value) => `"${String(value || "").replace(/"/g, "\"\"")}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `atelier-signaux-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 function renderWaveNote() {
   if (!memberWaveNote) {
     return;
@@ -1286,6 +1351,13 @@ function renderWaveNote() {
   body.textContent = `${segment.welcome} Ton écoute aide à voir ce qui tient, ce qui manque et ce qui reste.`;
   memberWaveNote.appendChild(title);
   memberWaveNote.appendChild(body);
+  const memoryLine = getLastVisitMemoryLine();
+  if (memoryLine) {
+    const memory = document.createElement("p");
+    memory.className = "season-note__memory";
+    memory.textContent = memoryLine;
+    memberWaveNote.appendChild(memory);
+  }
   show(memberWaveNote);
 }
 
@@ -1710,6 +1782,48 @@ function getTrackAccessSummary(track) {
   return parts.length ? parts.join(" | ") : "Visible pour tous les membres validés.";
 }
 
+function canPreviewAccessTrack(track, segment, status) {
+  if (track.status !== "active" || !track.audio_ok) {
+    return false;
+  }
+  const allowedSegments = track.allowed_audience_segments || [];
+  const allowedStatuses = track.allowed_member_statuses || [];
+  if (allowedSegments.length && !allowedSegments.includes(segment)) {
+    return false;
+  }
+  if (allowedStatuses.length && !allowedStatuses.includes(status)) {
+    return false;
+  }
+  if (["acte-0", "hors-acte"].includes(track.season_slug)) {
+    return segment === "proche" || status === "priority" || status === "founder";
+  }
+  return true;
+}
+
+function renderAdminProfilePreview() {
+  if (!adminPreviewList) {
+    return;
+  }
+  const segment = adminPreviewSegment?.value || "public";
+  const status = adminPreviewStatus?.value || "member";
+  const visibleTracks = adminTrackCache.filter((track) => canPreviewAccessTrack(track, segment, status));
+  adminPreviewList.innerHTML = "";
+  if (!visibleTracks.length) {
+    const empty = document.createElement("p");
+    empty.className = "muted";
+    empty.textContent = "Aucun morceau visible pour ce profil.";
+    adminPreviewList.appendChild(empty);
+    return;
+  }
+  groupTracksBySeason(visibleTracks).forEach((group) => {
+    const line = document.createElement("p");
+    line.className = "admin-preview-line";
+    const titles = group.tracks.map((track) => formatTrackTitle(track.title)).join(", ");
+    line.textContent = `${formatSeasonTitle(group.season)} : ${titles}`;
+    adminPreviewList.appendChild(line);
+  });
+}
+
 async function copyTextToClipboard(text, button, restoredLabel) {
   try {
     await navigator.clipboard.writeText(text);
@@ -1726,7 +1840,9 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
   if (!adminTrackCockpit) {
     return;
   }
+  adminTrackCache = Array.isArray(tracks) ? tracks : [];
   renderAdminTrackCreateForm(seasons);
+  renderAdminProfilePreview();
   if (!tracks.length) {
     adminTrackCockpit.innerHTML = "<p class=\"muted\">Aucun morceau trouvé.</p>";
     return;
@@ -2078,6 +2194,7 @@ function renderAdminStatus(data) {
   const magic = data?.magicLinks || {};
   const pending = Number(data?.pendingMessages || 0);
   const today = data?.today || {};
+  const health = data?.health || {};
   const functions = Array.isArray(data?.functions) ? data.functions.slice(0, 6) : [];
   adminTodayState.pendingMessages = pending;
   adminTodayState.playsToday = Number(today.playsToday || 0);
@@ -2093,6 +2210,8 @@ function renderAdminStatus(data) {
     ["admin-status-meta", `Echecs fonctions 24h : ${uptime.errors24h || 0}/${uptime.total24h || 0} (${Math.round((uptime.failureRate24h || 0) * 100)}%)`],
     ["admin-status-meta", `Liens magiques (7 jours) : ${magic.sent || 0} envoyés, ${magic.error || 0} en erreur`],
     ["admin-status-meta", `Messages non traités : ${pending}`],
+    ["admin-status-meta", `Demandes en attente : ${health.pendingMembers || 0}`],
+    ["admin-status-meta", `Audios actifs à corriger : ${health.brokenAudioCount || 0}/${health.tracksChecked || 0}`],
   ].forEach(([className, text]) => {
     const line = document.createElement("p");
     line.className = className;
@@ -2100,6 +2219,20 @@ function renderAdminStatus(data) {
     top.appendChild(line);
   });
   adminStatusPanel.appendChild(top);
+
+  (health.brokenAudio || []).forEach((track) => {
+    const card = document.createElement("article");
+    card.className = "admin-status-item";
+    const title = document.createElement("p");
+    title.className = "admin-status-title";
+    title.textContent = `Audio à corriger : ${formatTrackTitle(track.title)}`;
+    const meta = document.createElement("p");
+    meta.className = "admin-status-meta";
+    meta.textContent = track.storage_path || "chemin absent";
+    card.appendChild(title);
+    card.appendChild(meta);
+    adminStatusPanel.appendChild(card);
+  });
 
   functions.forEach((fn) => {
     const card = document.createElement("article");
@@ -2728,6 +2861,7 @@ async function loadTracks(options = {}) {
 
   memberMeta.textContent = `Bienvenue, ${getMemberDisplayName()} - ${getAudienceStatusLabel(profile.member_status)}`;
   renderWaveNote();
+  rememberAtelierVisit();
   await loadMemberPersonalStats();
 
   if (tracks.length === 0) {
@@ -3383,6 +3517,14 @@ if (adminTrackCreateForm) {
   });
 }
 
+if (adminPreviewSegment) {
+  adminPreviewSegment.addEventListener("change", renderAdminProfilePreview);
+}
+
+if (adminPreviewStatus) {
+  adminPreviewStatus.addEventListener("change", renderAdminProfilePreview);
+}
+
 if (copyAtelierLinkBtn) {
   copyAtelierLinkBtn.addEventListener("click", async () => {
     const atelierUrl = `${window.location.origin}/atelier/`;
@@ -3461,6 +3603,10 @@ document.querySelectorAll("[data-admin-section]").forEach((button) => {
 
 if (exportInboxCsvBtn) {
   exportInboxCsvBtn.addEventListener("click", exportInboxCsv);
+}
+
+if (exportSignalCsvBtn) {
+  exportSignalCsvBtn.addEventListener("click", exportSignalCsv);
 }
 
 if (adminUnlockForm) {

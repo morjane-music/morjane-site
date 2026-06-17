@@ -95,15 +95,38 @@ async function sendInvitationEmail(email, actionLink, status, segment) {
     || process.env.RESEND_FROM_EMAIL
     || "Atelier Morjane <atelier@morjane.re>";
   const subject = "Morjane t'ouvre l'Atelier";
+  const segmentCopy = {
+    public: {
+      line: "Tu entres dans un cercle d'ecoute prive, avant la sortie des chansons.",
+      note: "Ecoute avec instinct. Ce qui reste compte plus qu'un avis parfait.",
+    },
+    proche: {
+      line: "Tu connais deja une partie de l'histoire. J'aimerais savoir ce qui reste apres l'ecoute.",
+      note: "Ta place ici est intime. Le lien reste personnel.",
+    },
+    artiste: {
+      line: "Tu connais la fabrication, les choix et les doutes. Ton regard m'aide sur la matiere.",
+      note: "Ecoute comme quelqu'un qui sait ce que ca coute de finir une chanson.",
+    },
+    pro: {
+      line: "Tu n'es pas ici pour me faire plaisir. Regarde ce qui tient aujourd'hui.",
+      note: "Ton retour peut rester direct, concret, utile.",
+    },
+  }[segment] || {
+    line: "Tu entres dans un cercle d'ecoute prive, avant la sortie des chansons.",
+    note: "Ecoute avec instinct.",
+  };
   const statusLine = status === "priority" ? "Ton acces prioritaire est pret." : "Ton acces est pret.";
   const text = [
     "Morjane t'ouvre l'Atelier.",
     "",
     statusLine,
+    segmentCopy.line,
     "Tu peux entrer avec ce lien :",
     actionLink,
     "",
     `Profil d'ecoute : ${segment}`,
+    segmentCopy.note,
     "",
     "Le lien reste personnel. Ne le transfere pas.",
   ].join("\n");
@@ -112,10 +135,11 @@ async function sendInvitationEmail(email, actionLink, status, segment) {
       <p style="color:#c99852;letter-spacing:.12em;text-transform:uppercase;margin:0 0 16px">Atelier Morjane</p>
       <h1 style="font-size:22px;margin:0 0 14px">Morjane t'ouvre l'Atelier.</h1>
       <p style="color:#c8bcae;line-height:1.6">${statusLine}</p>
+      <p style="color:#f4efe7;line-height:1.6">${segmentCopy.line}</p>
       <p style="margin:24px 0">
         <a href="${actionLink}" style="display:inline-block;border:1px solid #c99852;color:#f4efe7;text-decoration:none;padding:12px 16px;border-radius:999px">Entrer dans l'Atelier</a>
       </p>
-      <p style="color:#9d9183;font-size:13px;line-height:1.6">Profil d'ecoute : ${segment}. Le lien reste personnel. Ne le transfere pas.</p>
+      <p style="color:#9d9183;font-size:13px;line-height:1.6">Profil d'ecoute : ${segment}. ${segmentCopy.note} Le lien reste personnel. Ne le transfere pas.</p>
     </div>
   `;
 
