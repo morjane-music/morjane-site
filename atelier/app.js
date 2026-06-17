@@ -70,6 +70,9 @@ const trackLikeCount = document.getElementById("trackLikeCount");
 const trackLikeBtn = document.getElementById("trackLikeBtn");
 const player = document.getElementById("player");
 const trackWatermark = document.getElementById("trackWatermark");
+const listeningChamber = document.getElementById("listeningChamber");
+const listeningChamberText = document.getElementById("listeningChamberText");
+const traceRevealBtn = document.getElementById("traceRevealBtn");
 const voteStatus = document.getElementById("voteStatus");
 const messageStatus = document.getElementById("messageStatus");
 const privateMessage = document.getElementById("privateMessage");
@@ -93,6 +96,7 @@ let trackPlayCounts = new Map();
 let trackLikeCounts = new Map();
 let userLikedTrackIds = new Set();
 let playLoggedForCurrentTrack = false;
+let listeningQuestionShown = false;
 let watermarkTimer = null;
 let adminMembersCache = [];
 let adminInboxCache = [];
@@ -2707,6 +2711,42 @@ if (player) {
   player.addEventListener("contextmenu", (event) => event.preventDefault());
 }
 
+function resetListeningChamber() {
+  listeningQuestionShown = false;
+  document.body.classList.remove("is-question-ready");
+  if (listeningChamber) {
+    listeningChamber.dataset.state = "listening";
+  }
+  if (listeningChamberText) {
+    listeningChamberText.textContent = "Écoute.";
+  }
+  if (traceRevealBtn) {
+    hide(traceRevealBtn);
+  }
+}
+
+function updateListeningChamber() {
+  if (!player || !listeningChamberText || listeningQuestionShown || player.currentTime < 45) {
+    return;
+  }
+
+  listeningQuestionShown = true;
+  listeningChamberText.textContent = "Qu'est-ce qui reste ?";
+  document.body.classList.add("is-question-ready");
+  if (listeningChamber) {
+    listeningChamber.dataset.state = "question";
+  }
+  if (traceRevealBtn) {
+    show(traceRevealBtn);
+  }
+}
+
+function leaveListeningChamber() {
+  document.body.classList.remove("is-listening");
+  document.body.classList.remove("atelier-listening");
+  resetListeningChamber();
+}
+
 function formatWatermarkDate(date) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
@@ -2752,8 +2792,7 @@ function stopWatermark() {
     trackWatermark.classList.remove("is-active");
     hide(trackWatermark);
   }
-  document.body.classList.remove("is-listening");
-  document.body.classList.remove("atelier-listening");
+  leaveListeningChamber();
 }
 
 function startWatermark() {
@@ -3237,6 +3276,7 @@ async function selectTrack(trackId) {
   messageStatus.textContent = "";
   renderMemberReplies([]);
   privateMessage.value = "";
+  resetListeningChamber();
   playLoggedForCurrentTrack = false;
   player.pause();
   player.removeAttribute("src");
@@ -3568,7 +3608,10 @@ if (player) {
       playLoggedForCurrentTrack = false;
     }
   });
-  player.addEventListener("timeupdate", logQualifiedPlay);
+  player.addEventListener("timeupdate", () => {
+    logQualifiedPlay();
+    updateListeningChamber();
+  });
 }
 
 if (tabPendingBtn && tabMembersBtn) {
@@ -3744,6 +3787,12 @@ if (adminUnlockForm) {
 if (trackLikeBtn) {
   trackLikeBtn.addEventListener("click", async () => {
     await toggleTrackLike();
+  });
+}
+
+if (traceRevealBtn && messageForm) {
+  traceRevealBtn.addEventListener("click", () => {
+    messageForm.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 }
 

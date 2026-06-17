@@ -285,6 +285,12 @@
       <div id="trackWatermark" class="track-watermark hidden" aria-hidden="true"></div>
       <div class="atelier-player-frame">
         <p class="atelier-player-frame__whisper">Version ouverte. Écoute avant qu'elle se fige.</p>
+        <div id="listeningChamber" class="listening-chamber" aria-live="polite">
+          <span class="listening-chamber__line listening-chamber__line--one" aria-hidden="true"></span>
+          <span class="listening-chamber__line listening-chamber__line--two" aria-hidden="true"></span>
+          <p id="listeningChamberText" class="listening-chamber__text">Écoute.</p>
+          <button id="traceRevealBtn" type="button" class="listening-chamber__trace hidden">Laisser une trace</button>
+        </div>
         <audio id="player" controls controlslist="nodownload noplaybackrate nofullscreen noremoteplayback" disableremoteplayback disablepictureinpicture preload="none"></audio>
       </div>
       <div class="listening-guide">
