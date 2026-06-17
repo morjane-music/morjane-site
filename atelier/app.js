@@ -33,6 +33,12 @@ const toggleUnreadOnlyBtn = document.getElementById("toggleUnreadOnlyBtn");
 const exportInboxCsvBtn = document.getElementById("exportInboxCsvBtn");
 const adminVotesSummary = document.getElementById("adminVotesSummary");
 const adminTrackCockpit = document.getElementById("adminTrackCockpit");
+const adminTrackCreateForm = document.getElementById("adminTrackCreateForm");
+const adminTrackTitleInput = document.getElementById("adminTrackTitleInput");
+const adminTrackSeasonSelect = document.getElementById("adminTrackSeasonSelect");
+const adminTrackPathInput = document.getElementById("adminTrackPathInput");
+const adminTrackOrderInput = document.getElementById("adminTrackOrderInput");
+const adminTrackCreateStatus = document.getElementById("adminTrackCreateStatus");
 const adminSignalBoard = document.getElementById("adminSignalBoard");
 const adminStatusPanel = document.getElementById("adminStatusPanel");
 const adminAuditLog = document.getElementById("adminAuditLog");
@@ -1602,16 +1608,66 @@ async function loadAdminVotesSummary() {
   }
 }
 
-function renderAdminTrackCockpit(tracks = []) {
+function renderAdminTrackCreateForm(seasons = []) {
+  if (!adminTrackSeasonSelect) {
+    return;
+  }
+  const current = adminTrackSeasonSelect.value;
+  adminTrackSeasonSelect.innerHTML = "";
+  seasons.forEach((season) => {
+    const option = document.createElement("option");
+    option.value = season.slug || "";
+    option.textContent = season.title || season.slug || "Acte";
+    adminTrackSeasonSelect.appendChild(option);
+  });
+  if (current && Array.from(adminTrackSeasonSelect.options).some((option) => option.value === current)) {
+    adminTrackSeasonSelect.value = current;
+  }
+}
+
+function createTrackInput(labelText, value, type = "text") {
+  const label = document.createElement("label");
+  label.textContent = labelText;
+  const input = document.createElement("input");
+  input.type = type;
+  input.value = value || "";
+  label.appendChild(input);
+  label.input = input;
+  return label;
+}
+
+function createSeasonSelect(seasons, value) {
+  const label = document.createElement("label");
+  label.textContent = "Acte";
+  const select = document.createElement("select");
+  seasons.forEach((season) => {
+    const option = document.createElement("option");
+    option.value = season.slug || "";
+    option.textContent = season.title || season.slug || "Acte";
+    select.appendChild(option);
+  });
+  select.value = value || seasons[0]?.slug || "";
+  label.appendChild(select);
+  label.select = select;
+  return label;
+}
+
+function renderAdminTrackCockpit(tracks = [], seasons = []) {
   if (!adminTrackCockpit) {
     return;
   }
+  renderAdminTrackCreateForm(seasons);
   if (!tracks.length) {
     adminTrackCockpit.innerHTML = "<p class=\"muted\">Aucun morceau trouvé.</p>";
     return;
   }
 
   adminTrackCockpit.innerHTML = "";
+  const missingAudioCount = tracks.filter((track) => !track.audio_ok).length;
+  const summary = document.createElement("p");
+  summary.className = "admin-field-help";
+  summary.textContent = `${tracks.length} morceaux | ${missingAudioCount} audio à vérifier`;
+  adminTrackCockpit.appendChild(summary);
   tracks.forEach((track) => {
     const card = document.createElement("article");
     card.className = "admin-track-item";
@@ -1642,6 +1698,17 @@ function renderAdminTrackCockpit(tracks = []) {
     headContent.appendChild(audioStatus);
     head.appendChild(headContent);
 
+    const fields = document.createElement("div");
+    fields.className = "admin-track-fields";
+    const titleField = createTrackInput("Titre", track.title);
+    const seasonField = createSeasonSelect(seasons, track.season_slug);
+    const pathField = createTrackInput("Chemin audio", track.storage_path);
+    const orderField = createTrackInput("Ordre", track.sort_order, "number");
+    fields.appendChild(titleField);
+    fields.appendChild(seasonField);
+    fields.appendChild(pathField);
+    fields.appendChild(orderField);
+
     const statusLabel = document.createElement("label");
     statusLabel.textContent = "Statut artistique";
     const status = document.createElement("select");
@@ -1657,6 +1724,20 @@ function renderAdminTrackCockpit(tracks = []) {
       option.value = value;
       option.textContent = label;
       status.appendChild(option);
+    });
+
+    const visibilityLabel = document.createElement("label");
+    visibilityLabel.textContent = "Visibilité";
+    const visibility = document.createElement("select");
+    [
+      ["active", "Visible"],
+      ["draft", "Caché"],
+      ["archived", "Archivé"],
+    ].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      visibility.appendChild(option);
     });
 
     const intentLabel = document.createElement("label");
@@ -1703,10 +1784,16 @@ function renderAdminTrackCockpit(tracks = []) {
     save.textContent = "Enregistrer";
 
     status.value = track.decision_status || "testing";
+    visibility.value = track.status || "active";
     intent.value = track.intent_note || "";
     question.value = track.feedback_question || "";
     save.addEventListener("click", async () => {
       await updateTrackCockpit(track.id, {
+        title: titleField.input.value,
+        season_slug: seasonField.select.value,
+        storage_path: pathField.input.value,
+        sort_order: orderField.input.value,
+        status: visibility.value,
         decision_status: status.value,
         intent_note: intent.value,
         feedback_question: question.value,
@@ -1715,6 +1802,9 @@ function renderAdminTrackCockpit(tracks = []) {
       });
     });
     card.appendChild(head);
+    card.appendChild(fields);
+    card.appendChild(visibilityLabel);
+    card.appendChild(visibility);
     card.appendChild(statusLabel);
     card.appendChild(status);
     card.appendChild(accessTitle);
@@ -1744,7 +1834,10 @@ async function loadAdminTrackCockpit() {
       adminTrackCockpit.innerHTML = `<p class="muted">Impossible de charger (${data.error || res.status}).</p>`;
       return;
     }
-    renderAdminTrackCockpit(Array.isArray(data.tracks) ? data.tracks : []);
+    renderAdminTrackCockpit(
+      Array.isArray(data.tracks) ? data.tracks : [],
+      Array.isArray(data.seasons) ? data.seasons : []
+    );
   } catch (_) {
     adminTrackCockpit.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
   }
@@ -1764,13 +1857,61 @@ async function updateTrackCockpit(trackId, payload) {
       body: JSON.stringify({ trackId, ...payload }),
     });
     if (!res.ok) {
+      if (adminTrackCreateStatus) adminTrackCreateStatus.textContent = "Mise à jour impossible.";
       return;
     }
+    if (adminTrackCreateStatus) adminTrackCreateStatus.textContent = "Morceau mis à jour.";
     await loadAdminTrackCockpit();
     await loadTracks({ preserveTrackView: true });
     await loadAdminAuditLog();
   } catch (_) {
-    // no-op
+    if (adminTrackCreateStatus) adminTrackCreateStatus.textContent = "Erreur réseau.";
+  }
+}
+
+async function createAdminTrack() {
+  if (!canManageMembers() || !session?.access_token) {
+    return;
+  }
+  const title = adminTrackTitleInput?.value.trim() || "";
+  const storagePath = adminTrackPathInput?.value.trim() || "";
+  const seasonSlug = adminTrackSeasonSelect?.value || "";
+  if (!title || !storagePath || !seasonSlug) {
+    if (adminTrackCreateStatus) adminTrackCreateStatus.textContent = "Titre, acte et chemin audio sont requis.";
+    return;
+  }
+  if (adminTrackCreateStatus) adminTrackCreateStatus.textContent = "Ajout du morceau...";
+  try {
+    const res = await fetch("/.netlify/functions/admin-track-cockpit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        action: "create",
+        title,
+        storage_path: storagePath,
+        season_slug: seasonSlug,
+        sort_order: adminTrackOrderInput?.value || 0,
+        status: "active",
+        decision_status: "testing",
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (adminTrackCreateStatus) adminTrackCreateStatus.textContent = `Ajout impossible (${data.error || res.status}).`;
+      return;
+    }
+    if (adminTrackCreateStatus) adminTrackCreateStatus.textContent = "Morceau ajouté.";
+    if (adminTrackTitleInput) adminTrackTitleInput.value = "";
+    if (adminTrackPathInput) adminTrackPathInput.value = "";
+    if (adminTrackOrderInput) adminTrackOrderInput.value = "";
+    await loadAdminTrackCockpit();
+    await loadTracks({ preserveTrackView: true });
+    await loadAdminAuditLog();
+  } catch (_) {
+    if (adminTrackCreateStatus) adminTrackCreateStatus.textContent = "Erreur réseau.";
   }
 }
 
@@ -3111,6 +3252,13 @@ if (adminInviteForm) {
   adminInviteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     await sendAdminInvite();
+  });
+}
+
+if (adminTrackCreateForm) {
+  adminTrackCreateForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await createAdminTrack();
   });
 }
 

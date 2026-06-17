@@ -54,9 +54,30 @@ function cleanList(value, allowed) {
   return value.map((item) => String(item || "").trim()).filter((item) => allowed.includes(item));
 }
 
+function cleanText(value, maxLength) {
+  if (typeof value !== "string") return "";
+  return value.trim().slice(0, maxLength);
+}
+
+function cleanInt(value, fallback = 0) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function hasMissingAccessColumns(error) {
   const text = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.toLowerCase();
   return text.includes("allowed_audience_segments") || text.includes("allowed_member_statuses");
+}
+
+async function getSeasonIdBySlug(supabase, slug) {
+  const safeSlug = cleanText(slug, 80);
+  if (!safeSlug) return null;
+  const result = await supabase
+    .from("atelier_seasons")
+    .select("id")
+    .eq("slug", safeSlug)
+    .maybeSingle();
+  return result.error ? null : result.data?.id || null;
 }
 
 exports.handler = async (event) => {
@@ -99,9 +120,13 @@ exports.handler = async (event) => {
       payload = {};
     }
 
+    const action = payload.action === "create" ? "create" : "update";
     const trackId = payload.trackId;
     const decisionStatus = payload.decision_status || "testing";
-    if (!trackId || !["testing", "kept", "rework", "paused", "released", "archived"].includes(decisionStatus)) {
+    const trackStatus = payload.status || "active";
+    if ((action === "update" && !trackId)
+      || !["testing", "kept", "rework", "paused", "released", "archived"].includes(decisionStatus)
+      || !["draft", "active", "archived"].includes(trackStatus)) {
       return {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
@@ -109,42 +134,68 @@ exports.handler = async (event) => {
       };
     }
 
-    const update = {
+    const seasonId = await getSeasonIdBySlug(supabase, payload.season_slug);
+    const baseFields = {
+      title: cleanText(payload.title, 160),
+      storage_path: cleanText(payload.storage_path, 500),
+      status: trackStatus,
+      sort_order: cleanInt(payload.sort_order, 0),
       decision_status: decisionStatus,
       intent_note: typeof payload.intent_note === "string" ? payload.intent_note.slice(0, 2000) : null,
       feedback_question: typeof payload.feedback_question === "string" ? payload.feedback_question.slice(0, 1000) : null,
       allowed_audience_segments: cleanList(payload.allowed_audience_segments, ["public", "proche", "artiste", "pro"]),
       allowed_member_statuses: cleanList(payload.allowed_member_statuses, ["member", "priority", "founder"]),
     };
+    if (seasonId) baseFields.season_id = seasonId;
 
-    const result = await supabase
-      .from("atelier_tracks")
-      .update(update)
-      .eq("id", trackId)
-      .select("id")
-      .maybeSingle();
+    if (action === "create" && (!baseFields.title || !baseFields.storage_path || !seasonId)) {
+      return {
+        statusCode: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ok: false, error: "missing_track_fields" }),
+      };
+    }
+
+    const result = action === "create"
+      ? await supabase
+          .from("atelier_tracks")
+          .insert(baseFields)
+          .select("id")
+          .maybeSingle()
+      : await supabase
+          .from("atelier_tracks")
+          .update(baseFields)
+          .eq("id", trackId)
+          .select("id")
+          .maybeSingle();
 
     if (result.error || !result.data) {
       await trackFunctionEvent(supabase, {
         function_name: "admin-track-cockpit",
         status: "error",
-        error_code: "update_failed",
+        error_code: action === "create" ? "create_failed" : "update_failed",
         latency_ms: Date.now() - startedAt,
-        meta: { track_id: trackId, message: result.error?.message || null },
+        meta: { track_id: trackId || null, message: result.error?.message || null },
       });
       return {
         statusCode: 500,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ok: false, error: "update_failed" }),
+        body: JSON.stringify({ ok: false, error: action === "create" ? "create_failed" : "update_failed" }),
       };
     }
 
     await supabase.from("atelier_admin_audit_logs").insert({
       admin_user_id: auth.adminUserId,
-      action: "track_cockpit_updated",
+      action: action === "create" ? "track_created" : "track_cockpit_updated",
       target_type: "atelier_track",
-      target_id: trackId,
-      details: { decision_status: decisionStatus },
+      target_id: result.data.id,
+      details: {
+        title: baseFields.title,
+        storage_path: baseFields.storage_path,
+        season_id: seasonId,
+        status: trackStatus,
+        decision_status: decisionStatus,
+      },
     });
 
     await trackFunctionEvent(supabase, {
@@ -169,12 +220,17 @@ exports.handler = async (event) => {
     };
   }
 
-  let [tracksRes, votesRes, playsRes, likesRes, messagesRes] = await Promise.all([
+  let [tracksRes, seasonsRes, votesRes, playsRes, likesRes, messagesRes] = await Promise.all([
     supabase
       .from("atelier_tracks")
-      .select("id, title, status, storage_path, intent_note, feedback_question, decision_status, created_at, allowed_audience_segments, allowed_member_statuses")
+      .select("id, season_id, title, status, storage_path, intent_note, feedback_question, decision_status, sort_order, created_at, allowed_audience_segments, allowed_member_statuses, atelier_seasons(id, slug, title, sort_order, status)")
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
-      .limit(20),
+      .limit(80),
+    supabase
+      .from("atelier_seasons")
+      .select("id, slug, title, description, status, sort_order")
+      .order("sort_order", { ascending: true }),
     supabase.from("atelier_votes").select("track_id, choice").limit(5000),
     supabase.from("atelier_track_plays").select("track_id").limit(5000),
     supabase.from("atelier_track_likes").select("track_id").limit(5000),
@@ -184,12 +240,13 @@ exports.handler = async (event) => {
   if (tracksRes.error && hasMissingAccessColumns(tracksRes.error)) {
     tracksRes = await supabase
       .from("atelier_tracks")
-      .select("id, title, status, storage_path, intent_note, feedback_question, decision_status, created_at")
+      .select("id, season_id, title, status, storage_path, intent_note, feedback_question, decision_status, sort_order, created_at, atelier_seasons(id, slug, title, sort_order, status)")
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
-      .limit(20);
+      .limit(80);
   }
 
-  if (tracksRes.error || votesRes.error || playsRes.error || likesRes.error || messagesRes.error) {
+  if (tracksRes.error || seasonsRes.error || votesRes.error || playsRes.error || likesRes.error || messagesRes.error) {
     await trackFunctionEvent(supabase, {
       function_name: "admin-track-cockpit",
       status: "error",
@@ -197,6 +254,7 @@ exports.handler = async (event) => {
       latency_ms: Date.now() - startedAt,
       meta: {
         tracks: tracksRes.error?.message || null,
+        seasons: seasonsRes.error?.message || null,
         votes: votesRes.error?.message || null,
         plays: playsRes.error?.message || null,
         likes: likesRes.error?.message || null,
@@ -233,12 +291,16 @@ exports.handler = async (event) => {
       id: track.id,
       title: track.title,
       status: track.status,
+      season_id: track.season_id || null,
+      season_slug: track.atelier_seasons?.slug || "",
+      season_title: track.atelier_seasons?.title || "",
       storage_path: track.storage_path || "",
       audio_ok: Boolean(signed.data?.signedUrl && !signed.error),
       audio_error: signed.error?.message || "",
       intent_note: track.intent_note || "",
       feedback_question: track.feedback_question || "",
       decision_status: track.decision_status || "testing",
+      sort_order: Number(track.sort_order || 0),
       allowed_audience_segments: track.allowed_audience_segments || [],
       allowed_member_statuses: track.allowed_member_statuses || [],
       votes: votesByTrack.get(track.id) || { develop: 0, revise: 0, leave: 0 },
@@ -258,6 +320,6 @@ exports.handler = async (event) => {
   return {
     statusCode: 200,
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-    body: JSON.stringify({ ok: true, tracks }),
+    body: JSON.stringify({ ok: true, tracks, seasons: seasonsRes.data || [] }),
   };
 };

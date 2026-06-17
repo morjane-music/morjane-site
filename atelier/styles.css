@@ -1315,6 +1315,43 @@ body.admin-compact .admin-note-input {
   gap: 10px;
 }
 
+.admin-track-create {
+  display: grid;
+  gap: 9px;
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid rgba(201, 152, 82, 0.22);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.admin-track-create h3 {
+  margin: 0;
+}
+
+.admin-track-create-grid,
+.admin-track-fields {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(100px, 0.7fr) minmax(180px, 1.4fr) minmax(70px, 0.35fr) auto;
+  gap: 8px;
+}
+
+.admin-track-fields {
+  grid-template-columns: minmax(130px, 1fr) minmax(100px, 0.7fr) minmax(180px, 1.4fr) minmax(70px, 0.35fr);
+}
+
+.admin-track-create input,
+.admin-track-create select,
+.admin-track-fields input,
+.admin-track-fields select {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.42);
+  color: var(--ink);
+  padding: 8px 10px;
+}
+
 .admin-track-head {
   display: flex;
   justify-content: space-between;
@@ -1939,6 +1976,11 @@ body.atelier-listening .atelier-player-frame {
   }
 
   .admin-invite-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-track-create-grid,
+  .admin-track-fields {
     grid-template-columns: 1fr;
   }
 

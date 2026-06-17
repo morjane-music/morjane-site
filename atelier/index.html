@@ -201,6 +201,17 @@
         <p class="muted">Chargement des votes...</p>
       </div>
       <h3>Accès par morceau</h3>
+      <form id="adminTrackCreateForm" class="admin-track-create">
+        <h3>Ajouter un morceau</h3>
+        <div class="admin-track-create-grid">
+          <input id="adminTrackTitleInput" type="text" placeholder="Titre public">
+          <select id="adminTrackSeasonSelect" aria-label="Acte"></select>
+          <input id="adminTrackPathInput" type="text" placeholder="Acte I/Nom du fichier.mp3">
+          <input id="adminTrackOrderInput" type="number" min="0" step="1" placeholder="Ordre">
+          <button type="submit" class="ghost">Ajouter</button>
+        </div>
+        <p id="adminTrackCreateStatus" class="muted"></p>
+      </form>
       <div id="adminTrackCockpit" class="admin-track-cockpit">
         <p class="muted">Chargement des accès...</p>
       </div>
