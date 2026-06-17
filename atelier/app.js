@@ -1668,7 +1668,7 @@ function buildExpectedTrackPath(title, seasonSlug, currentPath = "") {
   return `${getSeasonFolderFromSlug(seasonSlug)}/${safeTitle}${existingExtension}`;
 }
 
-function formatShortDate(value) {
+function formatAdminShortDate(value) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
@@ -1766,8 +1766,8 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     visibilitySummary.textContent = getTrackAccessSummary(track);
     const history = document.createElement("p");
     history.className = "admin-track-history";
-    const created = formatShortDate(track.created_at);
-    const changed = formatShortDate(track.last_admin_action_at);
+    const created = formatAdminShortDate(track.created_at);
+    const changed = formatAdminShortDate(track.last_admin_action_at);
     history.textContent = [
       created ? `Créé le ${created}` : "",
       track.last_admin_action && changed ? `Dernière action : ${track.last_admin_action} (${changed})` : "",
