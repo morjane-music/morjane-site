@@ -3,8 +3,8 @@
 
 insert into public.atelier_seasons (slug, title, description, status, sort_order)
 values
-  ('acte-0', 'ACTE 0', 'Ce qui etait la avant.', 'active', 30),
-  ('hors-acte', 'HORS ACTE', 'Les chansons autour du seuil.', 'active', 40)
+  ('acte-0', 'ACTE 0', 'Les premieres formes, avant le seuil.', 'active', 30),
+  ('hors-acte', 'HORS ACTE', 'Ce qui gravite autour sans demander sa place.', 'active', 40)
 on conflict (slug) do update
 set
   title = excluded.title,

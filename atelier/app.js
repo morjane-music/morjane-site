@@ -37,6 +37,7 @@ const adminTrackCreateForm = document.getElementById("adminTrackCreateForm");
 const adminTrackTitleInput = document.getElementById("adminTrackTitleInput");
 const adminTrackSeasonSelect = document.getElementById("adminTrackSeasonSelect");
 const adminTrackPathInput = document.getElementById("adminTrackPathInput");
+const adminTrackAudioSelect = document.getElementById("adminTrackAudioSelect");
 const adminTrackOrderInput = document.getElementById("adminTrackOrderInput");
 const adminTrackCreateStatus = document.getElementById("adminTrackCreateStatus");
 const adminPreviewSegment = document.getElementById("adminPreviewSegment");
@@ -96,6 +97,7 @@ let watermarkTimer = null;
 let adminMembersCache = [];
 let adminInboxCache = [];
 let adminTrackCache = [];
+let adminAudioFilesCache = [];
 let adminLastSeenIso = null;
 let adminInboxUnreadOnly = false;
 let adminViewMode = "pending";
@@ -110,6 +112,8 @@ const adminTodayState = {
   pendingMessages: 0,
   playsToday: 0,
   activeMembers7d: 0,
+  pendingMembers: 0,
+  brokenAudioCount: 0,
 };
 const ADMIN_DENSITY_STORAGE_KEY = "atelier_admin_compact_density";
 const ATELIER_LAST_VISIT_STORAGE_KEY = "atelier_last_visit_at";
@@ -169,26 +173,26 @@ const ATELIER_ACTES = [
   {
     slug: "acte-i",
     title: "ACTE I",
-    description: "Le premier seuil.",
+    description: "Ce qui ouvre la faille.",
     sort_order: 10,
   },
   {
     slug: "acte-ii",
     title: "ACTE II",
-    description: "Ce qui arrive.",
+    description: "Ce qui avance encore dans l'ombre.",
     sort_order: 20,
   },
   {
     slug: "acte-0",
     title: "ACTE 0",
-    description: "Ce qui était là avant.",
+    description: "Les premières formes, avant le seuil.",
     sort_order: 30,
     restricted: true,
   },
   {
     slug: "hors-acte",
     title: "HORS ACTE",
-    description: "Les chansons autour du seuil.",
+    description: "Ce qui gravite autour sans demander sa place.",
     sort_order: 40,
     restricted: true,
   },
@@ -719,6 +723,14 @@ function renderAdminTodayCards() {
     <article class="admin-weekly-card">
       <p class="admin-weekly-label">Membres actifs 7j</p>
       <p class="admin-weekly-value">${Number(adminTodayState.activeMembers7d || 0)}</p>
+    </article>
+    <article class="admin-weekly-card">
+      <p class="admin-weekly-label">Demandes à traiter</p>
+      <p class="admin-weekly-value">${Number(adminTodayState.pendingMembers || 0)}</p>
+    </article>
+    <article class="admin-weekly-card">
+      <p class="admin-weekly-label">Audios à corriger</p>
+      <p class="admin-weekly-value">${Number(adminTodayState.brokenAudioCount || 0)}</p>
     </article>
   `;
 }
@@ -1696,6 +1708,7 @@ function renderAdminTrackCreateForm(seasons = []) {
   if (current && Array.from(adminTrackSeasonSelect.options).some((option) => option.value === current)) {
     adminTrackSeasonSelect.value = current;
   }
+  renderAdminAudioSelect(adminTrackAudioSelect, adminTrackPathInput?.value || "");
 }
 
 function createTrackInput(labelText, value, type = "text") {
@@ -1725,6 +1738,37 @@ function createSeasonSelect(seasons, value) {
   return label;
 }
 
+function renderAdminAudioSelect(select, selectedPath = "") {
+  if (!select) {
+    return;
+  }
+  const current = selectedPath || select.value || "";
+  select.innerHTML = "";
+  const empty = document.createElement("option");
+  empty.value = "";
+  empty.textContent = "Choisir un fichier audio";
+  select.appendChild(empty);
+  adminAudioFilesCache.forEach((file) => {
+    const option = document.createElement("option");
+    option.value = file.path;
+    option.textContent = file.path;
+    select.appendChild(option);
+  });
+  if (current && Array.from(select.options).some((option) => option.value === current)) {
+    select.value = current;
+  }
+}
+
+function createAudioFileSelect(value) {
+  const label = document.createElement("label");
+  label.textContent = "Fichier Storage";
+  const select = document.createElement("select");
+  renderAdminAudioSelect(select, value);
+  label.appendChild(select);
+  label.select = select;
+  return label;
+}
+
 function getSeasonFolderFromSlug(slug) {
   return ({
     "acte-i": "Acte I",
@@ -1749,7 +1793,7 @@ function formatAdminShortDate(value) {
 
 function getTrackSimpleState(track) {
   if (track.status === "archived") return { label: "Archivé", className: "is-hidden" };
-  if (track.status === "draft") return { label: "Caché", className: "is-hidden" };
+  if (track.status === "draft") return { label: "Préparé", className: "is-hidden" };
   if (!track.audio_ok) return { label: "Audio à corriger", className: "is-warning" };
   if ((track.allowed_audience_segments || []).length || (track.allowed_member_statuses || []).length || ["acte-0", "hors-acte"].includes(track.season_slug)) {
     return { label: "Réservé", className: "is-reserved" };
@@ -1759,7 +1803,7 @@ function getTrackSimpleState(track) {
 
 function getTrackAccessSummary(track) {
   if (track.status === "archived") return "Archivé : invisible pour le cercle.";
-  if (track.status === "draft") return "Caché : visible seulement en admin.";
+  if (track.status === "draft") return "Préparé mais caché : visible seulement en admin.";
   const segmentLabels = {
     public: "public",
     proche: "proches",
@@ -1780,6 +1824,20 @@ function getTrackAccessSummary(track) {
     return "Réservé par acte : proches, prioritaires et fondateurs.";
   }
   return parts.length ? parts.join(" | ") : "Visible pour tous les membres validés.";
+}
+
+function getTrackOpeningChecklist(track) {
+  const items = [
+    ["Titre", Boolean(String(track.title || "").trim())],
+    ["Audio", Boolean(track.audio_ok)],
+    ["Acte", Boolean(track.season_slug || track.season_id)],
+    ["Question", Boolean(String(track.feedback_question || "").trim())],
+    ["Visibilité", track.status === "active"],
+  ];
+  return {
+    items,
+    ready: items.every(([, ok]) => ok),
+  };
 }
 
 function canPreviewAccessTrack(track, segment, status) {
@@ -1902,15 +1960,36 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     stateBadge.textContent = simpleState.label;
     head.appendChild(stateBadge);
 
+    const checklistData = getTrackOpeningChecklist(track);
+    const checklist = document.createElement("div");
+    checklist.className = "admin-open-checklist";
+    const checklistTitle = document.createElement("p");
+    checklistTitle.className = `admin-open-checklist__title ${checklistData.ready ? "is-ready" : ""}`;
+    checklistTitle.textContent = checklistData.ready ? "Prêt à ouvrir" : "À compléter avant ouverture";
+    checklist.appendChild(checklistTitle);
+    checklistData.items.forEach(([label, ok]) => {
+      const item = document.createElement("span");
+      item.className = ok ? "is-ok" : "is-missing";
+      item.textContent = `${ok ? "OK" : "À faire"} · ${label}`;
+      checklist.appendChild(item);
+    });
+
     const fields = document.createElement("div");
     fields.className = "admin-track-fields";
     const titleField = createTrackInput("Titre", track.title);
     const seasonField = createSeasonSelect(seasons, track.season_slug);
     const pathField = createTrackInput("Chemin audio", track.storage_path);
+    const audioField = createAudioFileSelect(track.storage_path);
+    audioField.select.addEventListener("change", () => {
+      if (audioField.select.value) {
+        pathField.input.value = audioField.select.value;
+      }
+    });
     const orderField = createTrackInput("Ordre", track.sort_order, "number");
     fields.appendChild(titleField);
     fields.appendChild(seasonField);
     fields.appendChild(pathField);
+    fields.appendChild(audioField);
     fields.appendChild(orderField);
 
     const pathActions = document.createElement("div");
@@ -1957,8 +2036,8 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     visibilityLabel.textContent = "État public";
     const visibility = document.createElement("select");
     [
-      ["active", "Visible"],
-      ["draft", "Caché"],
+      ["active", "Visible au cercle"],
+      ["draft", "Préparé mais caché"],
       ["archived", "Archivé"],
     ].forEach(([value, label]) => {
       const option = document.createElement("option");
@@ -2029,6 +2108,7 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
       });
     });
     card.appendChild(head);
+    card.appendChild(checklist);
     card.appendChild(fields);
     card.appendChild(pathActions);
     card.appendChild(visibilityLabel);
@@ -2062,6 +2142,7 @@ async function loadAdminTrackCockpit() {
       adminTrackCockpit.innerHTML = `<p class="muted">Impossible de charger (${data.error || res.status}).</p>`;
       return;
     }
+    adminAudioFilesCache = Array.isArray(data.audioFiles) ? data.audioFiles : [];
     renderAdminTrackCockpit(
       Array.isArray(data.tracks) ? data.tracks : [],
       Array.isArray(data.seasons) ? data.seasons : []
@@ -2122,7 +2203,7 @@ async function createAdminTrack() {
         storage_path: storagePath,
         season_slug: seasonSlug,
         sort_order: adminTrackOrderInput?.value || 0,
-        status: "active",
+        status: "draft",
         decision_status: "testing",
       }),
     });
@@ -2131,7 +2212,7 @@ async function createAdminTrack() {
       if (adminTrackCreateStatus) adminTrackCreateStatus.textContent = `Ajout impossible (${data.error || res.status}).`;
       return;
     }
-    if (adminTrackCreateStatus) adminTrackCreateStatus.textContent = "Morceau ajouté.";
+    if (adminTrackCreateStatus) adminTrackCreateStatus.textContent = "Morceau préparé, encore caché.";
     if (adminTrackTitleInput) adminTrackTitleInput.value = "";
     if (adminTrackPathInput) adminTrackPathInput.value = "";
     if (adminTrackOrderInput) adminTrackOrderInput.value = "";
@@ -2152,7 +2233,7 @@ function renderMemberReplies(replies = []) {
     hide(memberReplies);
     return;
   }
-  memberReplies.innerHTML = "<p class=\"member-replies-title\">Mot de Morjane</p>";
+  memberReplies.innerHTML = "<p class=\"member-replies-title\">Morjane a laissé un mot</p>";
   replies.forEach((reply) => {
     const item = document.createElement("p");
     item.className = "member-reply-item";
@@ -2200,6 +2281,8 @@ function renderAdminStatus(data) {
   adminTodayState.playsToday = Number(today.playsToday || 0);
   adminTodayState.activeMembers7d = Number(today.activeMembers7d || 0);
   adminTodayState.liveNow = Number(today.liveNow || adminTodayState.liveNow || 0);
+  adminTodayState.pendingMembers = Number(health.pendingMembers || 0);
+  adminTodayState.brokenAudioCount = Number(health.brokenAudioCount || 0);
   renderAdminTodayCards();
 
   adminStatusPanel.innerHTML = "";
@@ -2980,9 +3063,9 @@ function renderTrackLikeState() {
   }
   const isLiked = userLikedTrackIds.has(selectedTrack.id);
   trackLikeBtn.classList.toggle("is-active", isLiked);
-  trackLikeBtn.textContent = isLiked ? "♥ Trace cœur laissée" : "♡ Laisser une trace cœur";
+  trackLikeBtn.textContent = isLiked ? "♥ Marque laissée" : "♡ Marquer ce morceau";
   if (trackLikeCount) {
-    trackLikeCount.textContent = `Traces cœur du cercle : ${getTrackLikeCount(selectedTrack.id)}`;
+    trackLikeCount.textContent = `Marques du cercle : ${getTrackLikeCount(selectedTrack.id)}`;
   }
 }
 
@@ -3023,7 +3106,7 @@ function createTrackCard(track) {
 
   const meta = document.createElement("span");
   meta.className = "track-list__meta";
-  meta.textContent = `Écoutes du cercle : ${getTrackPlayCount(track.id)} · Traces cœur : ${getTrackLikeCount(track.id)}`;
+  meta.textContent = `Écoutes du cercle : ${getTrackPlayCount(track.id)} · Marques : ${getTrackLikeCount(track.id)}`;
 
   const hint = document.createElement("span");
   hint.className = "track-card__hint";
@@ -3514,6 +3597,18 @@ if (adminTrackCreateForm) {
   adminTrackCreateForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     await createAdminTrack();
+  });
+}
+
+if (adminTrackAudioSelect) {
+  adminTrackAudioSelect.addEventListener("change", () => {
+    if (adminTrackAudioSelect.value && adminTrackPathInput) {
+      adminTrackPathInput.value = adminTrackAudioSelect.value;
+    }
+    if (adminTrackAudioSelect.value && adminTrackTitleInput && !adminTrackTitleInput.value.trim()) {
+      const fileName = adminTrackAudioSelect.value.split("/").pop() || "";
+      adminTrackTitleInput.value = fileName.replace(/\.(m4a|mp3|wav|aac)$/i, "").replace(/\s+/g, " ").trim();
+    }
   });
 }
 

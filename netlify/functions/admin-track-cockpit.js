@@ -80,6 +80,29 @@ async function getSeasonIdBySlug(supabase, slug) {
   return result.error ? null : result.data?.id || null;
 }
 
+async function listAudioFiles(supabase) {
+  const folders = ["Acte I", "Acte II", "Acte 0", "Hors acte"];
+  const files = [];
+  await Promise.all(folders.map(async (folder) => {
+    const result = await supabase.storage.from("atelier-audio").list(folder, {
+      limit: 100,
+      sortBy: { column: "name", order: "asc" },
+    });
+    if (result.error) return;
+    (result.data || []).forEach((item) => {
+      if (!item.name || item.name.endsWith("/")) return;
+      if (!/\.(m4a|mp3|wav|aac)$/i.test(item.name)) return;
+      files.push({
+        name: item.name,
+        folder,
+        path: `${folder}/${item.name}`,
+        updated_at: item.updated_at || item.created_at || null,
+      });
+    });
+  }));
+  return files.sort((a, b) => a.path.localeCompare(b.path, "fr"));
+}
+
 exports.handler = async (event) => {
   const startedAt = Date.now();
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -220,7 +243,7 @@ exports.handler = async (event) => {
     };
   }
 
-  let [tracksRes, seasonsRes, votesRes, playsRes, likesRes, messagesRes, auditRes] = await Promise.all([
+  let [tracksRes, seasonsRes, votesRes, playsRes, likesRes, messagesRes, auditRes, audioFiles] = await Promise.all([
     supabase
       .from("atelier_tracks")
       .select("id, season_id, title, status, storage_path, intent_note, feedback_question, decision_status, sort_order, created_at, allowed_audience_segments, allowed_member_statuses, atelier_seasons(id, slug, title, sort_order, status)")
@@ -241,6 +264,7 @@ exports.handler = async (event) => {
       .eq("target_type", "atelier_track")
       .order("created_at", { ascending: false })
       .limit(300),
+    listAudioFiles(supabase),
   ]);
 
   if (tracksRes.error && hasMissingAccessColumns(tracksRes.error)) {
@@ -338,6 +362,6 @@ exports.handler = async (event) => {
   return {
     statusCode: 200,
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-    body: JSON.stringify({ ok: true, tracks, seasons: seasonsRes.data || [] }),
+    body: JSON.stringify({ ok: true, tracks, seasons: seasonsRes.data || [], audioFiles }),
   };
 };

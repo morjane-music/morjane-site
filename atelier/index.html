@@ -227,6 +227,9 @@
           <input id="adminTrackTitleInput" type="text" placeholder="Titre public">
           <select id="adminTrackSeasonSelect" aria-label="Acte"></select>
           <input id="adminTrackPathInput" type="text" placeholder="Acte I/Nom du fichier.mp3">
+          <select id="adminTrackAudioSelect" aria-label="Choisir un fichier audio">
+            <option value="">Choisir un fichier audio</option>
+          </select>
           <input id="adminTrackOrderInput" type="number" min="0" step="1" placeholder="Ordre">
           <button type="submit" class="ghost">Ajouter</button>
         </div>
@@ -268,8 +271,8 @@
         <p id="trackFeedbackQuestion" class="track-intent-text"></p>
       </div>
       <p id="trackPlayCount" class="muted">Écoutes du cercle : -</p>
-      <p id="trackLikeCount" class="muted">Traces cœur du cercle : -</p>
-      <button id="trackLikeBtn" type="button" class="ghost">♡ Laisser une trace cœur</button>
+      <p id="trackLikeCount" class="muted">Marques du cercle : -</p>
+      <button id="trackLikeBtn" type="button" class="ghost">♡ Marquer ce morceau</button>
       <div class="track-protection-banner" role="note" aria-label="Protection du contenu">
         <span class="track-protection-banner__icon" aria-hidden="true">
           <span class="protection-seal protection-seal--large"></span>

@@ -1376,12 +1376,12 @@ body.admin-compact .admin-note-input {
 .admin-track-create-grid,
 .admin-track-fields {
   display: grid;
-  grid-template-columns: minmax(130px, 1fr) minmax(100px, 0.7fr) minmax(180px, 1.4fr) minmax(70px, 0.35fr) auto;
+  grid-template-columns: minmax(130px, 1fr) minmax(100px, 0.7fr) minmax(180px, 1.2fr) minmax(180px, 1.2fr) minmax(70px, 0.35fr) auto;
   gap: 8px;
 }
 
 .admin-track-fields {
-  grid-template-columns: minmax(130px, 1fr) minmax(100px, 0.7fr) minmax(180px, 1.4fr) minmax(70px, 0.35fr);
+  grid-template-columns: minmax(130px, 1fr) minmax(100px, 0.7fr) minmax(180px, 1.2fr) minmax(180px, 1.2fr) minmax(70px, 0.35fr);
 }
 
 .admin-track-create input,
@@ -1394,6 +1394,49 @@ body.admin-compact .admin-note-input {
   background: rgba(0, 0, 0, 0.42);
   color: var(--ink);
   padding: 8px 10px;
+}
+
+.admin-open-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid rgba(232, 223, 211, 0.1);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.admin-open-checklist__title {
+  flex: 1 0 100%;
+  margin: 0;
+  color: rgba(255, 210, 171, 0.9);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-open-checklist__title.is-ready {
+  color: rgba(206, 232, 200, 0.9);
+}
+
+.admin-open-checklist span {
+  padding: 4px 7px;
+  border: 1px solid rgba(232, 223, 211, 0.14);
+  border-radius: 999px;
+  color: rgba(232, 223, 211, 0.68);
+  font-size: 11px;
+}
+
+.admin-open-checklist .is-ok {
+  border-color: rgba(125, 166, 122, 0.34);
+  color: rgba(206, 232, 200, 0.82);
+}
+
+.admin-open-checklist .is-missing {
+  border-color: rgba(222, 151, 95, 0.34);
+  color: rgba(255, 210, 171, 0.86);
 }
 
 .admin-track-head {
