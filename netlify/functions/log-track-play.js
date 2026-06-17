@@ -75,11 +75,11 @@ exports.handler = async (event) => {
 
   const { data: profile } = await adminClient
     .from("atelier_profiles")
-    .select("member_status, audience_segment")
+    .select("role, member_status, audience_segment")
     .eq("id", userId)
     .maybeSingle();
 
-  if (!profile || !["member", "founder", "priority"].includes(profile.member_status)) {
+  if (!profile || (profile.role !== "admin" && !["member", "founder", "priority"].includes(profile.member_status))) {
     await trackFunctionEvent(adminClient, {
       function_name: "log-track-play",
       status: "error",

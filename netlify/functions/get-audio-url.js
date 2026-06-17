@@ -79,11 +79,11 @@ exports.handler = async (event) => {
 
   const { data: profile, error: profileError } = await adminClient
     .from("atelier_profiles")
-    .select("member_status, audience_segment")
+    .select("role, member_status, audience_segment")
     .eq("id", userId)
     .maybeSingle();
 
-  if (profileError || !profile || !["member", "founder", "priority"].includes(profile.member_status)) {
+  if (profileError || !profile || (profile.role !== "admin" && !["member", "founder", "priority"].includes(profile.member_status))) {
     await trackFunctionEvent(adminClient, {
       function_name: "get-audio-url",
       status: "error",

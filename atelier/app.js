@@ -355,7 +355,7 @@ function canSeeActe(acte) {
   }
   const segment = normalizeAudienceSegment(profile?.audience_segment);
   const status = String(profile?.member_status || "");
-  return segment === "proche" || status === "priority" || status === "founder";
+  return profile?.role === "admin" || segment === "proche" || status === "priority" || status === "founder";
 }
 
 function formatSeasonTitle(season) {

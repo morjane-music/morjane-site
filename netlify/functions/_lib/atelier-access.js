@@ -36,8 +36,9 @@ function canAccessReservedSeason(profile, track) {
   }
 
   const status = String(profile?.member_status || "");
+  const role = String(profile?.role || "");
   const segment = normalizeAudienceSegment(profile?.audience_segment);
-  return segment === "proche" || status === "priority" || status === "founder";
+  return role === "admin" || segment === "proche" || status === "priority" || status === "founder";
 }
 
 function canAccessTrack(profile, track) {
@@ -45,7 +46,8 @@ function canAccessTrack(profile, track) {
     return false;
   }
   const status = String(profile.member_status || "");
-  if (!OPEN_MEMBER_STATUSES.has(status)) {
+  const role = String(profile.role || "");
+  if (role !== "admin" && !OPEN_MEMBER_STATUSES.has(status)) {
     return false;
   }
   const allowedStatuses = normalizeList(track.allowed_member_statuses);

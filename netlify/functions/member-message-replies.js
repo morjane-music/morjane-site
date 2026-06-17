@@ -57,11 +57,11 @@ exports.handler = async (event) => {
   const userId = userResult.data.user.id;
   const profileRes = await adminClient
     .from("atelier_profiles")
-    .select("member_status, audience_segment")
+    .select("role, member_status, audience_segment")
     .eq("id", userId)
     .maybeSingle();
 
-  if (profileRes.error || !profileRes.data || !["member", "founder", "priority"].includes(profileRes.data.member_status)) {
+  if (profileRes.error || !profileRes.data || (profileRes.data.role !== "admin" && !["member", "founder", "priority"].includes(profileRes.data.member_status))) {
     return {
       statusCode: 403,
       headers: { "Content-Type": "application/json" },

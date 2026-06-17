@@ -141,6 +141,7 @@ as $$
       and (cardinality(t.allowed_audience_segments) = 0 or public.atelier_normalized_segment(p.audience_segment) = any(t.allowed_audience_segments))
       and (
         s.slug not in ('acte-0', 'hors-acte')
+        or p.role = 'admin'
         or public.atelier_normalized_segment(p.audience_segment) = 'proche'
         or p.member_status in ('priority', 'founder')
       )

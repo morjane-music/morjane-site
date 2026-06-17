@@ -79,11 +79,11 @@ exports.handler = async (event) => {
 
   const profileRes = await supabase
     .from("atelier_profiles")
-    .select("member_status, audience_segment")
+    .select("role, member_status, audience_segment")
     .eq("id", userId)
     .maybeSingle();
 
-  if (profileRes.error || !profileRes.data || !["member", "founder", "priority"].includes(profileRes.data.member_status)) {
+  if (profileRes.error || !profileRes.data || (profileRes.data.role !== "admin" && !["member", "founder", "priority"].includes(profileRes.data.member_status))) {
     await trackFunctionEvent(supabase, {
       function_name: "submit-member-message",
       status: "error",

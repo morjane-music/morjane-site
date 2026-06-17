@@ -61,6 +61,7 @@ as $$
       )
       and (
         s.slug not in ('acte-0', 'hors-acte')
+        or p.role = 'admin'
         or public.atelier_normalized_segment(p.audience_segment) = 'proche'
         or p.member_status in ('priority', 'founder')
       )

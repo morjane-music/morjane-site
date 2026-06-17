@@ -49,7 +49,7 @@ exports.handler = async (event) => {
   const userId = userResult.data.user.id;
   const profileRes = await supabase
     .from("atelier_profiles")
-    .select("id, member_status, audience_segment")
+    .select("id, role, member_status, audience_segment")
     .eq("id", userId)
     .maybeSingle();
 
