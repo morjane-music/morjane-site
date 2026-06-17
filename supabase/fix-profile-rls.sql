@@ -9,7 +9,7 @@ for insert to authenticated
 with check (
   auth.uid() = id
   and role = 'member'
-  and member_status = 'none'
+  and member_status in ('none', 'pending')
 );
 
 drop policy if exists atelier_profiles_update_own on public.atelier_profiles;

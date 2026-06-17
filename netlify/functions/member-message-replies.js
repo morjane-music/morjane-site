@@ -60,7 +60,7 @@ exports.handler = async (event) => {
     .eq("id", userId)
     .maybeSingle();
 
-  if (profileRes.error || !profileRes.data || !["member", "founder"].includes(profileRes.data.member_status)) {
+  if (profileRes.error || !profileRes.data || !["member", "founder", "priority"].includes(profileRes.data.member_status)) {
     return {
       statusCode: 403,
       headers: { "Content-Type": "application/json" },

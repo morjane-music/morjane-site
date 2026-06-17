@@ -110,7 +110,7 @@ exports.handler = async () => {
       liveNow,
     ] = await Promise.all([
       countQuery(supabase.from("atelier_profiles").select("id", { count: "exact", head: true }).gte("created_at", since)),
-      countQuery(supabase.from("atelier_profiles").select("id", { count: "exact", head: true }).eq("member_status", "none")),
+      countQuery(supabase.from("atelier_profiles").select("id", { count: "exact", head: true }).in("member_status", ["none", "pending"])),
       countQuery(supabase.from("atelier_messages").select("id", { count: "exact", head: true }).gte("created_at", since)),
       countQuery(supabase.from("atelier_track_plays").select("id", { count: "exact", head: true }).gte("created_at", since)),
       countQuery(supabase.from("atelier_track_likes").select("id", { count: "exact", head: true }).gte("created_at", since)),

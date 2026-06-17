@@ -47,6 +47,7 @@ async function authenticateAdmin(event, supabaseUrl, anonKey, serviceRoleKey) {
 const QUEUE_FIELDS = [
   "audience_status",
   "audience_segment",
+  "source",
   "access_source",
   "access_wave",
   "admin_note",
@@ -71,16 +72,16 @@ function getUpdateForAction(action) {
     return { member_status: "member", role: "member", audience_status: "approved" };
   }
   if (action === "vip") {
-    return { member_status: "founder", role: "founder", audience_status: "vip" };
+    return { member_status: "priority", role: "member", audience_status: "vip" };
   }
   if (action === "refuse") {
-    return { member_status: "none", role: "member", audience_status: "refused" };
+    return { member_status: "blocked", role: "member", audience_status: "refused" };
   }
   if (action === "archive") {
-    return { audience_status: "archived" };
+    return { member_status: "archived", audience_status: "archived" };
   }
   if (action === "revoke") {
-    return { member_status: "none", role: "member", audience_status: "waiting" };
+    return { member_status: "pending", role: "member", audience_status: "waiting" };
   }
   return null;
 }
@@ -124,7 +125,7 @@ async function sendAccessEmail(supabase, userId) {
 async function getTargetProfile(supabase, userId) {
   const result = await supabase
     .from("atelier_profiles")
-    .select("id, email, role, member_status, audience_status")
+    .select("id, email, role, member_status, audience_status, audience_segment, source, access_source")
     .eq("id", userId)
     .maybeSingle();
   if (result.error || !result.data) {
@@ -141,6 +142,8 @@ function getProfileState(profile) {
     role: profile.role || null,
     member_status: profile.member_status || null,
     audience_status: profile.audience_status || null,
+    audience_segment: profile.audience_segment || null,
+    source: profile.source || profile.access_source || null,
   };
 }
 
@@ -181,7 +184,7 @@ exports.handler = async (event) => {
     let queueColumnsAvailable = true;
     let result = await supabase
       .from("atelier_profiles")
-      .select("id, email, role, member_status, audience_status, audience_segment, access_source, access_wave, admin_note, last_admin_action_at, created_at")
+      .select("id, email, role, member_status, audience_status, audience_segment, source, access_source, access_wave, admin_note, last_admin_action_at, created_at")
       .order("created_at", { ascending: false })
       .limit(100);
 
@@ -306,12 +309,14 @@ exports.handler = async (event) => {
     if (action === "set_meta") {
       const fields = payload.fields && typeof payload.fields === "object" ? payload.fields : {};
       const allowedStatuses = ["new", "waiting", "approved", "vip", "refused", "archived"];
-      const allowedSegments = ["listener", "pro", "press", "creator", "friend", "team"];
+      const allowedSegments = ["public", "proche", "artiste", "pro"];
+      const allowedSources = ["site", "concert", "instagram", "email", "invitation", "bouche_a_oreille", "autre"];
+      const source = allowedSources.includes(fields.source) ? fields.source : (allowedSources.includes(fields.access_source) ? fields.access_source : "site");
       update = {
         audience_status: allowedStatuses.includes(fields.audience_status) ? fields.audience_status : "new",
         audience_segment: allowedSegments.includes(fields.audience_segment) ? fields.audience_segment : null,
-        access_source: cleanText(fields.access_source, 80),
-        access_wave: cleanText(fields.access_wave, 80),
+        source,
+        access_source: source,
         admin_note: cleanText(fields.admin_note, 1200),
       };
     } else {

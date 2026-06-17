@@ -77,7 +77,7 @@ exports.handler = async (event) => {
     .eq("id", userId)
     .maybeSingle();
 
-  if (profileRes.error || !profileRes.data || !["member", "founder"].includes(profileRes.data.member_status)) {
+  if (profileRes.error || !profileRes.data || !["member", "founder", "priority"].includes(profileRes.data.member_status)) {
     await trackFunctionEvent(supabase, {
       function_name: "submit-member-message",
       status: "error",

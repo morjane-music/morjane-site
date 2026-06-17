@@ -83,7 +83,7 @@ exports.handler = async (event) => {
     supabase
       .from("atelier_profiles")
       .select("id", { count: "exact", head: true })
-      .in("member_status", ["member", "founder"])
+      .in("member_status", ["member", "founder", "priority"])
       .gte("created_at", since),
     supabase
       .from("atelier_track_plays")

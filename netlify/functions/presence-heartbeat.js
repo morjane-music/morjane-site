@@ -67,7 +67,7 @@ exports.handler = async (event) => {
     .eq("id", userId)
     .maybeSingle();
 
-  if (profileRes.error || !profileRes.data || !["member", "founder"].includes(profileRes.data.member_status)) {
+  if (profileRes.error || !profileRes.data || !["member", "founder", "priority"].includes(profileRes.data.member_status)) {
     await trackFunctionEvent(adminClient, {
       function_name: "presence-heartbeat",
       status: "error",
@@ -122,4 +122,3 @@ exports.handler = async (event) => {
     body: JSON.stringify({ ok: true }),
   };
 };
-

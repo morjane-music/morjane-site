@@ -73,7 +73,7 @@ exports.handler = async (event) => {
     .eq("id", userId)
     .maybeSingle();
 
-  if (!profile || !["member", "founder"].includes(profile.member_status)) {
+  if (!profile || !["member", "founder", "priority"].includes(profile.member_status)) {
     await trackFunctionEvent(adminClient, {
       function_name: "log-track-play",
       status: "error",

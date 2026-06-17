@@ -77,7 +77,7 @@ exports.handler = async (event) => {
     .eq("id", userId)
     .maybeSingle();
 
-  if (profileError || !profile || !["member", "founder"].includes(profile.member_status)) {
+  if (profileError || !profile || !["member", "founder", "priority"].includes(profile.member_status)) {
     await trackFunctionEvent(adminClient, {
       function_name: "get-audio-url",
       status: "error",

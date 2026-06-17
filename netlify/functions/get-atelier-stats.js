@@ -16,7 +16,7 @@ exports.handler = async () => {
   const query = await supabase
     .from("atelier_profiles")
     .select("id", { count: "exact", head: true })
-    .in("member_status", ["member", "founder"]);
+    .in("member_status", ["member", "founder", "priority"]);
 
   if (query.error) {
     return {

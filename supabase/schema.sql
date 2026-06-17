@@ -4,9 +4,10 @@ create table if not exists public.atelier_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   role text not null default 'member' check (role in ('member', 'founder', 'admin')),
-  member_status text not null default 'none' check (member_status in ('none', 'member', 'founder')),
+  member_status text not null default 'pending' check (member_status in ('none', 'pending', 'member', 'founder', 'priority', 'blocked', 'archived')),
   audience_status text not null default 'new' check (audience_status in ('new', 'waiting', 'approved', 'vip', 'refused', 'archived')),
-  audience_segment text check (audience_segment in ('listener', 'pro', 'press', 'creator', 'friend', 'team')),
+  audience_segment text check (audience_segment in ('public', 'proche', 'artiste', 'pro', 'listener', 'press', 'creator', 'friend', 'team')),
+  source text check (source in ('site', 'concert', 'instagram', 'email', 'invitation', 'bouche_a_oreille', 'autre')),
   access_source text,
   access_wave text,
   admin_note text,
@@ -84,7 +85,7 @@ as $$
   select exists (
     select 1
     from public.atelier_profiles p
-    where p.id = uid and p.member_status in ('member', 'founder')
+    where p.id = uid and p.member_status in ('member', 'founder', 'priority')
   );
 $$;
 
@@ -196,7 +197,8 @@ set
 
 alter table public.atelier_profiles
   add column if not exists audience_status text not null default 'new' check (audience_status in ('new', 'waiting', 'approved', 'vip', 'refused', 'archived')),
-  add column if not exists audience_segment text check (audience_segment in ('listener', 'pro', 'press', 'creator', 'friend', 'team')),
+  add column if not exists audience_segment text check (audience_segment in ('public', 'proche', 'artiste', 'pro', 'listener', 'press', 'creator', 'friend', 'team')),
+  add column if not exists source text check (source in ('site', 'concert', 'instagram', 'email', 'invitation', 'bouche_a_oreille', 'autre')),
   add column if not exists access_source text,
   add column if not exists access_wave text,
   add column if not exists admin_note text,
@@ -471,7 +473,7 @@ for insert to authenticated
 with check (
   auth.uid() = id
   and role = 'member'
-  and member_status = 'none'
+  and member_status in ('none', 'pending')
 );
 
 drop policy if exists atelier_profiles_update_own on public.atelier_profiles;

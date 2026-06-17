@@ -97,26 +97,55 @@ const adminTodayState = {
 const ADMIN_DENSITY_STORAGE_KEY = "atelier_admin_compact_density";
 const ADMIN_MEMBER_STATUS_LABELS = {
   new: "nouveau",
-  waiting: "a relancer",
+  waiting: "à relancer",
   approved: "validé",
-  vip: "VIP / founder",
+  vip: "prioritaire",
   refused: "refusé",
   archived: "archivé",
 };
 const ADMIN_MEMBER_SEGMENT_LABELS = {
-  listener: "auditeur",
+  public: "public",
+  proche: "proche",
+  artiste: "artiste",
   pro: "pro",
-  press: "presse",
-  creator: "créateur",
-  friend: "proche",
-  team: "équipe",
 };
-
-const WAVE_PUBLIC_NOTES = {
-  proches: "Vague proches : écoute instinctive, sans posture. Ce que tu ressens en premier compte.",
-  pros: "Vague pros : aide-moi à voir ce qui tient artistiquement, en scène et en sortie.",
-  presse: "Vague presse : versions confidentielles pour comprendre la direction avant l'annonce publique.",
-  fans: "Vague fans fidèles : ton rôle est de dire ce qui reste après l'écoute.",
+const LEGACY_AUDIENCE_SEGMENTS = {
+  listener: "public",
+  friend: "proche",
+  creator: "artiste",
+  press: "pro",
+  team: "pro",
+};
+const AUDIENCE_SEGMENT_COPY = {
+  public: {
+    label: "public",
+    welcome: "Bienvenue dans l'Atelier. Ici vivent les chansons avant leur sortie.",
+    question: "Quel morceau aurais-tu envie de réécouter ?",
+  },
+  proche: {
+    label: "proche",
+    welcome: "Tu connais déjà une partie de l'histoire. Je cherche ce qui reste.",
+    question: "Qu'est-ce qui reste en toi après l'écoute ?",
+  },
+  artiste: {
+    label: "artiste",
+    welcome: "Tu connais la fabrication. Tu connais les choix et les doutes.",
+    question: "Qu'entends-tu dans la matière artistique ?",
+  },
+  pro: {
+    label: "pro",
+    welcome: "Tu n'es pas ici pour me faire plaisir. Regarde ce qui tient.",
+    question: "Qu'est-ce qui te semble le plus solide aujourd'hui ?",
+  },
+};
+const SOURCE_LABELS = {
+  site: "site",
+  concert: "concert",
+  instagram: "Instagram",
+  email: "email",
+  invitation: "invitation",
+  bouche_a_oreille: "bouche à oreille",
+  autre: "autre",
 };
 const ATELIER_ACTES = [
   {
@@ -385,7 +414,7 @@ function setGateStatus(text) {
 }
 
 function isMember(status) {
-  return status === "member" || status === "founder";
+  return status === "member" || status === "founder" || status === "priority";
 }
 
 async function loadCircleCount() {
@@ -407,10 +436,28 @@ async function loadCircleCount() {
 }
 
 function getAudienceStatusLabel(status) {
-  if (status === "member" || status === "founder") {
-    return "dans le cercle privé";
+  if (isMember(status)) {
+    return status === "priority" || status === "founder" ? "accès prioritaire" : "dans le cercle privé";
   }
   return "sur le seuil de l'Atelier";
+}
+
+function normalizeAudienceSegment(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  return AUDIENCE_SEGMENT_COPY[raw] ? raw : (LEGACY_AUDIENCE_SEGMENTS[raw] || "public");
+}
+
+function getAudienceSegmentCopy(value) {
+  return AUDIENCE_SEGMENT_COPY[normalizeAudienceSegment(value)] || AUDIENCE_SEGMENT_COPY.public;
+}
+
+function getMemberSource(member) {
+  return String(member?.source || member?.access_source || "").trim();
+}
+
+function getSourceLabel(value) {
+  const key = String(value || "").trim();
+  return SOURCE_LABELS[key] || key || "source inconnue";
 }
 
 function startMagicLinkCooldown(seconds = 60) {
@@ -632,11 +679,17 @@ function getQueueStatus(member) {
   if (member.audience_status) {
     return member.audience_status;
   }
-  if (member.member_status === "founder" || member.role === "founder") {
+  if (member.member_status === "priority" || member.member_status === "founder" || member.role === "founder") {
     return "vip";
   }
   if (member.member_status === "member" || member.role === "admin") {
     return "approved";
+  }
+  if (member.member_status === "blocked") {
+    return "refused";
+  }
+  if (member.member_status === "archived") {
+    return "archived";
   }
   return "new";
 }
@@ -711,10 +764,10 @@ function createAdminMemberRow(member) {
 
   const meta = document.createElement("p");
   meta.className = "admin-member-meta";
-  const segment = member.audience_segment ? (ADMIN_MEMBER_SEGMENT_LABELS[member.audience_segment] || member.audience_segment) : "segment non defini";
-  const source = member.access_source || "source inconnue";
-  const wave = member.access_wave || "hors vague";
-  meta.textContent = `${member.member_status} / ${member.role} | ${segment} | ${source} | ${wave}`;
+  const segmentKey = normalizeAudienceSegment(member.audience_segment);
+  const segment = ADMIN_MEMBER_SEGMENT_LABELS[segmentKey] || segmentKey;
+  const source = getSourceLabel(getMemberSource(member));
+  meta.textContent = `Accès : ${member.member_status || "pending"} / ${member.role || "member"} | Profil : ${segment} | Source : ${source}`;
   content.appendChild(meta);
 
   const fields = document.createElement("div");
@@ -723,31 +776,28 @@ function createAdminMemberRow(member) {
     ["new", "Nouveau"],
     ["waiting", "A relancer"],
     ["approved", "Valide"],
-    ["vip", "VIP / founder"],
+    ["vip", "Prioritaire"],
     ["refused", "Refuse"],
     ["archived", "Archive"],
   ], getQueueStatus(member), "Statut de file");
   const segmentSelect = createSelect([
-    ["", "Segment"],
-    ["listener", "Auditeur"],
+    ["public", "Public"],
+    ["proche", "Proche"],
+    ["artiste", "Artiste"],
     ["pro", "Pro"],
-    ["press", "Presse"],
-    ["creator", "Createur"],
-    ["friend", "Proche"],
-    ["team", "Equipe"],
-  ], member.audience_segment || "", "Segment");
-  const sourceInput = document.createElement("input");
-  sourceInput.type = "text";
-  sourceInput.placeholder = "Source";
-  sourceInput.value = member.access_source || "";
-  const waveInput = document.createElement("input");
-  waveInput.type = "text";
-  waveInput.placeholder = "Vague";
-  waveInput.value = member.access_wave || "";
+  ], segmentKey, "Profil d'écoute");
+  const sourceSelect = createSelect([
+    ["site", "Site"],
+    ["concert", "Concert"],
+    ["instagram", "Instagram"],
+    ["email", "Email"],
+    ["invitation", "Invitation"],
+    ["bouche_a_oreille", "Bouche à oreille"],
+    ["autre", "Autre"],
+  ], getMemberSource(member) || "site", "Provenance");
   fields.appendChild(queueStatus);
   fields.appendChild(segmentSelect);
-  fields.appendChild(sourceInput);
-  fields.appendChild(waveInput);
+  fields.appendChild(sourceSelect);
 
   const note = document.createElement("textarea");
   note.className = "admin-note-input";
@@ -765,7 +815,7 @@ function createAdminMemberRow(member) {
   const secondarySummary = document.createElement("summary");
   secondarySummary.textContent = "Plus";
   secondary.appendChild(secondarySummary);
-  secondary.appendChild(createMemberAction("VIP", "vip", member.id));
+  secondary.appendChild(createMemberAction("Prioritaire", "vip", member.id));
   secondary.appendChild(createMemberAction("Refuser", "refuse", member.id));
   secondary.appendChild(createMemberAction("Archiver", "archive", member.id));
   const revokeBtn = createMemberAction("Retirer", "revoke", member.id);
@@ -783,8 +833,8 @@ function createAdminMemberRow(member) {
   saveMeta.addEventListener("click", () => updateMemberMeta(member.id, {
     audience_status: queueStatus.value,
     audience_segment: segmentSelect.value,
-    access_source: sourceInput.value,
-    access_wave: waveInput.value,
+    source: sourceSelect.value,
+    access_source: sourceSelect.value,
     admin_note: note.value,
   }));
   content.appendChild(actions);
@@ -835,7 +885,7 @@ function renderAdminMembers() {
       <span>Nouveaux ${counts.new || 0}</span>
       <span>A relancer ${counts.waiting || 0}</span>
       <span>Valides ${counts.approved || 0}</span>
-      <span>VIP ${counts.vip || 0}</span>
+      <span>Prioritaires ${counts.vip || 0}</span>
       <span>Refuses ${counts.refused || 0}</span>
     `;
   }
@@ -844,12 +894,13 @@ function renderAdminMembers() {
     const queueStatus = getQueueStatus(member);
     const pendingStatuses = ["new", "waiting", "refused", "archived"];
     const statusOk = adminViewMode === "pending"
-      ? member.member_status === "none" || pendingStatuses.includes(queueStatus)
-      : member.member_status !== "none" || member.role === "admin" || queueStatus === "approved" || queueStatus === "vip";
+      ? !isMember(member.member_status) || pendingStatuses.includes(queueStatus)
+      : isMember(member.member_status) || member.role === "admin" || queueStatus === "approved" || queueStatus === "vip";
     const haystack = [
       member.email,
       member.audience_status,
       member.audience_segment,
+      member.source,
       member.access_source,
       member.access_wave,
       member.admin_note,
@@ -1082,18 +1133,13 @@ function renderWaveNote() {
   if (!memberWaveNote) {
     return;
   }
-  const wave = String(profile?.access_wave || "").trim().toLowerCase();
-  const note = WAVE_PUBLIC_NOTES[wave] || (wave ? `Vague ${wave} : ton écoute aide à choisir ce qui continue.` : "");
-  if (!note) {
-    hide(memberWaveNote);
-    return;
-  }
+  const segment = getAudienceSegmentCopy(profile?.audience_segment);
   memberWaveNote.innerHTML = "";
   const title = document.createElement("p");
   title.className = "season-note__title";
-  title.textContent = "Note de vague";
+  title.textContent = "Profil d'écoute";
   const body = document.createElement("p");
-  body.textContent = note;
+  body.textContent = segment.welcome;
   memberWaveNote.appendChild(title);
   memberWaveNote.appendChild(body);
   show(memberWaveNote);
@@ -1786,7 +1832,7 @@ function renderAdminAuditLog(logs = []) {
     track_cockpit_updated: "Morceau mis à jour",
     member_approve: "Membre validé",
     member_revoke: "Accès retiré",
-    member_vip: "VIP / proche",
+    member_vip: "Prioritaire",
     member_refuse: "Demande refusée",
     member_archive: "Profil archivé",
     member_set_meta: "Fiche membre mise à jour",
@@ -2033,11 +2079,11 @@ async function ensureAtelierProfile() {
 
   let { data, error } = await supabase
     .from("atelier_profiles")
-    .select("id, email, role, member_status, access_wave")
+    .select("id, email, role, member_status, audience_segment, source, access_source, access_wave")
     .eq("id", session.user.id)
     .maybeSingle();
 
-  if (error && /access_wave/i.test(String(error.message || ""))) {
+  if (error && /(audience_segment|source|access_source|access_wave)/i.test(String(error.message || ""))) {
     const fallback = await supabase
       .from("atelier_profiles")
       .select("id, email, role, member_status")
@@ -2364,7 +2410,7 @@ function createTrackCard(track) {
 
   const hint = document.createElement("span");
   hint.className = "track-card__hint";
-  hint.textContent = track.feedback_question || track.intent_note || "Entrer dans cette version et laisser une trace";
+  hint.textContent = track.feedback_question || track.intent_note || getAudienceSegmentCopy(profile?.audience_segment).question;
 
   const cta = document.createElement("span");
   cta.className = "track-card__cta";
@@ -2471,15 +2517,11 @@ async function selectTrack(trackId) {
     trackDecisionStatus.textContent = getDecisionStatusLabel(selectedTrack.decision_status);
   }
   renderTrackTimeline(selectedTrack.decision_status || "testing");
-  const hasIntent = Boolean(selectedTrack.intent_note || selectedTrack.feedback_question);
   if (trackIntentPanel && trackIntentNote && trackFeedbackQuestion) {
-    if (hasIntent) {
-      trackIntentNote.textContent = selectedTrack.intent_note || "Je vous laisse écouter librement cette version, sans chercher la bonne réponse.";
-      trackFeedbackQuestion.textContent = selectedTrack.feedback_question || "Qu'est-ce que cette chanson garde en vous après l'écoute ?";
-      show(trackIntentPanel);
-    } else {
-      hide(trackIntentPanel);
-    }
+    const segment = getAudienceSegmentCopy(profile?.audience_segment);
+    trackIntentNote.textContent = selectedTrack.intent_note || "Tu entends cette chanson dans son état actuel, avant sa forme définitive.";
+    trackFeedbackQuestion.textContent = selectedTrack.feedback_question || segment.question;
+    show(trackIntentPanel);
   }
   if (trackPlayCount) {
     trackPlayCount.textContent = `Écoutes du cercle : ${getTrackPlayCount(selectedTrack.id)}`;
