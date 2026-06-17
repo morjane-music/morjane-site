@@ -1360,6 +1360,45 @@ body.admin-compact .admin-note-input {
   border-bottom: 1px solid rgba(201, 152, 82, 0.14);
 }
 
+.admin-track-state {
+  align-self: flex-start;
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border: 1px solid rgba(201, 152, 82, 0.28);
+  border-radius: 999px;
+  color: rgba(245, 228, 198, 0.88);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-track-state.is-open {
+  border-color: rgba(125, 166, 122, 0.46);
+  color: rgba(206, 232, 200, 0.88);
+}
+
+.admin-track-state.is-reserved {
+  border-color: rgba(201, 152, 82, 0.46);
+}
+
+.admin-track-state.is-warning {
+  border-color: rgba(222, 151, 95, 0.58);
+  color: rgba(255, 210, 171, 0.92);
+}
+
+.admin-track-state.is-hidden {
+  border-color: rgba(232, 223, 211, 0.2);
+  color: rgba(232, 223, 211, 0.62);
+}
+
+.admin-track-history {
+  margin: 5px 0 0;
+  color: rgba(232, 223, 211, 0.48);
+  font-size: 12px;
+}
+
 .admin-decision-cue {
   width: fit-content;
   margin: 7px 0 0;
@@ -1392,6 +1431,12 @@ body.admin-compact .admin-note-input {
 .admin-track-access {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-track-actions {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 

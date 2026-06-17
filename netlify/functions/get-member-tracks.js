@@ -59,7 +59,7 @@ exports.handler = async (event) => {
 
   let tracksRes = await supabase
     .from("atelier_tracks")
-    .select("id, title, status, season_id, intent_note, feedback_question, decision_status, sort_order, created_at, allowed_audience_segments, allowed_member_statuses, atelier_seasons(id, slug, title, description, sort_order, status)")
+    .select("id, title, status, storage_path, season_id, intent_note, feedback_question, decision_status, sort_order, created_at, allowed_audience_segments, allowed_member_statuses, atelier_seasons(id, slug, title, description, sort_order, status)")
     .eq("status", "active")
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
@@ -67,7 +67,7 @@ exports.handler = async (event) => {
   if (tracksRes.error && hasMissingAccessColumns(tracksRes.error)) {
     tracksRes = await supabase
       .from("atelier_tracks")
-      .select("id, title, status, season_id, intent_note, feedback_question, decision_status, sort_order, created_at, atelier_seasons(id, slug, title, description, sort_order, status)")
+      .select("id, title, status, storage_path, season_id, intent_note, feedback_question, decision_status, sort_order, created_at, atelier_seasons(id, slug, title, description, sort_order, status)")
       .eq("status", "active")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
@@ -84,15 +84,28 @@ exports.handler = async (event) => {
     return json(500, { ok: false, error: "query_failed" });
   }
 
-  const tracks = (tracksRes.data || [])
+  const accessibleTracks = (tracksRes.data || [])
     .filter((track) => track.atelier_seasons?.status !== "archived")
     .filter((track) => canAccessTrack(profileRes.data, track));
+
+  const checkedTracks = await Promise.all(accessibleTracks.map(async (track) => {
+    if (!track.storage_path) {
+      return { track, audioOk: false };
+    }
+    const signed = await supabase.storage.from("atelier-audio").createSignedUrl(track.storage_path, 60);
+    return { track, audioOk: Boolean(signed.data?.signedUrl && !signed.error) };
+  }));
+  const tracks = checkedTracks.filter((item) => item.audioOk).map((item) => {
+    const { storage_path, ...safeTrack } = item.track;
+    return safeTrack;
+  });
+  const hiddenBrokenAudio = checkedTracks.length - tracks.length;
 
   await trackFunctionEvent(supabase, {
     function_name: "get-member-tracks",
     status: "ok",
     latency_ms: Date.now() - startedAt,
-    meta: { count: tracks.length },
+    meta: { count: tracks.length, hidden_broken_audio: hiddenBrokenAudio },
   });
 
   return json(200, { ok: true, tracks });

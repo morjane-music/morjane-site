@@ -220,7 +220,7 @@ exports.handler = async (event) => {
     };
   }
 
-  let [tracksRes, seasonsRes, votesRes, playsRes, likesRes, messagesRes] = await Promise.all([
+  let [tracksRes, seasonsRes, votesRes, playsRes, likesRes, messagesRes, auditRes] = await Promise.all([
     supabase
       .from("atelier_tracks")
       .select("id, season_id, title, status, storage_path, intent_note, feedback_question, decision_status, sort_order, created_at, allowed_audience_segments, allowed_member_statuses, atelier_seasons(id, slug, title, sort_order, status)")
@@ -235,6 +235,12 @@ exports.handler = async (event) => {
     supabase.from("atelier_track_plays").select("track_id").limit(5000),
     supabase.from("atelier_track_likes").select("track_id").limit(5000),
     supabase.from("atelier_messages").select("track_id").limit(5000),
+    supabase
+      .from("atelier_admin_audit_logs")
+      .select("target_id, action, created_at")
+      .eq("target_type", "atelier_track")
+      .order("created_at", { ascending: false })
+      .limit(300),
   ]);
 
   if (tracksRes.error && hasMissingAccessColumns(tracksRes.error)) {
@@ -272,6 +278,7 @@ exports.handler = async (event) => {
   const playsByTrack = new Map();
   const likesByTrack = new Map();
   const messagesByTrack = new Map();
+  const latestAuditByTrack = new Map();
 
   for (const vote of votesRes.data || []) {
     if (["develop", "revise", "leave"].includes(vote.choice)) {
@@ -281,6 +288,13 @@ exports.handler = async (event) => {
   for (const play of playsRes.data || []) increment(playsByTrack, play.track_id);
   for (const like of likesRes.data || []) increment(likesByTrack, like.track_id);
   for (const message of messagesRes.data || []) increment(messagesByTrack, message.track_id);
+  if (!auditRes.error) {
+    for (const entry of auditRes.data || []) {
+      if (entry.target_id && !latestAuditByTrack.has(entry.target_id)) {
+        latestAuditByTrack.set(entry.target_id, entry);
+      }
+    }
+  }
 
   const tracks = await Promise.all((tracksRes.data || []).map(async (track) => {
     const signed = track.storage_path
@@ -297,10 +311,14 @@ exports.handler = async (event) => {
       storage_path: track.storage_path || "",
       audio_ok: Boolean(signed.data?.signedUrl && !signed.error),
       audio_error: signed.error?.message || "",
+      audio_preview_url: signed.data?.signedUrl || "",
       intent_note: track.intent_note || "",
       feedback_question: track.feedback_question || "",
       decision_status: track.decision_status || "testing",
       sort_order: Number(track.sort_order || 0),
+      created_at: track.created_at || null,
+      last_admin_action: latestAuditByTrack.get(track.id)?.action || "",
+      last_admin_action_at: latestAuditByTrack.get(track.id)?.created_at || null,
       allowed_audience_segments: track.allowed_audience_segments || [],
       allowed_member_statuses: track.allowed_member_statuses || [],
       votes: votesByTrack.get(track.id) || { develop: 0, revise: 0, leave: 0 },

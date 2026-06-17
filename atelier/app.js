@@ -163,26 +163,26 @@ const ATELIER_ACTES = [
   {
     slug: "acte-i",
     title: "ACTE I",
-    description: "Les morceaux du premier seuil.",
+    description: "Le premier seuil.",
     sort_order: 10,
   },
   {
     slug: "acte-ii",
     title: "ACTE II",
-    description: "Les chansons qui arrivent.",
+    description: "Ce qui arrive.",
     sort_order: 20,
   },
   {
     slug: "acte-0",
     title: "ACTE 0",
-    description: "Les premières fissures.",
+    description: "Ce qui était là avant.",
     sort_order: 30,
     restricted: true,
   },
   {
     slug: "hors-acte",
     title: "HORS ACTE",
-    description: "Les chansons qui gravitent autour du seuil.",
+    description: "Les chansons autour du seuil.",
     sort_order: 40,
     restricted: true,
   },
@@ -948,6 +948,7 @@ function createAdminMemberRow(member) {
 
   const actions = document.createElement("div");
   actions.className = "admin-member-actions";
+  actions.appendChild(createMemberAction("Valider + envoyer", "approve_and_send_access_email", member.id));
   actions.appendChild(createMemberAction("Valider", "approve", member.id));
   actions.appendChild(createMemberAction("Envoyer accès", "send_access_email", member.id));
   actions.appendChild(createCopyInvitationAction(member));
@@ -1652,6 +1653,75 @@ function createSeasonSelect(seasons, value) {
   return label;
 }
 
+function getSeasonFolderFromSlug(slug) {
+  return ({
+    "acte-i": "Acte I",
+    "acte-ii": "Acte II",
+    "acte-0": "Acte 0",
+    "hors-acte": "Hors acte",
+  }[slug] || "Acte I");
+}
+
+function buildExpectedTrackPath(title, seasonSlug, currentPath = "") {
+  const existingExtension = String(currentPath || "").match(/\.(m4a|mp3|wav|aac)$/i)?.[0] || ".mp3";
+  const safeTitle = String(title || "Nouveau morceau").trim().replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ");
+  return `${getSeasonFolderFromSlug(seasonSlug)}/${safeTitle}${existingExtension}`;
+}
+
+function formatShortDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function getTrackSimpleState(track) {
+  if (track.status === "archived") return { label: "Archivé", className: "is-hidden" };
+  if (track.status === "draft") return { label: "Caché", className: "is-hidden" };
+  if (!track.audio_ok) return { label: "Audio à corriger", className: "is-warning" };
+  if ((track.allowed_audience_segments || []).length || (track.allowed_member_statuses || []).length || ["acte-0", "hors-acte"].includes(track.season_slug)) {
+    return { label: "Réservé", className: "is-reserved" };
+  }
+  return { label: "Ouvert", className: "is-open" };
+}
+
+function getTrackAccessSummary(track) {
+  if (track.status === "archived") return "Archivé : invisible pour le cercle.";
+  if (track.status === "draft") return "Caché : visible seulement en admin.";
+  const segmentLabels = {
+    public: "public",
+    proche: "proches",
+    artiste: "artistes",
+    pro: "pros",
+  };
+  const statusLabels = {
+    member: "membres",
+    priority: "prioritaires",
+    founder: "fondateurs",
+  };
+  const segments = (track.allowed_audience_segments || []).map((item) => segmentLabels[item] || item);
+  const statuses = (track.allowed_member_statuses || []).map((item) => statusLabels[item] || item);
+  const parts = [];
+  if (segments.length) parts.push(`Profils : ${segments.join(", ")}`);
+  if (statuses.length) parts.push(`Accès : ${statuses.join(", ")}`);
+  if (!parts.length && ["acte-0", "hors-acte"].includes(track.season_slug)) {
+    return "Réservé par acte : proches, prioritaires et fondateurs.";
+  }
+  return parts.length ? parts.join(" | ") : "Visible pour tous les membres validés.";
+}
+
+async function copyTextToClipboard(text, button, restoredLabel) {
+  try {
+    await navigator.clipboard.writeText(text);
+    button.textContent = "Copié";
+  } catch (_) {
+    button.textContent = "Copie impossible";
+  }
+  setTimeout(() => {
+    button.textContent = restoredLabel;
+  }, 1400);
+}
+
 function renderAdminTrackCockpit(tracks = [], seasons = []) {
   if (!adminTrackCockpit) {
     return;
@@ -1691,12 +1761,30 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     audioStatus.textContent = track.audio_ok
       ? `Audio OK : ${track.storage_path || "chemin non renseigné"}`
       : `Audio à vérifier : ${track.storage_path || "chemin non renseigné"}`;
+    const visibilitySummary = document.createElement("p");
+    visibilitySummary.className = "admin-status-meta";
+    visibilitySummary.textContent = getTrackAccessSummary(track);
+    const history = document.createElement("p");
+    history.className = "admin-track-history";
+    const created = formatShortDate(track.created_at);
+    const changed = formatShortDate(track.last_admin_action_at);
+    history.textContent = [
+      created ? `Créé le ${created}` : "",
+      track.last_admin_action && changed ? `Dernière action : ${track.last_admin_action} (${changed})` : "",
+    ].filter(Boolean).join(" | ") || "Historique léger en attente.";
     headContent.appendChild(title);
     headContent.appendChild(cue);
     headContent.appendChild(stats);
     headContent.appendChild(votes);
     headContent.appendChild(audioStatus);
+    headContent.appendChild(visibilitySummary);
+    headContent.appendChild(history);
     head.appendChild(headContent);
+    const simpleState = getTrackSimpleState(track);
+    const stateBadge = document.createElement("span");
+    stateBadge.className = `admin-track-state ${simpleState.className}`;
+    stateBadge.textContent = simpleState.label;
+    head.appendChild(stateBadge);
 
     const fields = document.createElement("div");
     fields.className = "admin-track-fields";
@@ -1708,6 +1796,29 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     fields.appendChild(seasonField);
     fields.appendChild(pathField);
     fields.appendChild(orderField);
+
+    const pathActions = document.createElement("div");
+    pathActions.className = "admin-track-actions";
+    const testAudio = document.createElement("button");
+    testAudio.type = "button";
+    testAudio.className = "ghost";
+    testAudio.textContent = "Tester audio";
+    testAudio.disabled = !track.audio_preview_url;
+    testAudio.addEventListener("click", () => {
+      if (track.audio_preview_url) {
+        window.open(track.audio_preview_url, "_blank", "noopener,noreferrer");
+      }
+    });
+    const copyPath = document.createElement("button");
+    copyPath.type = "button";
+    copyPath.className = "ghost";
+    copyPath.textContent = "Copier chemin";
+    copyPath.addEventListener("click", async () => {
+      const expectedPath = pathField.input.value.trim() || buildExpectedTrackPath(titleField.input.value, seasonField.select.value, track.storage_path);
+      await copyTextToClipboard(expectedPath, copyPath, "Copier chemin");
+    });
+    pathActions.appendChild(testAudio);
+    pathActions.appendChild(copyPath);
 
     const statusLabel = document.createElement("label");
     statusLabel.textContent = "Statut artistique";
@@ -1727,7 +1838,7 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     });
 
     const visibilityLabel = document.createElement("label");
-    visibilityLabel.textContent = "Visibilité";
+    visibilityLabel.textContent = "État public";
     const visibility = document.createElement("select");
     [
       ["active", "Visible"],
@@ -1741,10 +1852,10 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     });
 
     const intentLabel = document.createElement("label");
-    intentLabel.textContent = "Note de Morjane";
+    intentLabel.textContent = "Intention courte";
     const intent = document.createElement("textarea");
     intent.rows = 3;
-    intent.placeholder = "Ce que tu cherches avec ce morceau...";
+    intent.placeholder = "Une ligne pour situer ce morceau sans trop l'expliquer.";
 
     const questionLabel = document.createElement("label");
     questionLabel.textContent = "Question posée au cercle";
@@ -1803,6 +1914,7 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     });
     card.appendChild(head);
     card.appendChild(fields);
+    card.appendChild(pathActions);
     card.appendChild(visibilityLabel);
     card.appendChild(visibility);
     card.appendChild(statusLabel);
@@ -2268,8 +2380,17 @@ async function updateMemberStatus(userId, action) {
       },
       body: JSON.stringify({ userId, action }),
     });
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      if (adminInviteStatusText) {
+        adminInviteStatusText.textContent = `Action impossible (${data.error || res.status}).`;
+      }
       return;
+    }
+    if (adminInviteStatusText && action === "approve_and_send_access_email") {
+      adminInviteStatusText.textContent = data.email_error
+        ? "Accès validé, mais email non envoyé."
+        : "Accès validé et email envoyé.";
     }
     await loadAdminMembers();
     await loadCircleCount();

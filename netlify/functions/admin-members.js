@@ -68,7 +68,7 @@ function cleanText(value, maxLength = 240) {
 }
 
 function getUpdateForAction(action) {
-  if (action === "approve") {
+  if (action === "approve" || action === "approve_and_send_access_email") {
     return { member_status: "member", role: "member", audience_status: "approved" };
   }
   if (action === "vip") {
@@ -243,7 +243,7 @@ exports.handler = async (event) => {
 
     const userId = payload.userId;
     const action = payload.action;
-    const allowedActions = ["approve", "revoke", "vip", "refuse", "archive", "set_meta", "send_access_email"];
+    const allowedActions = ["approve", "approve_and_send_access_email", "revoke", "vip", "refuse", "archive", "set_meta", "send_access_email"];
     if (!userId || !allowedActions.includes(action)) {
       await trackFunctionEvent(supabase, {
         function_name: "admin-members",
@@ -370,6 +370,20 @@ exports.handler = async (event) => {
       };
     }
 
+    let accessEmail = null;
+    if (action === "approve_and_send_access_email") {
+      accessEmail = await sendAccessEmail(supabase, userId);
+      if (!accessEmail.ok) {
+        await trackFunctionEvent(supabase, {
+          function_name: "admin-members",
+          status: "error",
+          error_code: accessEmail.error,
+          latency_ms: Date.now() - startedAt,
+          meta: { method: "POST", action, approved: true },
+        });
+      }
+    }
+
     const adminId = adminUserId;
     if (adminId) {
       const targetAfter = await getTargetProfile(supabase, userId);
@@ -384,6 +398,8 @@ exports.handler = async (event) => {
           before: getProfileState(targetBefore),
           after: getProfileState(targetAfter),
           fields: action === "set_meta" ? Object.keys(payload.fields || {}) : undefined,
+          email_sent: accessEmail ? Boolean(accessEmail.ok) : undefined,
+          email_error: accessEmail && !accessEmail.ok ? accessEmail.error : undefined,
         },
       });
     }
@@ -398,7 +414,11 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      body: JSON.stringify({ ok: true }),
+      body: JSON.stringify({
+        ok: true,
+        email_sent: accessEmail ? Boolean(accessEmail.ok) : undefined,
+        email_error: accessEmail && !accessEmail.ok ? accessEmail.error : undefined,
+      }),
     };
   }
 
