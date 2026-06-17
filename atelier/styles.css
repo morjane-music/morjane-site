@@ -1320,7 +1320,7 @@ body.admin-compact .admin-note-input {
 
 .admin-track-item {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .admin-track-create {
@@ -1399,8 +1399,8 @@ body.admin-compact .admin-note-input {
 .admin-open-checklist {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  padding: 9px;
+  gap: 6px;
+  padding: 7px 8px;
   border: 1px solid rgba(232, 223, 211, 0.1);
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.22);
@@ -1422,7 +1422,7 @@ body.admin-compact .admin-note-input {
 }
 
 .admin-open-checklist span {
-  padding: 4px 7px;
+  padding: 3px 7px;
   border: 1px solid rgba(232, 223, 211, 0.14);
   border-radius: 999px;
   color: rgba(232, 223, 211, 0.68);
@@ -1443,7 +1443,7 @@ body.admin-compact .admin-note-input {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  padding-bottom: 8px;
+  padding-bottom: 7px;
   border-bottom: 1px solid rgba(201, 152, 82, 0.14);
 }
 
@@ -1481,7 +1481,7 @@ body.admin-compact .admin-note-input {
 }
 
 .admin-track-history {
-  margin: 5px 0 0;
+  margin: 3px 0 0;
   color: rgba(232, 223, 211, 0.48);
   font-size: 12px;
 }
@@ -2001,14 +2001,26 @@ body.atelier-listening .atelier-player-frame {
   }
 
   button {
-    padding: 7px 9px;
+    min-height: 44px;
+    padding: 10px 12px;
     font-size: 14px;
   }
 
   input,
-  textarea {
-    padding: 9px 10px;
+  textarea,
+  select {
+    min-height: 44px;
+    padding: 10px 11px;
     font-size: 14px;
+  }
+
+  .ghost,
+  .admin-tab,
+  .admin-main-tab,
+  .acte-chooser__button,
+  .vote-grid button,
+  .track-card {
+    min-height: 44px;
   }
 
   #trackTitle {
@@ -2114,6 +2126,45 @@ body.atelier-listening .atelier-player-frame {
   .admin-track-create-grid,
   .admin-track-fields {
     grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .admin-track-cockpit {
+    gap: 8px;
+  }
+
+  .admin-track-item {
+    gap: 7px;
+    padding: 10px;
+  }
+
+  .admin-track-head {
+    display: grid;
+    gap: 7px;
+  }
+
+  .admin-track-state {
+    justify-self: start;
+  }
+
+  .admin-open-checklist {
+    gap: 5px;
+    padding: 7px;
+  }
+
+  .admin-open-checklist__title {
+    font-size: 10px;
+  }
+
+  .admin-open-checklist span {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+
+  .admin-decision-cue,
+  .admin-status-meta,
+  .admin-track-history {
+    font-size: 11px;
   }
 
   .admin-member-actions button {
