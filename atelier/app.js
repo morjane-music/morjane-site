@@ -1653,6 +1653,15 @@ function renderAdminTrackCockpit(tracks = []) {
     accessHint.className = "admin-field-help";
     accessHint.textContent = "Aucune case cochée = visible pour tous les membres validés.";
 
+    const accessTitle = document.createElement("p");
+    accessTitle.className = "admin-access-title";
+    accessTitle.textContent = "Qui peut voir ce morceau ?";
+
+    const accessWrap = document.createElement("div");
+    accessWrap.className = "admin-track-access";
+    accessWrap.appendChild(segmentAccess);
+    accessWrap.appendChild(statusAccess);
+
     const save = document.createElement("button");
     save.type = "button";
     save.className = "ghost";
@@ -1673,13 +1682,13 @@ function renderAdminTrackCockpit(tracks = []) {
     card.appendChild(head);
     card.appendChild(statusLabel);
     card.appendChild(status);
+    card.appendChild(accessTitle);
+    card.appendChild(accessWrap);
+    card.appendChild(accessHint);
     card.appendChild(intentLabel);
     card.appendChild(intent);
     card.appendChild(questionLabel);
     card.appendChild(question);
-    card.appendChild(segmentAccess);
-    card.appendChild(statusAccess);
-    card.appendChild(accessHint);
     card.appendChild(save);
     adminTrackCockpit.appendChild(card);
   });

@@ -1311,6 +1311,22 @@ body.admin-compact .admin-note-input {
   color: rgba(232, 223, 211, 0.74);
 }
 
+.admin-access-title {
+  margin: 2px 0 -4px;
+  color: rgba(245, 228, 198, 0.9);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-track-access {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .admin-check-group {
   display: flex;
   flex-wrap: wrap;
@@ -1901,6 +1917,10 @@ body.atelier-listening .atelier-player-frame {
 
   .admin-main-tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-track-access {
+    grid-template-columns: 1fr;
   }
 
   .admin-today-cards {

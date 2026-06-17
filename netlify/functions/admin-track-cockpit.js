@@ -54,6 +54,11 @@ function cleanList(value, allowed) {
   return value.map((item) => String(item || "").trim()).filter((item) => allowed.includes(item));
 }
 
+function hasMissingAccessColumns(error) {
+  const text = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.toLowerCase();
+  return text.includes("allowed_audience_segments") || text.includes("allowed_member_statuses");
+}
+
 exports.handler = async (event) => {
   const startedAt = Date.now();
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -164,7 +169,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const [tracksRes, votesRes, playsRes, likesRes, messagesRes] = await Promise.all([
+  let [tracksRes, votesRes, playsRes, likesRes, messagesRes] = await Promise.all([
     supabase
       .from("atelier_tracks")
       .select("id, title, status, storage_path, intent_note, feedback_question, decision_status, created_at, allowed_audience_segments, allowed_member_statuses")
@@ -175,6 +180,14 @@ exports.handler = async (event) => {
     supabase.from("atelier_track_likes").select("track_id").limit(5000),
     supabase.from("atelier_messages").select("track_id").limit(5000),
   ]);
+
+  if (tracksRes.error && hasMissingAccessColumns(tracksRes.error)) {
+    tracksRes = await supabase
+      .from("atelier_tracks")
+      .select("id, title, status, storage_path, intent_note, feedback_question, decision_status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(20);
+  }
 
   if (tracksRes.error || votesRes.error || playsRes.error || likesRes.error || messagesRes.error) {
     await trackFunctionEvent(supabase, {
