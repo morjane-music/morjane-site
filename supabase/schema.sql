@@ -139,6 +139,11 @@ as $$
       and s.status = 'active'
       and (cardinality(t.allowed_member_statuses) = 0 or p.member_status = any(t.allowed_member_statuses))
       and (cardinality(t.allowed_audience_segments) = 0 or public.atelier_normalized_segment(p.audience_segment) = any(t.allowed_audience_segments))
+      and (
+        s.slug not in ('acte-0', 'hors-acte')
+        or public.atelier_normalized_segment(p.audience_segment) = 'proche'
+        or p.member_status in ('priority', 'founder')
+      )
   );
 $$;
 

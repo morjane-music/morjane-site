@@ -100,14 +100,14 @@ exports.handler = async (event) => {
 
   let { data: track, error: trackError } = await adminClient
     .from("atelier_tracks")
-    .select("id, storage_path, status, allowed_audience_segments, allowed_member_statuses")
+    .select("id, storage_path, status, allowed_audience_segments, allowed_member_statuses, atelier_seasons(id, slug, title, status)")
     .eq("id", trackId)
     .maybeSingle();
 
   if (trackError && hasMissingAccessColumns(trackError)) {
     const fallback = await adminClient
       .from("atelier_tracks")
-      .select("id, storage_path, status")
+      .select("id, storage_path, status, atelier_seasons(id, slug, title, status)")
       .eq("id", trackId)
       .maybeSingle();
     track = fallback.data;

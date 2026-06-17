@@ -155,6 +155,13 @@ const SOURCE_LABELS = {
 };
 const ATELIER_ACTES = [
   {
+    slug: "acte-0",
+    title: "ACTE 0",
+    description: "Les premières fissures.",
+    sort_order: 0,
+    restricted: true,
+  },
+  {
     slug: "acte-i",
     title: "ACTE I",
     description: "Les morceaux du premier seuil.",
@@ -165,6 +172,13 @@ const ATELIER_ACTES = [
     title: "ACTE II",
     description: "Les chansons qui arrivent.",
     sort_order: 20,
+  },
+  {
+    slug: "hors-acte",
+    title: "HORS ACTE",
+    description: "Les chansons qui gravitent autour du seuil.",
+    sort_order: 40,
+    restricted: true,
   },
 ];
 
@@ -316,17 +330,32 @@ function normalizeActeSlug(season) {
   const slug = String(season?.slug || "").trim().toLowerCase();
   const title = String(season?.title || "").trim().toLowerCase();
   const id = Number(season?.id || 0);
+  if (slug === "acte-0" || slug === "acte-zero" || title === "acte 0" || title === "acte zéro" || title === "acte zero") {
+    return "acte-0";
+  }
   if (slug === "acte-i" || slug === "acte-1" || title === "acte i" || title === "acte 1" || id === 1) {
     return "acte-i";
   }
   if (slug === "acte-ii" || slug === "acte-2" || title === "acte ii" || title === "acte 2" || id === 2) {
     return "acte-ii";
   }
+  if (slug === "hors-acte" || slug === "horsacte" || title === "hors acte") {
+    return "hors-acte";
+  }
   return slug || `season-${id || "unknown"}`;
 }
 
 function getActeDefinition(slug) {
   return ATELIER_ACTES.find((acte) => acte.slug === slug) || null;
+}
+
+function canSeeActe(acte) {
+  if (!acte?.restricted) {
+    return true;
+  }
+  const segment = normalizeAudienceSegment(profile?.audience_segment);
+  const status = String(profile?.member_status || "");
+  return segment === "proche" || status === "priority" || status === "founder";
 }
 
 function formatSeasonTitle(season) {
@@ -405,7 +434,7 @@ function getVisibleActeGroups() {
     groupedBySlug.set(normalizeActeSlug(group.season), group);
   });
 
-  return ATELIER_ACTES.map((acte) => {
+  return ATELIER_ACTES.filter(canSeeActe).map((acte) => {
     const existing = groupedBySlug.get(acte.slug);
     if (existing) {
       return existing;

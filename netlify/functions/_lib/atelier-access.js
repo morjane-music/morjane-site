@@ -16,6 +16,30 @@ function normalizeList(value) {
   return Array.isArray(value) ? value.map((item) => String(item || "").trim()).filter(Boolean) : [];
 }
 
+function normalizeSeasonSlug(track) {
+  const season = track?.atelier_seasons || track?.season || {};
+  const raw = String(season.slug || season.title || "").trim().toLowerCase();
+  const normalized = raw
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (["acte-0", "acte-zero", "acte0"].includes(normalized)) return "acte-0";
+  if (["hors-acte", "horsacte"].includes(normalized)) return "hors-acte";
+  return normalized;
+}
+
+function canAccessReservedSeason(profile, track) {
+  const slug = normalizeSeasonSlug(track);
+  if (slug !== "acte-0" && slug !== "hors-acte") {
+    return true;
+  }
+
+  const status = String(profile?.member_status || "");
+  const segment = normalizeAudienceSegment(profile?.audience_segment);
+  return segment === "proche" || status === "priority" || status === "founder";
+}
+
 function canAccessTrack(profile, track) {
   if (!profile || !track || track.status !== "active") {
     return false;
@@ -32,11 +56,16 @@ function canAccessTrack(profile, track) {
   if (allowedSegments.length && !allowedSegments.includes(normalizeAudienceSegment(profile.audience_segment))) {
     return false;
   }
+  if (!canAccessReservedSeason(profile, track)) {
+    return false;
+  }
   return true;
 }
 
 module.exports = {
   OPEN_MEMBER_STATUSES,
+  canAccessReservedSeason,
   canAccessTrack,
   normalizeAudienceSegment,
+  normalizeSeasonSlug,
 };

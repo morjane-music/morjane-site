@@ -96,14 +96,14 @@ exports.handler = async (event) => {
 
   let trackRes = await adminClient
     .from("atelier_tracks")
-    .select("id, status, allowed_audience_segments, allowed_member_statuses")
+    .select("id, status, allowed_audience_segments, allowed_member_statuses, atelier_seasons(id, slug, title, status)")
     .eq("id", trackId)
     .maybeSingle();
 
   if (trackRes.error && hasMissingAccessColumns(trackRes.error)) {
     trackRes = await adminClient
       .from("atelier_tracks")
-      .select("id, status")
+      .select("id, status, atelier_seasons(id, slug, title, status)")
       .eq("id", trackId)
       .maybeSingle();
   }
