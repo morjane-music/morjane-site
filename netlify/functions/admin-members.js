@@ -111,9 +111,9 @@ async function sendAccessEmail(supabase, userId) {
     body: JSON.stringify({
       from,
       to,
-      subject: "Ton acces a l'Atelier Morjane est ouvert",
-      text: `Ton acces a l'Atelier est ouvert.\n\nEntre ici : ${url}\n\nSi le site te le demande, reconnecte-toi avec le meme email.`,
-      html: `<p>Ton acces a l'Atelier est ouvert.</p><p><a href="${url}">Entrer dans l'Atelier</a></p><p>Si le site te le demande, reconnecte-toi avec le meme email.</p>`,
+      subject: "Ton accès à l'Atelier Morjane est ouvert",
+      text: `Ton accès à l'Atelier est ouvert.\n\nEntre ici : ${url}\n\nSi le site te le demande, reconnecte-toi avec le même email.`,
+      html: `<p>Ton accès à l'Atelier est ouvert.</p><p><a href="${url}">Entrer dans l'Atelier</a></p><p>Si le site te le demande, reconnecte-toi avec le même email.</p>`,
     }),
   });
   if (!res.ok) {

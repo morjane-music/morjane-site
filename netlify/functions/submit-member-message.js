@@ -1,5 +1,6 @@
 const { createClient } = require("@supabase/supabase-js");
 const { trackFunctionEvent } = require("./_lib/atelier-observability");
+const { canAccessTrack } = require("./_lib/atelier-access");
 
 const MAX_MESSAGE_LENGTH = 1200;
 const MIN_MESSAGE_SECONDS = 45;
@@ -28,6 +29,11 @@ function json(statusCode, body) {
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
     body: JSON.stringify(body),
   };
+}
+
+function hasMissingAccessColumns(error) {
+  const text = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.toLowerCase();
+  return text.includes("allowed_audience_segments") || text.includes("allowed_member_statuses");
 }
 
 exports.handler = async (event) => {
@@ -73,7 +79,7 @@ exports.handler = async (event) => {
 
   const profileRes = await supabase
     .from("atelier_profiles")
-    .select("member_status")
+    .select("member_status, audience_segment")
     .eq("id", userId)
     .maybeSingle();
 
@@ -88,13 +94,21 @@ exports.handler = async (event) => {
     return json(403, { ok: false, error: "forbidden" });
   }
 
-  const trackRes = await supabase
+  let trackRes = await supabase
     .from("atelier_tracks")
-    .select("id, status")
+    .select("id, status, allowed_audience_segments, allowed_member_statuses")
     .eq("id", trackId)
     .maybeSingle();
 
-  if (trackRes.error || !trackRes.data || trackRes.data.status !== "active") {
+  if (trackRes.error && hasMissingAccessColumns(trackRes.error)) {
+    trackRes = await supabase
+      .from("atelier_tracks")
+      .select("id, status")
+      .eq("id", trackId)
+      .maybeSingle();
+  }
+
+  if (trackRes.error || !trackRes.data || !canAccessTrack(profileRes.data, trackRes.data)) {
     return json(404, { ok: false, error: "track_not_found" });
   }
 

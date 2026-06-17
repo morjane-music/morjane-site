@@ -1,11 +1,17 @@
 const { createClient } = require("@supabase/supabase-js");
 const { trackFunctionEvent } = require("./_lib/atelier-observability");
+const { canAccessTrack } = require("./_lib/atelier-access");
 
 function getBearerToken(authHeader) {
   if (!authHeader) return "";
   const [scheme, token] = authHeader.split(" ");
   if (scheme !== "Bearer" || !token) return "";
   return token;
+}
+
+function hasMissingAccessColumns(error) {
+  const text = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.toLowerCase();
+  return text.includes("allowed_audience_segments") || text.includes("allowed_member_statuses");
 }
 
 exports.handler = async (event) => {
@@ -69,7 +75,7 @@ exports.handler = async (event) => {
 
   const { data: profile } = await adminClient
     .from("atelier_profiles")
-    .select("member_status")
+    .select("member_status, audience_segment")
     .eq("id", userId)
     .maybeSingle();
 
@@ -88,13 +94,21 @@ exports.handler = async (event) => {
     };
   }
 
-  const trackRes = await adminClient
+  let trackRes = await adminClient
     .from("atelier_tracks")
-    .select("id, status")
+    .select("id, status, allowed_audience_segments, allowed_member_statuses")
     .eq("id", trackId)
     .maybeSingle();
 
-  if (trackRes.error || !trackRes.data || trackRes.data.status !== "active") {
+  if (trackRes.error && hasMissingAccessColumns(trackRes.error)) {
+    trackRes = await adminClient
+      .from("atelier_tracks")
+      .select("id, status")
+      .eq("id", trackId)
+      .maybeSingle();
+  }
+
+  if (trackRes.error || !trackRes.data || !canAccessTrack(profile, trackRes.data)) {
     await trackFunctionEvent(adminClient, {
       function_name: "log-track-play",
       status: "error",

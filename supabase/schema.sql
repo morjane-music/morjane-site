@@ -37,6 +37,8 @@ create table if not exists public.atelier_tracks (
   feedback_question text,
   decision_status text not null default 'testing' check (decision_status in ('testing', 'kept', 'rework', 'paused', 'released', 'archived')),
   sort_order integer not null default 0,
+  allowed_audience_segments text[] not null default '{}'::text[] check (allowed_audience_segments <@ array['public', 'proche', 'artiste', 'pro']::text[]),
+  allowed_member_statuses text[] not null default '{}'::text[] check (allowed_member_statuses <@ array['member', 'priority', 'founder']::text[]),
   created_at timestamptz not null default now()
 );
 
@@ -100,6 +102,43 @@ as $$
     select 1
     from public.atelier_profiles p
     where p.id = uid and p.role = 'admin'
+  );
+$$;
+
+create or replace function public.atelier_normalized_segment(value text)
+returns text
+language sql
+immutable
+as $$
+  select case coalesce(value, 'public')
+    when 'listener' then 'public'
+    when 'friend' then 'proche'
+    when 'creator' then 'artiste'
+    when 'press' then 'pro'
+    when 'team' then 'pro'
+    when '' then 'public'
+    else coalesce(value, 'public')
+  end;
+$$;
+
+create or replace function public.atelier_can_access_track(uid uuid, target_track_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.atelier_profiles p
+    join public.atelier_tracks t on t.id = target_track_id
+    join public.atelier_seasons s on s.id = t.season_id
+    where p.id = uid
+      and p.member_status in ('member', 'founder', 'priority')
+      and t.status = 'active'
+      and s.status = 'active'
+      and (cardinality(t.allowed_member_statuses) = 0 or p.member_status = any(t.allowed_member_statuses))
+      and (cardinality(t.allowed_audience_segments) = 0 or public.atelier_normalized_segment(p.audience_segment) = any(t.allowed_audience_segments))
   );
 $$;
 

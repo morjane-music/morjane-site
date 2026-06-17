@@ -1,4 +1,5 @@
 const { createClient } = require("@supabase/supabase-js");
+const { canAccessTrack } = require("./_lib/atelier-access");
 
 function getBearerToken(header) {
   if (!header) return "";
@@ -56,11 +57,25 @@ exports.handler = async (event) => {
   const userId = userResult.data.user.id;
   const profileRes = await adminClient
     .from("atelier_profiles")
-    .select("member_status")
+    .select("member_status, audience_segment")
     .eq("id", userId)
     .maybeSingle();
 
   if (profileRes.error || !profileRes.data || !["member", "founder", "priority"].includes(profileRes.data.member_status)) {
+    return {
+      statusCode: 403,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ok: false, error: "forbidden" }),
+    };
+  }
+
+  const trackRes = await adminClient
+    .from("atelier_tracks")
+    .select("id, status, allowed_audience_segments, allowed_member_statuses")
+    .eq("id", payload.trackId)
+    .maybeSingle();
+
+  if (trackRes.error || !trackRes.data || !canAccessTrack(profileRes.data, trackRes.data)) {
     return {
       statusCode: 403,
       headers: { "Content-Type": "application/json" },

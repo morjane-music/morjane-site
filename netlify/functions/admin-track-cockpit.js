@@ -49,6 +49,11 @@ function increment(map, key, field = null) {
   map.set(key, Number(map.get(key) || 0) + 1);
 }
 
+function cleanList(value, allowed) {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item || "").trim()).filter((item) => allowed.includes(item));
+}
+
 exports.handler = async (event) => {
   const startedAt = Date.now();
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -103,6 +108,8 @@ exports.handler = async (event) => {
       decision_status: decisionStatus,
       intent_note: typeof payload.intent_note === "string" ? payload.intent_note.slice(0, 2000) : null,
       feedback_question: typeof payload.feedback_question === "string" ? payload.feedback_question.slice(0, 1000) : null,
+      allowed_audience_segments: cleanList(payload.allowed_audience_segments, ["public", "proche", "artiste", "pro"]),
+      allowed_member_statuses: cleanList(payload.allowed_member_statuses, ["member", "priority", "founder"]),
     };
 
     const result = await supabase
@@ -160,7 +167,7 @@ exports.handler = async (event) => {
   const [tracksRes, votesRes, playsRes, likesRes, messagesRes] = await Promise.all([
     supabase
       .from("atelier_tracks")
-      .select("id, title, status, storage_path, intent_note, feedback_question, decision_status, created_at")
+      .select("id, title, status, storage_path, intent_note, feedback_question, decision_status, created_at, allowed_audience_segments, allowed_member_statuses")
       .order("created_at", { ascending: false })
       .limit(20),
     supabase.from("atelier_votes").select("track_id, choice").limit(5000),
@@ -219,6 +226,8 @@ exports.handler = async (event) => {
       intent_note: track.intent_note || "",
       feedback_question: track.feedback_question || "",
       decision_status: track.decision_status || "testing",
+      allowed_audience_segments: track.allowed_audience_segments || [],
+      allowed_member_statuses: track.allowed_member_statuses || [],
       votes: votesByTrack.get(track.id) || { develop: 0, revise: 0, leave: 0 },
       plays: playsByTrack.get(track.id) || 0,
       likes: likesByTrack.get(track.id) || 0,

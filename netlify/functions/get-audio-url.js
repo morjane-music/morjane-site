@@ -1,5 +1,6 @@
 const { createClient } = require("@supabase/supabase-js");
 const { trackFunctionEvent } = require("./_lib/atelier-observability");
+const { canAccessTrack } = require("./_lib/atelier-access");
 
 function getBearerToken(authHeader) {
   if (!authHeader) {
@@ -10,6 +11,11 @@ function getBearerToken(authHeader) {
     return "";
   }
   return token;
+}
+
+function hasMissingAccessColumns(error) {
+  const text = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.toLowerCase();
+  return text.includes("allowed_audience_segments") || text.includes("allowed_member_statuses");
 }
 
 exports.handler = async (event) => {
@@ -73,7 +79,7 @@ exports.handler = async (event) => {
 
   const { data: profile, error: profileError } = await adminClient
     .from("atelier_profiles")
-    .select("member_status")
+    .select("member_status, audience_segment")
     .eq("id", userId)
     .maybeSingle();
 
@@ -92,13 +98,23 @@ exports.handler = async (event) => {
     };
   }
 
-  const { data: track, error: trackError } = await adminClient
+  let { data: track, error: trackError } = await adminClient
     .from("atelier_tracks")
-    .select("id, storage_path, status")
+    .select("id, storage_path, status, allowed_audience_segments, allowed_member_statuses")
     .eq("id", trackId)
     .maybeSingle();
 
-  if (trackError || !track || track.status !== "active") {
+  if (trackError && hasMissingAccessColumns(trackError)) {
+    const fallback = await adminClient
+      .from("atelier_tracks")
+      .select("id, storage_path, status")
+      .eq("id", trackId)
+      .maybeSingle();
+    track = fallback.data;
+    trackError = fallback.error;
+  }
+
+  if (trackError || !track || !canAccessTrack(profile, track)) {
     await trackFunctionEvent(adminClient, {
       function_name: "get-audio-url",
       status: "error",

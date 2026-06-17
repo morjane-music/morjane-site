@@ -270,6 +270,33 @@ function getDecisionStatusLabel(status) {
   }[status] || "En test");
 }
 
+function getTrackDecisionCue(track) {
+  if (!track?.audio_ok) {
+    return "À corriger : audio indisponible";
+  }
+  const messages = Number(track.messages || 0);
+  const plays = Number(track.plays || 0);
+  const keepVotes = Number(track.votes?.develop || 0);
+  const reviseVotes = Number(track.votes?.revise || 0);
+  const leaveVotes = Number(track.votes?.leave || 0);
+  if (track.decision_status === "kept") {
+    return "Décision prise : à garder";
+  }
+  if (track.decision_status === "rework") {
+    return "À retravailler";
+  }
+  if (track.decision_status === "paused") {
+    return "À relancer plus tard";
+  }
+  if (messages < 2 || plays < 5) {
+    return "À écouter encore";
+  }
+  if (reviseVotes > keepVotes || leaveVotes > keepVotes) {
+    return "Décision à prendre";
+  }
+  return "Signal favorable";
+}
+
 function getSeasonFallbackTitle(seasonId) {
   if (!seasonId) {
     return "Versions";
@@ -460,6 +487,32 @@ function getSourceLabel(value) {
   return SOURCE_LABELS[key] || key || "source inconnue";
 }
 
+function getAccessLabel(member) {
+  const status = String(member?.member_status || "pending");
+  return ({
+    pending: "en attente",
+    member: "membre",
+    priority: "prioritaire",
+    blocked: "bloqué",
+    archived: "archivé",
+    founder: "fondateur",
+    none: "en attente",
+  }[status] || status);
+}
+
+function getInvitationText(member) {
+  const name = member?.email ? ` pour ${member.email}` : "";
+  return [
+    `Je t'ouvre un accès à l'Atelier Morjane${name}.`,
+    "",
+    "Tu pourras écouter des versions avant leur sortie et me laisser un retour privé.",
+    "",
+    "Entre ici : https://morjane.re/atelier/",
+    "",
+    "Utilise le même email pour recevoir ton lien de connexion.",
+  ].join("\n");
+}
+
 function startMagicLinkCooldown(seconds = 60) {
   if (!magicLinkSubmitBtn) {
     return;
@@ -618,7 +671,7 @@ function renderAdminWeeklyStats(data) {
       <p class="admin-weekly-value">${plays}</p>
     </article>
     <article class="admin-weekly-card">
-      <p class="admin-weekly-label">Messages recus</p>
+      <p class="admin-weekly-label">Messages reçus</p>
       <p class="admin-weekly-value">${messages}</p>
     </article>
   `;
@@ -712,6 +765,29 @@ function createSelect(options, value, label) {
   return select;
 }
 
+function createCheckboxGroup(titleText, options, selectedValues = []) {
+  const selected = new Set(Array.isArray(selectedValues) ? selectedValues : []);
+  const fieldset = document.createElement("fieldset");
+  fieldset.className = "admin-check-group";
+  const legend = document.createElement("legend");
+  legend.textContent = titleText;
+  fieldset.appendChild(legend);
+  options.forEach(([value, label]) => {
+    const item = document.createElement("label");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = value;
+    checkbox.checked = selected.has(value);
+    const text = document.createElement("span");
+    text.textContent = label;
+    item.appendChild(checkbox);
+    item.appendChild(text);
+    fieldset.appendChild(item);
+  });
+  fieldset.getSelectedValues = () => Array.from(fieldset.querySelectorAll("input:checked")).map((input) => input.value);
+  return fieldset;
+}
+
 function createMemberAction(label, action, userId) {
   const button = document.createElement("button");
   button.type = "button";
@@ -731,11 +807,31 @@ function createMemberAction(label, action, userId) {
   return button;
 }
 
+function createCopyInvitationAction(member) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "ghost";
+  button.textContent = "Copier invitation";
+  button.addEventListener("click", async () => {
+    const text = getInvitationText(member);
+    try {
+      await navigator.clipboard.writeText(text);
+      button.textContent = "Invitation copiée";
+    } catch (_) {
+      button.textContent = "Copie impossible";
+    }
+    setTimeout(() => {
+      button.textContent = "Copier invitation";
+    }, 1400);
+  });
+  return button;
+}
+
 function appendAdminMemberDetails(content, member, fields, note, saveMeta) {
   const details = document.createElement("details");
   details.className = "admin-details";
   const summary = document.createElement("summary");
-  summary.textContent = "Details";
+  summary.textContent = "Détails profil";
   details.appendChild(summary);
   details.appendChild(fields);
   details.appendChild(note);
@@ -767,19 +863,19 @@ function createAdminMemberRow(member) {
   const segmentKey = normalizeAudienceSegment(member.audience_segment);
   const segment = ADMIN_MEMBER_SEGMENT_LABELS[segmentKey] || segmentKey;
   const source = getSourceLabel(getMemberSource(member));
-  meta.textContent = `Accès : ${member.member_status || "pending"} / ${member.role || "member"} | Profil : ${segment} | Source : ${source}`;
+  meta.textContent = `Accès réel : ${getAccessLabel(member)} | Suivi : ${getQueueLabel(member)} | Profil : ${segment} | Source : ${source}`;
   content.appendChild(meta);
 
   const fields = document.createElement("div");
   fields.className = "admin-member-fields";
   const queueStatus = createSelect([
     ["new", "Nouveau"],
-    ["waiting", "A relancer"],
-    ["approved", "Valide"],
+    ["waiting", "À relancer"],
+    ["approved", "Validé"],
     ["vip", "Prioritaire"],
-    ["refused", "Refuse"],
-    ["archived", "Archive"],
-  ], getQueueStatus(member), "Statut de file");
+    ["refused", "Refusé"],
+    ["archived", "Archivé"],
+  ], getQueueStatus(member), "Suivi interne");
   const segmentSelect = createSelect([
     ["public", "Public"],
     ["proche", "Proche"],
@@ -799,6 +895,10 @@ function createAdminMemberRow(member) {
   fields.appendChild(segmentSelect);
   fields.appendChild(sourceSelect);
 
+  const accessHelp = document.createElement("p");
+  accessHelp.className = "admin-field-help";
+  accessHelp.textContent = "Le suivi classe le profil. L'accès réel se change avec Valider, Prioritaire, Refuser, Archiver ou Retirer.";
+
   const note = document.createElement("textarea");
   note.className = "admin-note-input";
   note.rows = 2;
@@ -809,6 +909,7 @@ function createAdminMemberRow(member) {
   actions.className = "admin-member-actions";
   actions.appendChild(createMemberAction("Valider", "approve", member.id));
   actions.appendChild(createMemberAction("Envoyer accès", "send_access_email", member.id));
+  actions.appendChild(createCopyInvitationAction(member));
 
   const secondary = document.createElement("details");
   secondary.className = "admin-action-menu";
@@ -829,7 +930,7 @@ function createAdminMemberRow(member) {
   const saveMeta = document.createElement("button");
   saveMeta.type = "button";
   saveMeta.className = "ghost";
-  saveMeta.textContent = "Sauver note";
+  saveMeta.textContent = "Sauver profil";
   saveMeta.addEventListener("click", () => updateMemberMeta(member.id, {
     audience_status: queueStatus.value,
     audience_segment: segmentSelect.value,
@@ -838,6 +939,7 @@ function createAdminMemberRow(member) {
     admin_note: note.value,
   }));
   content.appendChild(actions);
+  fields.appendChild(accessHelp);
   appendAdminMemberDetails(content, member, fields, note, saveMeta);
 
   row.appendChild(content);
@@ -1113,10 +1215,10 @@ function renderAdminSignalBoard() {
     dominant.textContent = `Signal dominant : ${topTag ? `${getFeedbackTagLabel(topTag[0])} (${topTag[1]})` : "pas encore"}`;
     const recurringDoubt = document.createElement("p");
     recurringDoubt.className = "admin-status-meta";
-    recurringDoubt.textContent = `Doute recurrent : ${doubt ? doubt.content : "aucun signal fort"}`;
+    recurringDoubt.textContent = `Doute récurrent : ${doubt ? doubt.content : "aucun signal fort"}`;
     const weakSignalText = document.createElement("p");
     weakSignalText.className = "admin-status-meta";
-    weakSignalText.textContent = `Signaux faibles : ${weakSignals.length ? weakSignals.map(([word, count]) => `${word} (${count})`).join(", ") : "pas assez de recurrence"}`;
+    weakSignalText.textContent = `Signaux faibles : ${weakSignals.length ? weakSignals.map(([word, count]) => `${word} (${count})`).join(", ") : "pas assez de récurrence"}`;
     const bestFeedback = document.createElement("p");
     bestFeedback.className = "admin-status-meta";
     bestFeedback.textContent = `Meilleur retour : ${best ? best.content : "aucun message"}`;
@@ -1137,9 +1239,9 @@ function renderWaveNote() {
   memberWaveNote.innerHTML = "";
   const title = document.createElement("p");
   title.className = "season-note__title";
-  title.textContent = "Profil d'écoute";
+  title.textContent = "Avant la sortie";
   const body = document.createElement("p");
-  body.textContent = segment.welcome;
+  body.textContent = `${segment.welcome} Ton écoute aide à voir ce qui tient, ce qui manque et ce qui reste.`;
   memberWaveNote.appendChild(title);
   memberWaveNote.appendChild(body);
   show(memberWaveNote);
@@ -1470,7 +1572,7 @@ function renderAdminTrackCockpit(tracks = []) {
     return;
   }
   if (!tracks.length) {
-    adminTrackCockpit.innerHTML = "<p class=\"muted\">Aucun morceau trouve.</p>";
+    adminTrackCockpit.innerHTML = "<p class=\"muted\">Aucun morceau trouvé.</p>";
     return;
   }
 
@@ -1484,6 +1586,9 @@ function renderAdminTrackCockpit(tracks = []) {
     const title = document.createElement("p");
     title.className = "admin-status-title";
     title.textContent = formatTrackTitle(track.title);
+    const cue = document.createElement("p");
+    cue.className = "admin-decision-cue";
+    cue.textContent = getTrackDecisionCue(track);
     const stats = document.createElement("p");
     stats.className = "admin-status-meta";
     stats.textContent = `${getDecisionStatusLabel(track.decision_status)} | ${track.plays || 0} écoutes | ${track.likes || 0} likes | ${track.messages || 0} messages`;
@@ -1493,9 +1598,10 @@ function renderAdminTrackCockpit(tracks = []) {
     const audioStatus = document.createElement("p");
     audioStatus.className = "admin-status-meta";
     audioStatus.textContent = track.audio_ok
-      ? `Audio OK : ${track.storage_path || "chemin non renseigne"}`
-      : `Audio a verifier : ${track.storage_path || "chemin non renseigne"}`;
+      ? `Audio OK : ${track.storage_path || "chemin non renseigné"}`
+      : `Audio à vérifier : ${track.storage_path || "chemin non renseigné"}`;
     headContent.appendChild(title);
+    headContent.appendChild(cue);
     headContent.appendChild(stats);
     headContent.appendChild(votes);
     headContent.appendChild(audioStatus);
@@ -1525,10 +1631,27 @@ function renderAdminTrackCockpit(tracks = []) {
     intent.placeholder = "Ce que tu cherches avec ce morceau...";
 
     const questionLabel = document.createElement("label");
-    questionLabel.textContent = "Question posee au cercle";
+    questionLabel.textContent = "Question posée au cercle";
     const question = document.createElement("textarea");
     question.rows = 2;
     question.placeholder = "Ex: Est-ce que le refrain tient ?";
+
+    const segmentAccess = createCheckboxGroup("Visible pour profils", [
+      ["public", "Public"],
+      ["proche", "Proche"],
+      ["artiste", "Artiste"],
+      ["pro", "Pro"],
+    ], track.allowed_audience_segments || []);
+
+    const statusAccess = createCheckboxGroup("Visible pour accès", [
+      ["member", "Membres"],
+      ["priority", "Prioritaires"],
+      ["founder", "Fondateurs"],
+    ], track.allowed_member_statuses || []);
+
+    const accessHint = document.createElement("p");
+    accessHint.className = "admin-field-help";
+    accessHint.textContent = "Aucune case cochée = visible pour tous les membres validés.";
 
     const save = document.createElement("button");
     save.type = "button";
@@ -1543,6 +1666,8 @@ function renderAdminTrackCockpit(tracks = []) {
         decision_status: status.value,
         intent_note: intent.value,
         feedback_question: question.value,
+        allowed_audience_segments: segmentAccess.getSelectedValues(),
+        allowed_member_statuses: statusAccess.getSelectedValues(),
       });
     });
     card.appendChild(head);
@@ -1552,6 +1677,9 @@ function renderAdminTrackCockpit(tracks = []) {
     card.appendChild(intent);
     card.appendChild(questionLabel);
     card.appendChild(question);
+    card.appendChild(segmentAccess);
+    card.appendChild(statusAccess);
+    card.appendChild(accessHint);
     card.appendChild(save);
     adminTrackCockpit.appendChild(card);
   });
@@ -2180,7 +2308,7 @@ async function loadSessionAndProfile() {
     if (adminPanel) {
       hide(adminPanel);
     }
-    memberMeta.textContent = "Ta demande est reçue. L'Atelier ouvre par vagues.";
+    memberMeta.textContent = "Sur le seuil de l'Atelier.";
     trackList.innerHTML = "";
     if (acteChooser) {
       acteChooser.innerHTML = "";
@@ -2201,24 +2329,18 @@ async function loadTracks(options = {}) {
   );
   const selectedTrackId = selectedTrack?.id || null;
 
-  let { data, error } = await supabase
-    .from("atelier_tracks")
-    .select("id, title, status, season_id, intent_note, feedback_question, decision_status, sort_order, created_at, atelier_seasons(id, slug, title, description, sort_order)")
-    .eq("status", "active")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: false });
-
-  if (error && /title|description|sort_order|atelier_seasons|created_at|intent_note|feedback_question|decision_status/i.test(String(error.message || ""))) {
-    const fallback = await supabase
-      .from("atelier_tracks")
-      .select("id, title, status, season_id")
-      .eq("status", "active")
-      .order("id", { ascending: false });
-    data = fallback.data;
-    error = fallback.error;
-  }
-
-  if (error) {
+  let data = [];
+  try {
+    const res = await fetch("/.netlify/functions/get-member-tracks", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(payload.error || "tracks_failed");
+    }
+    data = payload.tracks || [];
+  } catch (_) {
     memberMeta.textContent = "Impossible de charger les titres.";
     return;
   }
@@ -2693,7 +2815,7 @@ async function submitMessage(content, tag = "emotion") {
   }
 
   if (content.length > 1200) {
-    messageStatus.textContent = "Trace trop longue. Garde-la sous 1200 caracteres.";
+    messageStatus.textContent = "Trace trop longue. Garde-la sous 1200 caractères.";
     return;
   }
 
@@ -2728,7 +2850,7 @@ async function submitMessage(content, tag = "emotion") {
     } else if (data.error === "invalid_message") {
       messageStatus.textContent = "Trace trop courte ou trop longue.";
     } else {
-      messageStatus.textContent = "Trace refusee. Reessaie dans un instant.";
+      messageStatus.textContent = "Trace refusée. Réessaie dans un instant.";
     }
     return;
   }

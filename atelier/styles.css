@@ -1242,6 +1242,14 @@ body.admin-compact .admin-note-input {
   gap: 8px;
 }
 
+.admin-field-help {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: rgba(232, 223, 211, 0.58);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .admin-member-fields input,
 .admin-member-fields select {
   min-width: 0;
@@ -1284,9 +1292,53 @@ body.admin-compact .admin-note-input {
   border-bottom: 1px solid rgba(201, 152, 82, 0.14);
 }
 
+.admin-decision-cue {
+  width: fit-content;
+  margin: 7px 0 0;
+  padding: 4px 8px;
+  border: 1px solid rgba(201, 152, 82, 0.32);
+  border-radius: 999px;
+  color: rgba(245, 228, 198, 0.92);
+  background: rgba(201, 152, 82, 0.09);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .admin-track-item label {
   font-size: 12px;
   color: rgba(232, 223, 211, 0.74);
+}
+
+.admin-check-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 2px 0 0;
+  padding: 8px;
+  border: 1px solid rgba(232, 223, 211, 0.11);
+  border-radius: 8px;
+}
+
+.admin-check-group legend {
+  padding: 0 4px;
+  color: rgba(232, 223, 211, 0.72);
+  font-size: 11px;
+}
+
+.admin-check-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border: 1px solid rgba(201, 152, 82, 0.2);
+  border-radius: 999px;
+  background: rgba(201, 152, 82, 0.05);
+}
+
+.admin-check-group input {
+  width: auto;
 }
 
 .admin-track-item textarea,
@@ -1669,17 +1721,29 @@ body.atelier-listening .atelier-player-frame {
 
 @media (max-width: 720px) {
   .atelier-wrap {
-    margin-top: 4vh;
+    margin-top: 2vh;
     padding: 0 12px;
   }
 
   .atelier-header h1 {
-    font-size: 34px;
+    font-size: 28px;
     letter-spacing: 0.05em;
   }
 
+  .living-threshold {
+    margin-top: 8px;
+    font-size: 22px;
+  }
+
+  .atelier-gate-subtitle,
+  .circle-count,
+  .atelier-circle-presence {
+    display: none;
+  }
+
   #gateStatus {
-    font-size: 15px;
+    font-size: 13px;
+    margin: 0;
   }
 
   .circle-count {
@@ -1695,7 +1759,7 @@ body.atelier-listening .atelier-player-frame {
 
   .atelier-intro {
     padding: 0;
-    margin-top: 8px;
+    margin-top: 6px;
   }
 
   .atelier-intro p {
@@ -1708,6 +1772,10 @@ body.atelier-listening .atelier-player-frame {
     font-size: 9px;
     letter-spacing: 0.2em;
     padding: 4px 7px;
+  }
+
+  .atelier-intro p:not(.atelier-intro__badge):not(.atelier-protection-badge) {
+    display: none;
   }
 
   .atelier-protection-badge {
@@ -1739,7 +1807,7 @@ body.atelier-listening .atelier-player-frame {
   }
 
   .track-list {
-    margin-top: 8px;
+    margin-top: 6px;
   }
 
   .acte-chooser {
@@ -1766,7 +1834,7 @@ body.atelier-listening .atelier-player-frame {
   .listening-guide,
   .atelier-emotion-panel,
   .atelier-player-frame {
-    padding: 11px 12px;
+    padding: 10px 11px;
   }
 
   .track-card {
