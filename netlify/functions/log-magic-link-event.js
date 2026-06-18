@@ -1,7 +1,15 @@
 const { createClient } = require("@supabase/supabase-js");
 const { trackFunctionEvent } = require("./_lib/atelier-observability");
 
-async function sendAccessRequestEmail(email) {
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+async function sendAccessRequestEmail(email, entry = {}) {
   const apiKey = process.env.RESEND_API_KEY || "";
   const to = process.env.ATELIER_ADMIN_EMAIL || "";
   if (!apiKey || !to || !email) {
@@ -13,6 +21,9 @@ async function sendAccessRequestEmail(email) {
     || process.env.RESEND_FROM_EMAIL
     || "Atelier Morjane <atelier@morjane.re>";
   const atelierUrl = "https://morjane.re/atelier/";
+  const entryText = [entry.source, entry.door].filter(Boolean).join(" / ");
+  const safeEntryText = escapeHtml(entryText);
+  const safeEmail = escapeHtml(email);
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -27,9 +38,10 @@ async function sendAccessRequestEmail(email) {
         "Nouvelle demande d'acces a l'Atelier Morjane.",
         "",
         `Email : ${email}`,
+        entryText ? `Entree : ${entryText}` : "",
         `Admin : ${atelierUrl}`,
-      ].join("\n"),
-      html: `<p>Nouvelle demande d'acces a l'Atelier Morjane.</p><p><strong>${email}</strong></p><p><a href="${atelierUrl}">Ouvrir l'Atelier</a></p>`,
+      ].filter(Boolean).join("\n"),
+      html: `<p>Nouvelle demande d'acces a l'Atelier Morjane.</p><p><strong>${safeEmail}</strong></p>${safeEntryText ? `<p>Entree : ${safeEntryText}</p>` : ""}<p><a href="${atelierUrl}">Ouvrir l'Atelier</a></p>`,
     }),
   });
 
@@ -66,6 +78,12 @@ exports.handler = async (event) => {
   const result = payload.result === "sent" ? "sent" : "error";
   const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : null;
   const errorCode = typeof payload.error_code === "string" ? payload.error_code.slice(0, 120) : null;
+  const rawEntry = payload.entry && typeof payload.entry === "object" ? payload.entry : {};
+  const entry = {
+    source: typeof rawEntry.source === "string" ? rawEntry.source.slice(0, 40) : null,
+    door: typeof rawEntry.door === "string" ? rawEntry.door.slice(0, 40) : null,
+    segment: typeof rawEntry.segment === "string" ? rawEntry.segment.slice(0, 40) : null,
+  };
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
   const insert = await supabase.from("atelier_magic_link_events").insert({
@@ -100,7 +118,7 @@ exports.handler = async (event) => {
       : { data: null, error: null };
     const alreadyInside = ["member", "priority", "founder"].includes(existingProfile.data?.member_status);
     if (!alreadyInside) {
-      notified = await sendAccessRequestEmail(email);
+      notified = await sendAccessRequestEmail(email, entry);
     }
   }
 
@@ -108,7 +126,7 @@ exports.handler = async (event) => {
     function_name: "log-magic-link-event",
     status: "ok",
     latency_ms: Date.now() - startedAt,
-    meta: { result, notified },
+    meta: { result, notified, entry_source: entry.source, entry_door: entry.door, entry_segment: entry.segment },
   });
 
   return {

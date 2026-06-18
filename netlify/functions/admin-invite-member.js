@@ -211,6 +211,7 @@ exports.handler = async (event) => {
   const audienceSegment = allowedSegments.includes(payload.audience_segment) ? payload.audience_segment : "public";
   const memberStatus = allowedStatuses.includes(payload.member_status) ? payload.member_status : "member";
   const note = typeof payload.admin_note === "string" ? payload.admin_note.trim().slice(0, 1200) : "";
+  const delivery = payload.delivery === "link" ? "link" : "email";
 
   if (!isValidEmail(email)) {
     return json(400, { ok: false, error: "invalid_email" });
@@ -270,14 +271,16 @@ exports.handler = async (event) => {
     return json(500, { ok: false, error: "profile_upsert_failed" });
   }
 
-  const sent = await sendInvitationEmail(email, link.actionLink, memberStatus, audienceSegment);
-  if (!sent.ok) {
-    return json(500, { ok: false, error: sent.error });
+  if (delivery === "email") {
+    const sent = await sendInvitationEmail(email, link.actionLink, memberStatus, audienceSegment);
+    if (!sent.ok) {
+      return json(500, { ok: false, error: sent.error });
+    }
   }
 
   await supabase.from("atelier_admin_audit_logs").insert({
     admin_user_id: auth.adminUserId,
-    action: "member_invited",
+    action: delivery === "link" ? "member_invite_link_created" : "member_invited",
     target_type: "atelier_profile",
     target_id: link.userId,
     details: {
@@ -285,6 +288,7 @@ exports.handler = async (event) => {
       member_status: memberStatus,
       audience_segment: audienceSegment,
       source: "invitation",
+      delivery,
     },
   });
 
@@ -292,8 +296,14 @@ exports.handler = async (event) => {
     function_name: "admin-invite-member",
     status: "ok",
     latency_ms: Date.now() - startedAt,
-    meta: { email, member_status: memberStatus, audience_segment: audienceSegment },
+    meta: { email, member_status: memberStatus, audience_segment: audienceSegment, delivery },
   });
 
-  return json(200, { ok: true, email, userId: link.userId });
+  return json(200, {
+    ok: true,
+    email,
+    userId: link.userId,
+    delivery,
+    actionLink: delivery === "link" ? link.actionLink : undefined,
+  });
 };

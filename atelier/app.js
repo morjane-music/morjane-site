@@ -57,6 +57,8 @@ const adminInviteSegment = document.getElementById("adminInviteSegment");
 const adminInviteStatus = document.getElementById("adminInviteStatus");
 const adminInviteNote = document.getElementById("adminInviteNote");
 const adminInviteStatusText = document.getElementById("adminInviteStatusText");
+const adminCreateInviteLinkBtn = document.getElementById("adminCreateInviteLinkBtn");
+const adminEntryLinks = document.getElementById("adminEntryLinks");
 const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
 const trackTitle = document.getElementById("trackTitle");
@@ -80,6 +82,7 @@ const memberReplies = document.getElementById("memberReplies");
 
 const magicLinkForm = document.getElementById("magicLinkForm");
 const emailInput = document.getElementById("emailInput");
+const authDoorNote = document.getElementById("authDoorNote");
 const magicLinkSubmitBtn = magicLinkForm ? magicLinkForm.querySelector("button[type='submit']") : null;
 const messageForm = document.getElementById("messageForm");
 const feedbackTag = document.getElementById("feedbackTag");
@@ -121,6 +124,7 @@ const adminTodayState = {
 };
 const ADMIN_DENSITY_STORAGE_KEY = "atelier_admin_compact_density";
 const ATELIER_LAST_VISIT_STORAGE_KEY = "atelier_last_visit_at";
+const ATELIER_ENTRY_CONTEXT_STORAGE_KEY = "atelier_entry_context";
 const ADMIN_MEMBER_STATUS_LABELS = {
   new: "nouveau",
   waiting: "à relancer",
@@ -173,6 +177,37 @@ const SOURCE_LABELS = {
   bouche_a_oreille: "bouche à oreille",
   autre: "autre",
 };
+const ENTRY_SOURCE_LABELS = {
+  site: "Site",
+  qr: "QR",
+  concert: "Concert",
+  instagram: "Instagram",
+  email: "Email",
+  invitation: "Invitation",
+  bouche_a_oreille: "Bouche à oreille",
+  direct: "Direct",
+  autre: "Autre",
+};
+const ENTRY_DOOR_LABELS = {
+  home: "Home cachée",
+  menu: "Menu mobile",
+  footer: "Footer",
+  direct: "Accès direct",
+  phone: "QR téléphone",
+  pro: "QR pro",
+  concert: "Concert",
+  instagram: "Instagram",
+  invitation: "Invitation",
+};
+const ADMIN_ENTRY_LINKS = [
+  { label: "Atelier direct", source: "direct", door: "direct" },
+  { label: "Porte home", source: "site", door: "home" },
+  { label: "Porte footer", source: "site", door: "footer" },
+  { label: "QR téléphone", source: "qr", door: "phone" },
+  { label: "QR pro", source: "qr", door: "pro", segment: "pro" },
+  { label: "QR concert", source: "concert", door: "concert" },
+  { label: "Lien Instagram", source: "instagram", door: "instagram" },
+];
 const ATELIER_ACTES = [
   {
     slug: "acte-i",
@@ -564,6 +599,141 @@ function getSourceLabel(value) {
   return SOURCE_LABELS[key] || key || "source inconnue";
 }
 
+function normalizeEntrySource(value) {
+  const key = String(value || "").trim().toLowerCase();
+  const aliases = {
+    qr_code: "qr",
+    qrcode: "qr",
+    phone_qr: "qr",
+    insta: "instagram",
+    bouche: "bouche_a_oreille",
+    word: "bouche_a_oreille",
+  };
+  const normalized = aliases[key] || key;
+  return Object.keys(ENTRY_SOURCE_LABELS).includes(normalized) ? normalized : "";
+}
+
+function normalizeEntryDoor(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "")
+    .slice(0, 40);
+}
+
+function normalizeEntrySegment(value) {
+  const segment = normalizeAudienceSegment(value);
+  return ["public", "proche", "artiste", "pro"].includes(segment) ? segment : "";
+}
+
+function getEntryDoorLabel(value) {
+  const key = normalizeEntryDoor(value);
+  return ENTRY_DOOR_LABELS[key] || key || "porte inconnue";
+}
+
+function getEntryContextFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const source = normalizeEntrySource(params.get("source") || params.get("src"));
+  const door = normalizeEntryDoor(params.get("door") || params.get("porte") || params.get("wave"));
+  const segment = normalizeEntrySegment(params.get("segment") || params.get("profil"));
+  if (!source && !door && !segment) {
+    return null;
+  }
+  return {
+    source: source || "direct",
+    door: door || "direct",
+    segment: segment || "",
+    captured_at: new Date().toISOString(),
+  };
+}
+
+function getStoredEntryContext() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ATELIER_ENTRY_CONTEXT_STORAGE_KEY) || "null");
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+    return {
+      source: normalizeEntrySource(parsed.source) || "direct",
+      door: normalizeEntryDoor(parsed.door) || "direct",
+      segment: normalizeEntrySegment(parsed.segment),
+      captured_at: parsed.captured_at || new Date().toISOString(),
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function storeEntryContext(context) {
+  if (!context) {
+    return;
+  }
+  localStorage.setItem(ATELIER_ENTRY_CONTEXT_STORAGE_KEY, JSON.stringify(context));
+}
+
+function getCurrentEntryContext() {
+  const fromUrl = getEntryContextFromUrl();
+  if (fromUrl) {
+    storeEntryContext(fromUrl);
+    return fromUrl;
+  }
+  return getStoredEntryContext();
+}
+
+function getSupabaseSourceForEntry(context) {
+  const source = normalizeEntrySource(context?.source);
+  if (["concert", "instagram", "email", "invitation", "bouche_a_oreille", "autre"].includes(source)) {
+    return source;
+  }
+  return "site";
+}
+
+function buildAtelierEntryUrl(entry = {}) {
+  const url = new URL("/atelier/", window.location.origin);
+  if (entry.source) url.searchParams.set("source", entry.source);
+  if (entry.door) url.searchParams.set("door", entry.door);
+  if (entry.segment) url.searchParams.set("segment", entry.segment);
+  return url.toString();
+}
+
+function getEntryAdminLabel(member) {
+  const accessSource = String(member?.access_source || "").trim();
+  const accessWave = String(member?.access_wave || "").trim();
+  if (accessSource || accessWave) {
+    const source = ENTRY_SOURCE_LABELS[normalizeEntrySource(accessSource)] || getSourceLabel(accessSource);
+    const door = accessWave ? getEntryDoorLabel(accessWave) : "";
+    return [source, door].filter(Boolean).join(" / ");
+  }
+  return getSourceLabel(getMemberSource(member));
+}
+
+function applyEntryContextToAuthView() {
+  if (!authDoorNote) {
+    return;
+  }
+  const context = getCurrentEntryContext();
+  if (!context || (!context.source && !context.door)) {
+    hide(authDoorNote);
+    return;
+  }
+
+  const source = normalizeEntrySource(context.source);
+  const door = normalizeEntryDoor(context.door);
+  const lines = {
+    phone: "Tu es devant l'Atelier. Laisse ton email, Morjane ouvrira si c'est le bon moment.",
+    pro: "Porte pro. Laisse ton email pour demander un accès d'écoute adapté.",
+    concert: "Tu arrives par une rencontre. Laisse ton email pour garder le fil.",
+    instagram: "Tu viens d'Instagram. Laisse ton email pour demander l'accès.",
+    home: "Tu as trouvé la fissure. Laisse ton email pour demander l'accès.",
+    footer: "L'Atelier n'est pas public. Laisse ton email pour demander l'accès.",
+    menu: "L'Atelier n'est pas public. Laisse ton email pour demander l'accès.",
+  };
+  authDoorNote.textContent = lines[door] || (source === "qr"
+    ? "Cette porte ouvre une demande, pas les chansons directement. Laisse ton email pour être reconnu."
+    : "Laisse ton email pour demander l'accès à l'Atelier.");
+  show(authDoorNote);
+}
+
 function getAccessLabel(member) {
   const status = String(member?.member_status || "pending");
   return ({
@@ -584,7 +754,7 @@ function getInvitationText(member) {
     "",
     "Tu pourras écouter des versions avant leur sortie et me laisser un retour privé.",
     "",
-    "Entre ici : https://morjane.re/atelier/",
+    "Entre ici : https://morjane.re/atelier/?source=invitation&door=invitation",
     "",
     "Utilise le même email pour recevoir ton lien de connexion.",
   ].join("\n");
@@ -850,6 +1020,15 @@ function createSelect(options, value, label) {
   return select;
 }
 
+function createAdminTextField(label, value = "") {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.setAttribute("aria-label", label);
+  input.placeholder = label;
+  input.value = value || "";
+  return input;
+}
+
 function createCheckboxGroup(titleText, options, selectedValues = []) {
   const selected = new Set(Array.isArray(selectedValues) ? selectedValues : []);
   const fieldset = document.createElement("fieldset");
@@ -912,6 +1091,94 @@ function createCopyInvitationAction(member) {
   return button;
 }
 
+function createPersonalLinkAction(member) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "ghost";
+  button.textContent = "Créer lien";
+  button.addEventListener("click", async () => {
+    if (!member?.email || !session?.access_token) {
+      button.textContent = "Email manquant";
+      return;
+    }
+    button.disabled = true;
+    button.textContent = "Création...";
+    try {
+      const res = await fetch("/.netlify/functions/admin-invite-member", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          email: member.email,
+          audience_segment: normalizeAudienceSegment(member.audience_segment) || "public",
+          member_status: member.member_status === "priority" ? "priority" : "member",
+          admin_note: member.admin_note || "",
+          delivery: "link",
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.actionLink) {
+        button.textContent = "Lien impossible";
+      } else {
+        await navigator.clipboard.writeText(data.actionLink);
+        button.textContent = "Lien copié";
+        await loadAdminAuditLog();
+      }
+    } catch (_) {
+      button.textContent = "Copie impossible";
+    } finally {
+      setTimeout(() => {
+        button.disabled = false;
+        button.textContent = "Créer lien";
+      }, 1600);
+    }
+  });
+  return button;
+}
+
+function renderAdminEntryLinks() {
+  if (!adminEntryLinks) {
+    return;
+  }
+  adminEntryLinks.innerHTML = "";
+  ADMIN_ENTRY_LINKS.forEach((entry) => {
+    const item = document.createElement("article");
+    item.className = "admin-entry-link";
+
+    const copy = document.createElement("button");
+    copy.type = "button";
+    copy.className = "ghost";
+    copy.textContent = "Copier";
+    const url = buildAtelierEntryUrl(entry);
+    copy.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(url);
+        copy.textContent = "Copié";
+      } catch (_) {
+        copy.textContent = "Copie impossible";
+      }
+      setTimeout(() => {
+        copy.textContent = "Copier";
+      }, 1400);
+    });
+
+    const title = document.createElement("p");
+    title.className = "admin-entry-link__title";
+    title.textContent = entry.label;
+
+    const meta = document.createElement("p");
+    meta.className = "admin-entry-link__meta";
+    meta.textContent = `${ENTRY_SOURCE_LABELS[entry.source] || entry.source} · ${getEntryDoorLabel(entry.door)}`;
+
+    item.appendChild(copy);
+    item.appendChild(title);
+    item.appendChild(meta);
+    adminEntryLinks.appendChild(item);
+  });
+}
+
 function appendAdminMemberDetails(content, member, fields, note, saveMeta) {
   const details = document.createElement("details");
   details.className = "admin-details";
@@ -947,8 +1214,8 @@ function createAdminMemberRow(member) {
   meta.className = "admin-member-meta";
   const segmentKey = normalizeAudienceSegment(member.audience_segment);
   const segment = ADMIN_MEMBER_SEGMENT_LABELS[segmentKey] || segmentKey;
-  const source = getSourceLabel(getMemberSource(member));
-  meta.textContent = `Accès réel : ${getAccessLabel(member)} | Suivi : ${getQueueLabel(member)} | Profil : ${segment} | Source : ${source}`;
+  const entry = getEntryAdminLabel(member);
+  meta.textContent = `Accès réel : ${getAccessLabel(member)} | Suivi : ${getQueueLabel(member)} | Profil : ${segment} | Entrée : ${entry}`;
   content.appendChild(meta);
 
   const fields = document.createElement("div");
@@ -975,10 +1242,24 @@ function createAdminMemberRow(member) {
     ["invitation", "Invitation"],
     ["bouche_a_oreille", "Bouche à oreille"],
     ["autre", "Autre"],
-  ], getMemberSource(member) || "site", "Provenance");
+  ], member.source || "site", "Provenance");
+  const accessSourceSelect = createSelect([
+    ["site", "Site"],
+    ["qr", "QR"],
+    ["concert", "Concert"],
+    ["instagram", "Instagram"],
+    ["email", "Email"],
+    ["invitation", "Invitation"],
+    ["bouche_a_oreille", "Bouche à oreille"],
+    ["direct", "Direct"],
+    ["autre", "Autre"],
+  ], member.access_source || getMemberSource(member) || "site", "Entrée précise");
+  const accessWaveInput = createAdminTextField("Porte / vague", member.access_wave || "");
   fields.appendChild(queueStatus);
   fields.appendChild(segmentSelect);
   fields.appendChild(sourceSelect);
+  fields.appendChild(accessSourceSelect);
+  fields.appendChild(accessWaveInput);
 
   const accessHelp = document.createElement("p");
   accessHelp.className = "admin-field-help";
@@ -996,6 +1277,7 @@ function createAdminMemberRow(member) {
   actions.appendChild(createMemberAction("Valider", "approve", member.id));
   actions.appendChild(createMemberAction("Envoyer accès", "send_access_email", member.id));
   actions.appendChild(createCopyInvitationAction(member));
+  actions.appendChild(createPersonalLinkAction(member));
 
   const secondary = document.createElement("details");
   secondary.className = "admin-action-menu";
@@ -1021,7 +1303,8 @@ function createAdminMemberRow(member) {
     audience_status: queueStatus.value,
     audience_segment: segmentSelect.value,
     source: sourceSelect.value,
-    access_source: sourceSelect.value,
+    access_source: accessSourceSelect.value,
+    access_wave: accessWaveInput.value,
     admin_note: note.value,
   }));
   content.appendChild(actions);
@@ -2481,6 +2764,8 @@ function renderAdminAuditLog(logs = []) {
     message_reopened: "Message rouvert",
     message_replied: "Réponse message",
     track_cockpit_updated: "Morceau mis à jour",
+    member_invited: "Invitation envoyée",
+    member_invite_link_created: "Lien d'invitation créé",
     member_approve: "Membre validé",
     member_revoke: "Accès retiré",
     member_vip: "Prioritaire",
@@ -2650,7 +2935,7 @@ async function updateMemberMeta(userId, fields) {
   }
 }
 
-async function sendAdminInvite() {
+async function sendAdminInvite(delivery = "email") {
   if (!canManageMembers() || !session?.access_token || !adminInviteEmail) {
     return;
   }
@@ -2661,7 +2946,9 @@ async function sendAdminInvite() {
     return;
   }
 
-  if (adminInviteStatusText) adminInviteStatusText.textContent = "Invitation en cours...";
+  if (adminInviteStatusText) {
+    adminInviteStatusText.textContent = delivery === "link" ? "Création du lien..." : "Invitation en cours...";
+  }
   try {
     const res = await fetch("/.netlify/functions/admin-invite-member", {
       method: "POST",
@@ -2674,6 +2961,7 @@ async function sendAdminInvite() {
         audience_segment: adminInviteSegment?.value || "public",
         member_status: adminInviteStatus?.value || "member",
         admin_note: adminInviteNote?.value || "",
+        delivery,
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -2682,6 +2970,7 @@ async function sendAdminInvite() {
         invalid_email: "Email invalide.",
         missing_resend_key: "Clé Resend manquante côté Netlify.",
         link_failed: "Lien d'invitation impossible à générer.",
+        missing_link: "Lien d'invitation impossible à générer.",
         profile_upsert_failed: "Profil impossible à préparer.",
         admin_gate_required: "Déverrouille d'abord l'admin.",
         resend_forbidden_sender: "Resend refuse l'expéditeur. Vérifie ATELIER_FROM_EMAIL dans Netlify.",
@@ -2693,7 +2982,16 @@ async function sendAdminInvite() {
       return;
     }
 
-    if (adminInviteStatusText) adminInviteStatusText.textContent = `Invitation envoyée à ${data.email || email}.`;
+    if (delivery === "link" && data.actionLink) {
+      try {
+        await navigator.clipboard.writeText(data.actionLink);
+        if (adminInviteStatusText) adminInviteStatusText.textContent = `Lien personnel copié pour ${data.email || email}.`;
+      } catch (_) {
+        if (adminInviteStatusText) adminInviteStatusText.textContent = `Lien créé pour ${data.email || email}, mais copie impossible.`;
+      }
+    } else if (adminInviteStatusText) {
+      adminInviteStatusText.textContent = `Invitation envoyée à ${data.email || email}.`;
+    }
     adminInviteEmail.value = "";
     if (adminInviteNote) adminInviteNote.value = "";
     await loadAdminMembers();
@@ -2827,6 +3125,8 @@ async function ensureAtelierProfile() {
     { onConflict: "id" }
   );
 
+  await recordEntryContext();
+
   let { data, error } = await supabase
     .from("atelier_profiles")
     .select("id, email, role, member_status, audience_segment, source, access_source, access_wave")
@@ -2843,6 +3143,34 @@ async function ensureAtelierProfile() {
   }
 
   return data || null;
+}
+
+async function recordEntryContext() {
+  const context = getCurrentEntryContext();
+  if (!context || !session?.access_token) {
+    return;
+  }
+
+  try {
+    const res = await fetch("/.netlify/functions/record-atelier-entry", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        source: getSupabaseSourceForEntry(context),
+        access_source: normalizeEntrySource(context.source) || "direct",
+        access_wave: normalizeEntryDoor(context.door) || "direct",
+        audience_segment: normalizeEntrySegment(context.segment),
+      }),
+    });
+    if (res.ok) {
+      localStorage.removeItem(ATELIER_ENTRY_CONTEXT_STORAGE_KEY);
+    }
+  } catch (_) {
+    // Keep the context in localStorage; it can be recorded after the next login.
+  }
 }
 
 async function fetchPublicConfig() {
@@ -2902,6 +3230,7 @@ async function loadSessionAndProfile() {
   if (!session) {
     stopPresenceHeartbeat();
     stopAdminLiveRefresh();
+    applyEntryContextToAuthView();
     show(authView);
     hide(memberView);
     hide(trackView);
@@ -3495,6 +3824,7 @@ magicLinkForm.addEventListener("submit", async (event) => {
     authStatus.textContent = "Email requis.";
     return;
   }
+  const entryContext = getCurrentEntryContext();
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
@@ -3509,7 +3839,7 @@ magicLinkForm.addEventListener("submit", async (event) => {
     fetch("/.netlify/functions/log-magic-link-event", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, result: "error", error_code: lower.slice(0, 120) }),
+      body: JSON.stringify({ email, result: "error", error_code: lower.slice(0, 120), entry: entryContext }),
     }).catch(() => {});
     if (lower.includes("rate limit")) {
       authStatus.textContent = "Trop de tentatives. Réessayez dans 60 secondes.";
@@ -3525,7 +3855,7 @@ magicLinkForm.addEventListener("submit", async (event) => {
   fetch("/.netlify/functions/log-magic-link-event", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, result: "sent" }),
+    body: JSON.stringify({ email, result: "sent", entry: entryContext }),
   }).catch(() => {});
   startMagicLinkCooldown(60);
 });
@@ -3638,7 +3968,13 @@ if (adminSearchInput) {
 if (adminInviteForm) {
   adminInviteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    await sendAdminInvite();
+    await sendAdminInvite("email");
+  });
+}
+
+if (adminCreateInviteLinkBtn) {
+  adminCreateInviteLinkBtn.addEventListener("click", async () => {
+    await sendAdminInvite("link");
   });
 }
 
@@ -3671,7 +4007,7 @@ if (adminPreviewStatus) {
 
 if (copyAtelierLinkBtn) {
   copyAtelierLinkBtn.addEventListener("click", async () => {
-    const atelierUrl = `${window.location.origin}/atelier/`;
+    const atelierUrl = buildAtelierEntryUrl({ source: "direct", door: "direct" });
     try {
       await navigator.clipboard.writeText(atelierUrl);
       copyAtelierLinkBtn.textContent = "Lien copié";
@@ -3809,6 +4145,9 @@ document.querySelectorAll("[data-support-context]").forEach((link) => {
 async function boot() {
   initAdminDensityMode();
   initScrollReveals();
+  getCurrentEntryContext();
+  applyEntryContextToAuthView();
+  renderAdminEntryLinks();
   setTimeout(() => {
     document.body.classList.add("ritual-ready");
   }, 120);

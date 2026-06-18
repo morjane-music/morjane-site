@@ -114,6 +114,14 @@ body.is-listening::before {
   font-size: 14px;
 }
 
+.auth-door-note {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border-left: 1px solid rgba(201, 152, 82, 0.42);
+  background: rgba(201, 152, 82, 0.06);
+  line-height: 1.45;
+}
+
 .living-threshold {
   max-width: 620px;
   margin: 14px auto 0;
@@ -950,6 +958,62 @@ button.ghost {
   border-color: rgba(201, 152, 82, 0.7);
 }
 
+.admin-entry-doors {
+  margin: 10px 0 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(201, 152, 82, 0.16);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.admin-entry-doors summary {
+  cursor: pointer;
+  color: rgba(245, 228, 198, 0.95);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.admin-entry-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.admin-entry-link {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 9px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid rgba(232, 223, 211, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.admin-entry-link button {
+  grid-row: span 2;
+  min-height: 36px;
+  padding: 7px 9px;
+}
+
+.admin-entry-link__title,
+.admin-entry-link__meta {
+  margin: 0;
+}
+
+.admin-entry-link__title {
+  color: rgba(244, 239, 231, 0.9);
+  font-weight: 600;
+}
+
+.admin-entry-link__meta {
+  color: rgba(167, 155, 140, 0.88);
+  font-size: 12px;
+}
+
 .admin-inbox-actions {
   margin-top: 8px;
   display: flex;
@@ -1206,7 +1270,7 @@ body.admin-compact .admin-note-input {
 
 .admin-invite-grid {
   display: grid;
-  grid-template-columns: minmax(180px, 1.4fr) repeat(2, minmax(120px, 0.7fr)) auto;
+  grid-template-columns: minmax(180px, 1.4fr) repeat(2, minmax(120px, 0.7fr)) auto auto;
   gap: 8px;
 }
 

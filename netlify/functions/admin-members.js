@@ -132,7 +132,7 @@ async function sendAccessEmail(supabase, userId) {
 async function getTargetProfile(supabase, userId) {
   const result = await supabase
     .from("atelier_profiles")
-    .select("id, email, role, member_status, audience_status, audience_segment, source, access_source")
+    .select("id, email, role, member_status, audience_status, audience_segment, source, access_source, access_wave")
     .eq("id", userId)
     .maybeSingle();
   if (result.error || !result.data) {
@@ -151,6 +151,8 @@ function getProfileState(profile) {
     audience_status: profile.audience_status || null,
     audience_segment: profile.audience_segment || null,
     source: profile.source || profile.access_source || null,
+    access_source: profile.access_source || null,
+    access_wave: profile.access_wave || null,
   };
 }
 
@@ -318,12 +320,16 @@ exports.handler = async (event) => {
       const allowedStatuses = ["new", "waiting", "approved", "vip", "refused", "archived"];
       const allowedSegments = ["public", "proche", "artiste", "pro"];
       const allowedSources = ["site", "concert", "instagram", "email", "invitation", "bouche_a_oreille", "autre"];
+      const allowedAccessSources = ["site", "qr", "concert", "instagram", "email", "invitation", "bouche_a_oreille", "direct", "autre"];
       const source = allowedSources.includes(fields.source) ? fields.source : (allowedSources.includes(fields.access_source) ? fields.access_source : "site");
+      const accessSource = allowedAccessSources.includes(fields.access_source) ? fields.access_source : source;
+      const accessWave = cleanText(fields.access_wave, 80);
       update = {
         audience_status: allowedStatuses.includes(fields.audience_status) ? fields.audience_status : "new",
         audience_segment: allowedSegments.includes(fields.audience_segment) ? fields.audience_segment : null,
         source,
-        access_source: source,
+        access_source: accessSource,
+        access_wave: accessWave,
         admin_note: cleanText(fields.admin_note, 1200),
       };
     } else {

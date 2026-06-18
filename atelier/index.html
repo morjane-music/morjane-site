@@ -58,6 +58,7 @@
         <li>Validation membre du cercle</li>
       </ol>
       <p>Entrez votre email pour recevoir un lien de connexion.</p>
+      <p id="authDoorNote" class="auth-door-note muted hidden"></p>
       <form id="magicLinkForm" class="stack">
         <input id="emailInput" type="email" placeholder="vous@email.com" required>
         <button type="submit">Recevoir le lien</button>
@@ -124,6 +125,11 @@
         <button type="button" id="adminDensityToggle" class="ghost" aria-pressed="false">Mode compact : off</button>
         <input id="adminSearchInput" type="search" placeholder="Rechercher un email">
       </div>
+      <details class="admin-entry-doors">
+        <summary>Liens et QR</summary>
+        <p class="muted">Ces liens ne donnent pas accès aux chansons. Ils qualifient seulement l'entrée avant validation.</p>
+        <div id="adminEntryLinks" class="admin-entry-links"></div>
+      </details>
       <nav class="admin-main-tabs" aria-label="Navigation admin">
         <button type="button" class="admin-main-tab is-active" data-admin-section="requests">Demandes</button>
         <button type="button" class="admin-main-tab" data-admin-section="members">Membres</button>
@@ -151,7 +157,8 @@
             <option value="member">Membre</option>
             <option value="priority">Prioritaire</option>
           </select>
-          <button type="submit" class="ghost">Inviter</button>
+          <button type="submit" class="ghost" data-invite-mode="send">Inviter par email</button>
+          <button type="button" id="adminCreateInviteLinkBtn" class="ghost">Créer + copier lien</button>
         </div>
         <textarea id="adminInviteNote" rows="2" placeholder="Note interne facultative"></textarea>
         <p id="adminInviteStatusText" class="muted"></p>
