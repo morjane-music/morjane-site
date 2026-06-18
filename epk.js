@@ -82,18 +82,45 @@ const burger = document.querySelector('.epk-burger');
 const nav = document.querySelector('.epk-nav');
 
 if (burger && nav) {
+  const closeEpkMenu = () => {
+    nav.classList.remove('is-open');
+    burger.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('menu-open');
+  };
+
   burger.setAttribute('aria-expanded', 'false');
 
-  burger.addEventListener('click', () => {
+  burger.addEventListener('click', event => {
+    event.stopPropagation();
     const isOpen = nav.classList.toggle('is-open');
     burger.setAttribute('aria-expanded', String(isOpen));
+    document.body.classList.toggle('menu-open', isOpen);
   });
 
   nav.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', () => {
-      nav.classList.remove('is-open');
-      burger.setAttribute('aria-expanded', 'false');
-    });
+    link.addEventListener('click', closeEpkMenu);
+  });
+
+  nav.addEventListener('click', event => {
+    event.stopPropagation();
+  });
+
+  document.addEventListener('click', () => {
+    if (nav.classList.contains('is-open')) {
+      closeEpkMenu();
+    }
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && nav.classList.contains('is-open')) {
+      closeEpkMenu();
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (!window.matchMedia('(max-width: 768px)').matches) {
+      closeEpkMenu();
+    }
   });
 }
 

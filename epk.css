@@ -852,6 +852,8 @@
     gap: 28px;
     transform: translateY(-100%);
     transition: transform 0.4s ease;
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .epk-page .epk-nav a,
@@ -885,6 +887,8 @@
 
   .epk-page .epk-nav.is-open {
     transform: translateY(0);
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .epk-page .epk-back {
