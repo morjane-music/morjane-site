@@ -454,6 +454,90 @@
   letter-spacing: 0.22em;
 }
 
+.epk-page .epk-music {
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.epk-page .epk-music-head {
+  max-width: 720px;
+  margin: 0 auto 34px;
+  text-align: center;
+}
+
+.epk-page .epk-music-head p {
+  margin: 16px auto 0;
+  color: rgba(194,182,166,0.78);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.epk-page .epk-track-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.epk-page .epk-track-item {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  min-height: 220px;
+  padding: 22px;
+  border: 1px solid rgba(201,152,82,0.16);
+  border-radius: 8px;
+  background:
+    radial-gradient(ellipse at 0% 100%, rgba(201,152,82,0.06), transparent 56%),
+    linear-gradient(180deg, rgba(255,255,255,0.018), transparent),
+    rgba(0,0,0,0.18);
+  text-align: left;
+}
+
+.epk-page .epk-track-item span {
+  color: rgba(201,152,82,0.78);
+  font-family: Montserrat, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.epk-page .epk-track-item h3 {
+  margin: 14px 0 10px;
+  color: rgba(236,224,200,0.92);
+  font-family: Montserrat, sans-serif;
+  font-size: clamp(20px, 2vw, 26px);
+  line-height: 1.05;
+}
+
+.epk-page .epk-track-item p {
+  margin: 0;
+  color: rgba(194,182,166,0.72);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.epk-page .epk-track-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-self: end;
+  margin-top: 22px;
+}
+
+.epk-page .epk-track-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  color: rgba(201,152,82,0.9);
+  font-family: Montserrat, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(201,152,82,0.34);
+}
+
 @media (max-width: 768px) {
   .epk-page .epk-music-inner {
     grid-template-columns: 1fr;
@@ -472,6 +556,23 @@
     width: 180px;
     height: 180px;
     margin-right: -8px;
+  }
+
+  .epk-page .epk-track-list {
+    grid-template-columns: 1fr;
+  }
+
+  .epk-page .epk-track-item {
+    min-height: 190px;
+    text-align: center;
+  }
+
+  .epk-page .epk-track-links {
+    justify-content: center;
+  }
+
+  .epk-page .epk-track-links a {
+    min-height: 44px;
   }
 }
 

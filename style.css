@@ -223,31 +223,6 @@ body.has-scrolled .site-header {
   text-align: left;
 }
 
-.hero-thread {
-  position: absolute;
-  left: clamp(28px, 5vw, 64px);
-  bottom: clamp(32px, 6vw, 72px);
-  z-index: 4;
-  max-width: 320px;
-  color: rgba(232,223,211,0.62);
-  font-family: Montserrat, sans-serif;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  line-height: 1.8;
-  text-transform: uppercase;
-}
-
-.hero-thread::before {
-  content: "";
-  display: block;
-  width: 54px;
-  height: 1px;
-  margin-bottom: 14px;
-  background: linear-gradient(90deg, rgba(201,152,82,0.68), transparent);
-}
-
-
 /* =====================================================
    05. MANIFESTE / BIO
 ===================================================== */
@@ -298,15 +273,15 @@ body.has-scrolled .site-header {
   margin-bottom: 0;
 }
 
-.manifeste-row:nth-child(1) .manifeste-text {
+.manifeste-row:nth-child(2) .manifeste-text {
   transform: translateX(-6px);
 }
 
-.manifeste-row:nth-child(2) .manifeste-text {
+.manifeste-row:nth-child(3) .manifeste-text {
   transform: translateX(6px);
 }
 
-.manifeste-row:nth-child(3) .manifeste-text {
+.manifeste-row:nth-child(4) .manifeste-text {
   transform: translateX(-6px);
 }
 
@@ -325,6 +300,21 @@ body.has-scrolled .site-header {
 
 .manifeste-line {
   display: none;
+}
+
+.manifeste-row--lead {
+  margin-bottom: 98px;
+}
+
+.manifeste-row--lead .manifeste-text {
+  max-width: 900px;
+  color: rgba(236,224,200,0.98);
+  font-size: clamp(31px, 4.8vw, 56px);
+  line-height: 1.03;
+  text-shadow:
+    0 0 20px rgba(201,152,82,0.14),
+    0 0 52px rgba(201,152,82,0.08);
+  transform: none;
 }
 
 
@@ -1429,20 +1419,6 @@ body.on-image .cursor-light {
     font-size: 20px;
   }
 
-  .hero-thread {
-    left: 24px;
-    bottom: 112px;
-    max-width: 240px;
-    font-size: 9px;
-    letter-spacing: 0.18em;
-    line-height: 1.7;
-  }
-
-  .hero-thread::before {
-    width: 42px;
-    margin-bottom: 10px;
-  }
-
   .section-manifeste {
     padding: 100px 24px;
     text-align: center;
@@ -1454,6 +1430,15 @@ body.on-image .cursor-light {
 
   .manifeste-row .manifeste-text {
     transform: none;
+  }
+
+  .manifeste-row--lead {
+    margin-bottom: 70px;
+  }
+
+  .manifeste-row--lead .manifeste-text {
+    font-size: clamp(30px, 10vw, 42px);
+    line-height: 1.06;
   }
 
   .regard-transition {
