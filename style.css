@@ -317,6 +317,18 @@ body.has-scrolled .site-header {
   transform: none;
 }
 
+.manifeste-row--identity .manifeste-text {
+  color: rgba(194,182,166,0.78);
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.7;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
 
 /* =====================================================
    06. REGARD / TRANSITION
@@ -740,32 +752,30 @@ body.has-scrolled .site-header {
 
 .music-traces {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 26px;
+  gap: 0;
+  margin-top: 34px;
+  border-top: 1px solid rgba(201,152,82,0.14);
+  border-bottom: 1px solid rgba(201,152,82,0.14);
 }
 
 .music-traces article {
-  min-height: 178px;
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  align-content: start;
-  border: 1px solid rgba(201,152,82,0.16);
-  border-radius: 8px;
-  padding: 16px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.018), transparent),
-    rgba(0,0,0,0.18);
-  transition: border-color 0.28s ease, background 0.28s ease, transform 0.28s ease;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: center;
+  min-height: 118px;
+  padding: 22px 0;
+  border-bottom: 1px solid rgba(201,152,82,0.1);
+  transition: background 0.28s ease, transform 0.28s ease;
+}
+
+.music-traces article:last-child {
+  border-bottom: 0;
 }
 
 .music-traces article:hover {
-  transform: translateY(-2px);
-  border-color: rgba(201,152,82,0.28);
-  background:
-    radial-gradient(ellipse at 0% 100%, rgba(201,152,82,0.07), transparent 52%),
-    linear-gradient(180deg, rgba(255,255,255,0.024), transparent),
-    rgba(0,0,0,0.2);
+  transform: translateX(4px);
+  background: linear-gradient(90deg, rgba(201,152,82,0.045), transparent 64%);
 }
 
 .music-traces span,
@@ -782,16 +792,16 @@ body.has-scrolled .site-header {
 
 .music-traces strong {
   display: block;
-  margin: 8px 0 14px;
-  font-size: 20px;
+  margin: 8px 0 8px;
+  font-size: clamp(20px, 2.4vw, 30px);
   font-weight: 500;
 }
 
 .music-traces p {
-  margin: -2px 0 0;
+  margin: 0;
   color: rgba(232,223,211,0.62);
-  font-size: 12px;
-  line-height: 1.45;
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .music-traces a {
@@ -803,9 +813,11 @@ body.has-scrolled .site-header {
 }
 
 .music-trace-actions {
-  display: grid;
-  gap: 5px;
-  align-self: end;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 190px;
 }
 
 
@@ -1085,11 +1097,33 @@ body.has-scrolled .site-header {
   padding-top: clamp(76px, 8vw, 104px);
 }
 
+.contact-kicker {
+  margin-bottom: 12px;
+  color: rgba(201,152,82,0.82);
+  font-family: Montserrat, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
 .contact-intro {
+  margin-bottom: 12px;
+  color: rgba(236,224,200,0.9);
+  font-family: Montserrat, sans-serif;
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.04;
+}
+
+.contact-supporting {
+  margin-bottom: 44px;
+  color: rgba(194,182,166,0.74);
   font-family: "Cormorant Garamond", serif;
+  font-size: 21px;
   font-style: italic;
-  font-size: 20px;
-  margin-bottom: 48px;
+  line-height: 1.45;
 }
 
 .contact-form {
@@ -1441,6 +1475,11 @@ body.on-image .cursor-light {
     line-height: 1.06;
   }
 
+  .manifeste-row--identity .manifeste-text {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+
   .regard-transition {
     height: 36vh;
   }
@@ -1522,8 +1561,18 @@ body.on-image .cursor-light {
   }
 
   .music-traces article {
-    min-height: 156px;
-    padding: 18px;
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 22px 0;
+  }
+
+  .music-traces article:hover {
+    transform: none;
+  }
+
+  .music-trace-actions {
+    justify-content: center;
+    min-width: 0;
   }
 
   .videos-head {
@@ -1582,6 +1631,7 @@ body.on-image .cursor-light {
 
   .section-contact,
   .contact-intro,
+  .contact-supporting,
   .contact-line,
   .contact-epk {
     text-align: center;
