@@ -2117,12 +2117,13 @@ body.atelier-listening .atelier-player-frame {
     background:
       linear-gradient(
         180deg,
-        rgba(5, 5, 5, 0.2) 0%,
-        rgba(5, 5, 5, 0.36) 32vh,
-        rgba(5, 5, 5, 0.78) 58vh,
+        rgba(5, 5, 5, 0.04) 0%,
+        rgba(5, 5, 5, 0.16) 34vh,
+        rgba(5, 5, 5, 0.52) 52vh,
+        rgba(5, 5, 5, 0.82) 68vh,
         rgba(5, 5, 5, 0.96) 92vh
       ),
-      url("../assets/images/atelier/new-background-mobile.png") center top / 100% auto no-repeat scroll,
+      url("../assets/images/atelier/new-background-mobile.png") center top / 112% auto no-repeat scroll,
       radial-gradient(1200px 500px at 15% -10%, rgba(201, 152, 82, 0.2), transparent 58%),
       radial-gradient(1000px 450px at 110% 15%, rgba(201, 152, 82, 0.08), transparent 58%),
       var(--bg);
