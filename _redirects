@@ -2,6 +2,9 @@
 /atelier/* /atelier/index.html 200
 /acte1 /acte1.html 200
 /fissure /acte1.html 200
-/epk /epk.html 301
-/confidentialite /confidentialite.html 301
-/cookies /cookies.html 301
+/epk.html /epk 301
+/epk /epk.html 200
+/confidentialite.html /confidentialite 301
+/confidentialite /confidentialite.html 200
+/cookies.html /cookies 301
+/cookies /cookies.html 200
