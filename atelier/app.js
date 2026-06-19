@@ -754,9 +754,9 @@ function getInvitationText(member) {
     "",
     "Tu pourras écouter des versions avant leur sortie et me laisser un retour privé.",
     "",
-    "Entre ici : https://morjane.re/atelier/?source=invitation&door=invitation",
+    "Demande ton accès ici : https://morjane.re/atelier/?source=invitation&door=invitation",
     "",
-    "Utilise le même email pour recevoir ton lien de connexion.",
+    "Utilise le même email pour que je retrouve ta demande.",
   ].join("\n");
 }
 
@@ -1075,7 +1075,7 @@ function createCopyInvitationAction(member) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "ghost";
-  button.textContent = "Copier invitation";
+  button.textContent = "Copier texte";
   button.addEventListener("click", async () => {
     const text = getInvitationText(member);
     try {
@@ -1085,7 +1085,7 @@ function createCopyInvitationAction(member) {
       button.textContent = "Copie impossible";
     }
     setTimeout(() => {
-      button.textContent = "Copier invitation";
+      button.textContent = "Copier texte";
     }, 1400);
   });
   return button;
@@ -3826,37 +3826,37 @@ magicLinkForm.addEventListener("submit", async (event) => {
   }
   const entryContext = getCurrentEntryContext();
 
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: getAtelierEmailRedirectUrl(),
-    },
-  });
-
-  if (error) {
-    const raw = String(error.message || "");
-    const lower = raw.toLowerCase();
-    fetch("/.netlify/functions/log-magic-link-event", {
+  let response = null;
+  let data = {};
+  try {
+    response = await fetch("/.netlify/functions/request-atelier-access", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, result: "error", error_code: lower.slice(0, 120), entry: entryContext }),
-    }).catch(() => {});
-    if (lower.includes("rate limit")) {
+      body: JSON.stringify({
+        email,
+        entry: entryContext,
+        redirectTo: getAtelierEmailRedirectUrl(),
+      }),
+    });
+    data = await response.json().catch(() => ({}));
+  } catch (_) {
+    authStatus.textContent = "Connexion instable. Réessaie dans un instant.";
+    return;
+  }
+
+  if (!response.ok || !data.ok) {
+    if (response.status === 429 || data.error === "rate_limited") {
       authStatus.textContent = "Trop de tentatives. Réessayez dans 60 secondes.";
       startMagicLinkCooldown(60);
-    } else if (lower.includes("invalid")) {
+    } else if (data.error === "invalid_email") {
       authStatus.textContent = "Email invalide. Vérifiez l'adresse puis réessayez.";
     } else {
-      authStatus.textContent = `Impossible d'envoyer le lien. (${raw})`;
+      authStatus.textContent = "Impossible d'envoyer le lien pour le moment.";
     }
     return;
   }
+
   authStatus.textContent = "Lien envoyé. Vérifie ta boîte mail.";
-  fetch("/.netlify/functions/log-magic-link-event", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, result: "sent", entry: entryContext }),
-  }).catch(() => {});
   startMagicLinkCooldown(60);
 });
 
