@@ -443,6 +443,43 @@ button.ghost {
   font-style: italic;
 }
 
+.atelier-movements {
+  margin: 12px 0 14px;
+  padding: 12px 14px;
+  border-left: 1px solid rgba(201, 152, 82, 0.42);
+  background: linear-gradient(90deg, rgba(201, 152, 82, 0.08), transparent 78%);
+}
+
+.atelier-movements__title {
+  margin: 0 0 7px;
+  color: rgba(244, 239, 231, 0.88);
+  font-family: "Cormorant Garamond", serif;
+  font-size: 20px;
+  font-style: italic;
+  line-height: 1.25;
+}
+
+.atelier-movements ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  color: rgba(232, 223, 211, 0.68);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.atelier-movements__seen {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(201, 152, 82, 0.82);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
 .acte-chooser {
   display: flex;
   flex-wrap: wrap;
@@ -472,6 +509,9 @@ button.ghost {
   font-size: 11px;
 }
 
+.acte-chooser__button small.has-news {
+  color: rgba(201, 152, 82, 0.95);
+}
 .acte-chooser__button.is-active {
   border-color: rgba(201, 152, 82, 0.54);
   background: rgba(201, 152, 82, 0.1);
@@ -714,6 +754,25 @@ button.ghost {
   color: rgba(232, 223, 211, 0.9);
 }
 
+.admin-announcement-box {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid rgba(232, 223, 211, 0.12);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.admin-announcement-box h3 {
+  margin-top: 0;
+}
+
+.admin-announcement-box textarea {
+  min-height: 120px;
+  resize: vertical;
+  color: rgba(244, 239, 231, 0.88);
+}
 .admin-panel {
   margin-top: 22px;
   padding: 14px;
@@ -1609,6 +1668,18 @@ body.admin-compact .admin-note-input {
   text-transform: uppercase;
 }
 
+.admin-toggle-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(232, 223, 211, 0.78);
+  font-size: 12px;
+}
+
+.admin-toggle-line input {
+  width: auto;
+  min-height: auto;
+}
 .admin-track-access {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

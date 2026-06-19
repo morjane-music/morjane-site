@@ -21,6 +21,11 @@ function hasMissingAccessColumns(error) {
   return text.includes("allowed_audience_segments") || text.includes("allowed_member_statuses");
 }
 
+function hasMissingAnnouncementColumns(error) {
+  const text = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.toLowerCase();
+  return text.includes("announcement_enabled") || text.includes("announcement_text");
+}
+
 exports.handler = async (event) => {
   const startedAt = Date.now();
   if (event.httpMethod !== "GET") {
@@ -59,10 +64,19 @@ exports.handler = async (event) => {
 
   let tracksRes = await supabase
     .from("atelier_tracks")
-    .select("id, title, status, storage_path, season_id, intent_note, feedback_question, decision_status, sort_order, created_at, allowed_audience_segments, allowed_member_statuses, atelier_seasons(id, slug, title, description, sort_order, status)")
+    .select("id, title, status, storage_path, season_id, intent_note, feedback_question, announcement_enabled, announcement_text, decision_status, sort_order, created_at, allowed_audience_segments, allowed_member_statuses, atelier_seasons(id, slug, title, description, sort_order, status)")
     .eq("status", "active")
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
+
+  if (tracksRes.error && hasMissingAnnouncementColumns(tracksRes.error)) {
+    tracksRes = await supabase
+      .from("atelier_tracks")
+      .select("id, title, status, storage_path, season_id, intent_note, feedback_question, decision_status, sort_order, created_at, allowed_audience_segments, allowed_member_statuses, atelier_seasons(id, slug, title, description, sort_order, status)")
+      .eq("status", "active")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
+  }
 
   if (tracksRes.error && hasMissingAccessColumns(tracksRes.error)) {
     tracksRes = await supabase

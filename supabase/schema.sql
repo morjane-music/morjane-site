@@ -35,6 +35,8 @@ create table if not exists public.atelier_tracks (
   influence_mode text not null default 'open',
   intent_note text,
   feedback_question text,
+  announcement_enabled boolean not null default true,
+  announcement_text text,
   decision_status text not null default 'testing' check (decision_status in ('testing', 'kept', 'rework', 'paused', 'released', 'archived')),
   sort_order integer not null default 0,
   allowed_audience_segments text[] not null default '{}'::text[] check (allowed_audience_segments <@ array['public', 'proche', 'artiste', 'pro']::text[]),
@@ -222,6 +224,8 @@ alter table public.atelier_messages
 alter table public.atelier_tracks
   add column if not exists intent_note text,
   add column if not exists feedback_question text,
+  add column if not exists announcement_enabled boolean not null default true,
+  add column if not exists announcement_text text,
   add column if not exists decision_status text not null default 'testing' check (decision_status in ('testing', 'kept', 'rework', 'paused', 'released', 'archived')),
   add column if not exists sort_order integer not null default 0;
 

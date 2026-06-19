@@ -13,6 +13,7 @@ const trackList = document.getElementById("trackList");
 const emptyTracks = document.getElementById("emptyTracks");
 const acteChooser = document.getElementById("acteChooser");
 const memberPendingHelp = document.getElementById("memberPendingHelp");
+const atelierMovements = document.getElementById("atelierMovements");
 const adminPanel = document.getElementById("adminPanel");
 const adminUnlockForm = document.getElementById("adminUnlockForm");
 const adminPinInput = document.getElementById("adminPinInput");
@@ -26,6 +27,7 @@ const adminInboxUnread = document.getElementById("adminInboxUnread");
 const adminInboxTrackFilter = document.getElementById("adminInboxTrackFilter");
 const adminInboxSenderFilter = document.getElementById("adminInboxSenderFilter");
 const copyAtelierLinkBtn = document.getElementById("copyAtelierLinkBtn");
+const copyMorjanePhoneLinkBtn = document.getElementById("copyMorjanePhoneLinkBtn");
 const refreshInboxBtn = document.getElementById("refreshInboxBtn");
 const markInboxReadBtn = document.getElementById("markInboxReadBtn");
 const adminInboxSearch = document.getElementById("adminInboxSearch");
@@ -43,6 +45,8 @@ const adminTrackCreateStatus = document.getElementById("adminTrackCreateStatus")
 const adminPreviewSegment = document.getElementById("adminPreviewSegment");
 const adminPreviewStatus = document.getElementById("adminPreviewStatus");
 const adminPreviewList = document.getElementById("adminPreviewList");
+const adminAnnouncementText = document.getElementById("adminAnnouncementText");
+const copyAdminAnnouncementBtn = document.getElementById("copyAdminAnnouncementBtn");
 const adminSignalBoard = document.getElementById("adminSignalBoard");
 const exportSignalCsvBtn = document.getElementById("exportSignalCsvBtn");
 const adminStatusPanel = document.getElementById("adminStatusPanel");
@@ -124,6 +128,8 @@ const adminTodayState = {
 };
 const ADMIN_DENSITY_STORAGE_KEY = "atelier_admin_compact_density";
 const ATELIER_LAST_VISIT_STORAGE_KEY = "atelier_last_visit_at";
+const ATELIER_SEEN_MOVEMENTS_STORAGE_KEY = "atelier_seen_movement_track_ids";
+const ATELIER_NEW_TRACK_WINDOW_DAYS = 14;
 const ATELIER_ENTRY_CONTEXT_STORAGE_KEY = "atelier_entry_context";
 const ADMIN_MEMBER_STATUS_LABELS = {
   new: "nouveau",
@@ -193,6 +199,7 @@ const ENTRY_DOOR_LABELS = {
   menu: "Menu mobile",
   footer: "Footer",
   direct: "Accès direct",
+  morjane: "Morjane téléphone",
   phone: "QR téléphone",
   pro: "QR pro",
   concert: "Concert",
@@ -201,6 +208,7 @@ const ENTRY_DOOR_LABELS = {
 };
 const ADMIN_ENTRY_LINKS = [
   { label: "Atelier direct", source: "direct", door: "direct" },
+  { label: "Morjane téléphone", source: "direct", door: "morjane" },
   { label: "Porte home", source: "site", door: "home" },
   { label: "Porte footer", source: "site", door: "footer" },
   { label: "QR téléphone", source: "qr", door: "phone" },
@@ -568,6 +576,66 @@ function getAudienceSegmentCopy(value) {
   return AUDIENCE_SEGMENT_COPY[normalizeAudienceSegment(value)] || AUDIENCE_SEGMENT_COPY.public;
 }
 
+function getLastVisitDate() {
+  try {
+    const previous = localStorage.getItem(ATELIER_LAST_VISIT_STORAGE_KEY);
+    if (!previous) return null;
+    const date = new Date(previous);
+    return Number.isNaN(date.getTime()) ? null : date;
+  } catch (_) {
+    return null;
+  }
+}
+
+function getSeenMovementIds() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ATELIER_SEEN_MOVEMENTS_STORAGE_KEY) || "[]");
+    return new Set(Array.isArray(parsed) ? parsed.map(String) : []);
+  } catch (_) {
+    return new Set();
+  }
+}
+
+function rememberSeenMovementIds(ids = []) {
+  try {
+    const current = getSeenMovementIds();
+    ids.forEach((id) => current.add(String(id)));
+    localStorage.setItem(ATELIER_SEEN_MOVEMENTS_STORAGE_KEY, JSON.stringify(Array.from(current).slice(-200)));
+  } catch (_) {
+    // ignore storage errors
+  }
+}
+
+function isTrackAnnouncementVisible(track) {
+  return track?.announcement_enabled !== false;
+}
+
+function getTrackAnnouncementLine(track, season) {
+  const custom = String(track?.announcement_text || "").trim();
+  if (custom) {
+    return custom;
+  }
+  return `${formatTrackTitle(track.title)} est ouvert dans ${formatSeasonTitle(season)}.`;
+}
+
+function isTrackNewSinceLastVisit(track) {
+  const created = new Date(track?.created_at || "");
+  if (Number.isNaN(created.getTime())) return false;
+  const previous = getLastVisitDate();
+  if (previous) {
+    return created > previous;
+  }
+  return Date.now() - created.getTime() <= ATELIER_NEW_TRACK_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+}
+
+function getNewTracksForGroup(group) {
+  const seen = getSeenMovementIds();
+  return (group?.tracks || [])
+    .filter(isTrackAnnouncementVisible)
+    .filter(isTrackNewSinceLastVisit)
+    .filter((track) => !seen.has(String(track.id)));
+}
+
 function getLastVisitMemoryLine() {
   try {
     const previous = localStorage.getItem(ATELIER_LAST_VISIT_STORAGE_KEY);
@@ -727,6 +795,7 @@ function applyEntryContextToAuthView() {
     home: "Tu as trouvé la fissure. Laisse ton email pour demander l'accès.",
     footer: "L'Atelier n'est pas public. Laisse ton email pour demander l'accès.",
     menu: "L'Atelier n'est pas public. Laisse ton email pour demander l'accès.",
+    morjane: "Connexion Morjane. Utilise ton email admin/fondateur pour ouvrir ta session sur ce téléphone.",
   };
   authDoorNote.textContent = lines[door] || (source === "qr"
     ? "Cette porte ouvre une demande, pas les chansons directement. Laisse ton email pour être reconnu."
@@ -2181,6 +2250,34 @@ async function copyTextToClipboard(text, button, restoredLabel) {
   }, 1400);
 }
 
+function buildAdminAnnouncementText() {
+  const visibleTracks = (adminTrackCache || [])
+    .filter((track) => track.status === "active" && track.audio_ok && track.announcement_enabled !== false)
+    .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+  const latest = visibleTracks[0];
+  if (!latest) {
+    return "L'Atelier est ouvert, mais aucune nouvelle version n'est prête à annoncer pour le moment.";
+  }
+
+  const season = formatSeasonTitle(getTrackSeason(latest));
+  return [
+    "L'Atelier a bougé.",
+    "",
+    latest.announcement_text || `${formatTrackTitle(latest.title)} est maintenant ouvert dans ${season}.`,
+    "",
+    "Si tu as un moment, ton écoute peut encore aider la chanson à trouver sa forme définitive.",
+    "",
+    "Entrer dans l'Atelier : https://morjane.re/atelier/",
+  ].join("\n");
+}
+
+function renderAdminAnnouncement() {
+  if (!adminAnnouncementText) {
+    return;
+  }
+  adminAnnouncementText.value = buildAdminAnnouncementText();
+}
+
 function renderAdminTrackCockpit(tracks = [], seasons = []) {
   if (!adminTrackCockpit) {
     return;
@@ -2188,6 +2285,7 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
   adminTrackCache = Array.isArray(tracks) ? tracks : [];
   renderAdminTrackCreateForm(seasons);
   renderAdminProfilePreview();
+  renderAdminAnnouncement();
   if (!tracks.length) {
     adminTrackCockpit.innerHTML = "<p class=\"muted\">Aucun morceau trouvé.</p>";
     return;
@@ -2344,6 +2442,21 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     const question = document.createElement("textarea");
     question.rows = 2;
     question.placeholder = "Ex: Est-ce que le refrain tient ?";
+    const announcementToggle = document.createElement("label");
+    announcementToggle.className = "admin-toggle-line";
+    const announcementCheckbox = document.createElement("input");
+    announcementCheckbox.type = "checkbox";
+    announcementCheckbox.checked = track.announcement_enabled !== false;
+    const announcementToggleText = document.createElement("span");
+    announcementToggleText.textContent = "Annoncer ce morceau dans les mouvements";
+    announcementToggle.appendChild(announcementCheckbox);
+    announcementToggle.appendChild(announcementToggleText);
+
+    const announcementLabel = document.createElement("label");
+    announcementLabel.textContent = "Texte d’annonce";
+    const announcementText = document.createElement("textarea");
+    announcementText.rows = 2;
+    announcementText.placeholder = "Ex: Vérité coupée est entrée dans l’Atelier. Elle cherche encore son point de rupture.";
 
     const segmentAccess = createCheckboxGroup("Visible pour profils", [
       ["public", "Public"],
@@ -2380,6 +2493,7 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     visibility.value = track.status || "active";
     intent.value = track.intent_note || "";
     question.value = track.feedback_question || "";
+    announcementText.value = track.announcement_text || "";
     save.addEventListener("click", async () => {
       await updateTrackCockpit(track.id, {
         title: titleField.input.value,
@@ -2390,6 +2504,8 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
         decision_status: status.value,
         intent_note: intent.value,
         feedback_question: question.value,
+        announcement_enabled: announcementCheckbox.checked,
+        announcement_text: announcementText.value,
         allowed_audience_segments: segmentAccess.getSelectedValues(),
         allowed_member_statuses: statusAccess.getSelectedValues(),
       });
@@ -2412,6 +2528,9 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     settings.appendChild(intent);
     settings.appendChild(questionLabel);
     settings.appendChild(question);
+    settings.appendChild(announcementToggle);
+    settings.appendChild(announcementLabel);
+    settings.appendChild(announcementText);
     settings.appendChild(save);
     card.appendChild(head);
     card.appendChild(checklist);
@@ -2498,6 +2617,8 @@ async function createAdminTrack() {
         sort_order: adminTrackOrderInput?.value || 0,
         status: "draft",
         decision_status: "testing",
+        announcement_enabled: true,
+        announcement_text: "",
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -3465,7 +3586,7 @@ function createTrackCard(track) {
 
   const fragmentLabel = document.createElement("span");
   fragmentLabel.className = "track-card__fragment-label";
-  fragmentLabel.textContent = "version ouverte";
+  fragmentLabel.textContent = isTrackNewSinceLastVisit(track) ? "Nouveau mouvement" : "Version ouverte";
 
   const top = document.createElement("span");
   top.className = "track-card__top";
@@ -3501,6 +3622,47 @@ function createTrackCard(track) {
   return li;
 }
 
+function renderAtelierMovements(groups) {
+  if (!atelierMovements) {
+    return;
+  }
+  const newTracks = (groups || []).flatMap((group) => getNewTracksForGroup(group)
+    .map((track) => ({ track, season: group.season })));
+  atelierMovements.innerHTML = "";
+
+  if (!newTracks.length) {
+    hide(atelierMovements);
+    return;
+  }
+
+  const title = document.createElement("p");
+  title.className = "atelier-movements__title";
+  title.textContent = newTracks.length === 1
+    ? "Depuis ton dernier passage, une version a bougé."
+    : `Depuis ton dernier passage, ${newTracks.length} versions ont bougé.`;
+
+  const list = document.createElement("ul");
+  newTracks.slice(0, 4).forEach(({ track, season }) => {
+    const item = document.createElement("li");
+    item.textContent = getTrackAnnouncementLine(track, season);
+    list.appendChild(item);
+  });
+
+  const seenButton = document.createElement("button");
+  seenButton.type = "button";
+  seenButton.className = "atelier-movements__seen";
+  seenButton.textContent = "Marquer comme vu";
+  seenButton.addEventListener("click", () => {
+    rememberSeenMovementIds(newTracks.map(({ track }) => track.id));
+    hide(atelierMovements);
+    renderTrackList();
+  });
+
+  atelierMovements.appendChild(title);
+  atelierMovements.appendChild(list);
+  atelierMovements.appendChild(seenButton);
+  show(atelierMovements);
+}
 function renderActeChooser(groups) {
   if (!acteChooser) {
     return;
@@ -3518,8 +3680,11 @@ function renderActeChooser(groups) {
     label.textContent = formatSeasonTitle(group.season);
 
     const count = document.createElement("small");
-    count.textContent = `${group.tracks.length} version${group.tracks.length > 1 ? "s" : ""}`;
-
+    const newCount = getNewTracksForGroup(group).length;
+    count.textContent = newCount
+      ? `${newCount} nouveau${newCount > 1 ? "x" : ""}`
+      : `${group.tracks.length} version${group.tracks.length > 1 ? "s" : ""}`;
+    count.classList.toggle("has-news", newCount > 0);
     button.appendChild(label);
     button.appendChild(count);
     button.addEventListener("click", () => {
@@ -3537,6 +3702,7 @@ function renderTrackList() {
     selectedActeSlug = "acte-i";
   }
   renderActeChooser(groups);
+  renderAtelierMovements(groups);
 
   const group = groups.find((item) => normalizeActeSlug(item.season) === selectedActeSlug) || groups[0];
   if (!group) {
@@ -3997,6 +4163,20 @@ if (adminTrackAudioSelect) {
   });
 }
 
+if (copyAdminAnnouncementBtn) {
+  copyAdminAnnouncementBtn.addEventListener("click", async () => {
+    const text = adminAnnouncementText?.value || buildAdminAnnouncementText();
+    try {
+      await navigator.clipboard.writeText(text);
+      copyAdminAnnouncementBtn.textContent = "Annonce copiée";
+    } catch (_) {
+      copyAdminAnnouncementBtn.textContent = "Copie impossible";
+    }
+    setTimeout(() => {
+      copyAdminAnnouncementBtn.textContent = "Copier l'annonce";
+    }, 1400);
+  });
+}
 if (adminPreviewSegment) {
   adminPreviewSegment.addEventListener("change", renderAdminProfilePreview);
 }
@@ -4023,6 +4203,23 @@ if (copyAtelierLinkBtn) {
   });
 }
 
+if (copyMorjanePhoneLinkBtn) {
+  copyMorjanePhoneLinkBtn.addEventListener("click", async () => {
+    const atelierUrl = buildAtelierEntryUrl({ source: "direct", door: "morjane" });
+    try {
+      await navigator.clipboard.writeText(atelierUrl);
+      copyMorjanePhoneLinkBtn.textContent = "Lien Morjane copié";
+      setTimeout(() => {
+        copyMorjanePhoneLinkBtn.textContent = "Lien Morjane téléphone";
+      }, 1400);
+    } catch (_) {
+      copyMorjanePhoneLinkBtn.textContent = "Copie impossible";
+      setTimeout(() => {
+        copyMorjanePhoneLinkBtn.textContent = "Lien Morjane téléphone";
+      }, 1400);
+    }
+  });
+}
 if (adminDensityToggle) {
   adminDensityToggle.addEventListener("click", () => {
     const next = !document.body.classList.contains("admin-compact");

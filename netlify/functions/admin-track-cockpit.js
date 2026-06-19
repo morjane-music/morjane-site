@@ -69,6 +69,11 @@ function hasMissingAccessColumns(error) {
   return text.includes("allowed_audience_segments") || text.includes("allowed_member_statuses");
 }
 
+function hasMissingAnnouncementColumns(error) {
+  const text = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.toLowerCase();
+  return text.includes("announcement_enabled") || text.includes("announcement_text");
+}
+
 async function getSeasonIdBySlug(supabase, slug) {
   const safeSlug = cleanText(slug, 80);
   if (!safeSlug) return null;
@@ -166,6 +171,8 @@ exports.handler = async (event) => {
       decision_status: decisionStatus,
       intent_note: typeof payload.intent_note === "string" ? payload.intent_note.slice(0, 2000) : null,
       feedback_question: typeof payload.feedback_question === "string" ? payload.feedback_question.slice(0, 1000) : null,
+      announcement_enabled: payload.announcement_enabled !== false,
+      announcement_text: typeof payload.announcement_text === "string" ? payload.announcement_text.slice(0, 1000) : null,
       allowed_audience_segments: cleanList(payload.allowed_audience_segments, ["public", "proche", "artiste", "pro"]),
       allowed_member_statuses: cleanList(payload.allowed_member_statuses, ["member", "priority", "founder"]),
     };
@@ -191,6 +198,25 @@ exports.handler = async (event) => {
           .eq("id", trackId)
           .select("id")
           .maybeSingle();
+
+    if (result.error && hasMissingAnnouncementColumns(result.error)) {
+      delete baseFields.announcement_enabled;
+      delete baseFields.announcement_text;
+      const retry = action === "create"
+        ? await supabase
+            .from("atelier_tracks")
+            .insert(baseFields)
+            .select("id")
+            .maybeSingle()
+        : await supabase
+            .from("atelier_tracks")
+            .update(baseFields)
+            .eq("id", trackId)
+            .select("id")
+            .maybeSingle();
+      result.data = retry.data;
+      result.error = retry.error;
+    }
 
     if (result.error || !result.data) {
       await trackFunctionEvent(supabase, {
@@ -218,6 +244,7 @@ exports.handler = async (event) => {
         season_id: seasonId,
         status: trackStatus,
         decision_status: decisionStatus,
+        announcement_enabled: payload.announcement_enabled !== false,
       },
     });
 
@@ -246,7 +273,7 @@ exports.handler = async (event) => {
   let [tracksRes, seasonsRes, votesRes, playsRes, likesRes, messagesRes, auditRes, audioFiles] = await Promise.all([
     supabase
       .from("atelier_tracks")
-      .select("id, season_id, title, status, storage_path, intent_note, feedback_question, decision_status, sort_order, created_at, allowed_audience_segments, allowed_member_statuses, atelier_seasons(id, slug, title, sort_order, status)")
+      .select("id, season_id, title, status, storage_path, intent_note, feedback_question, announcement_enabled, announcement_text, decision_status, sort_order, created_at, allowed_audience_segments, allowed_member_statuses, atelier_seasons(id, slug, title, sort_order, status)")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
       .limit(80),
@@ -266,6 +293,15 @@ exports.handler = async (event) => {
       .limit(300),
     listAudioFiles(supabase),
   ]);
+
+  if (tracksRes.error && hasMissingAnnouncementColumns(tracksRes.error)) {
+    tracksRes = await supabase
+      .from("atelier_tracks")
+      .select("id, season_id, title, status, storage_path, intent_note, feedback_question, decision_status, sort_order, created_at, allowed_audience_segments, allowed_member_statuses, atelier_seasons(id, slug, title, sort_order, status)")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false })
+      .limit(80);
+  }
 
   if (tracksRes.error && hasMissingAccessColumns(tracksRes.error)) {
     tracksRes = await supabase
@@ -338,6 +374,8 @@ exports.handler = async (event) => {
       audio_preview_url: signed.data?.signedUrl || "",
       intent_note: track.intent_note || "",
       feedback_question: track.feedback_question || "",
+      announcement_enabled: track.announcement_enabled !== false,
+      announcement_text: track.announcement_text || "",
       decision_status: track.decision_status || "testing",
       sort_order: Number(track.sort_order || 0),
       created_at: track.created_at || null,
