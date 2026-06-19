@@ -176,12 +176,6 @@ create index if not exists idx_atelier_track_plays_track_created
 create index if not exists idx_atelier_track_plays_user_track_created
   on public.atelier_track_plays(user_id, track_id, created_at desc);
 
-drop view if exists public.atelier_track_play_counts;
-
-create view public.atelier_track_play_counts as
-select track_id, count(*)::bigint as play_count
-from public.atelier_track_plays
-group by track_id;
 
 alter table public.atelier_track_plays enable row level security;
 
@@ -504,12 +498,6 @@ begin
 end
 $$;
 
-drop view if exists public.atelier_track_like_counts;
-
-create view public.atelier_track_like_counts as
-select track_id, count(*)::bigint as like_count
-from public.atelier_track_likes
-group by track_id;
 
 revoke insert, update on public.atelier_profiles from authenticated;
 grant insert (id, email) on public.atelier_profiles to authenticated;

@@ -86,6 +86,10 @@ const memberReplies = document.getElementById("memberReplies");
 
 const magicLinkForm = document.getElementById("magicLinkForm");
 const emailInput = document.getElementById("emailInput");
+const otpCodeForm = document.getElementById("otpCodeForm");
+const otpCodeInput = document.getElementById("otpCodeInput");
+const showOtpCodeBtn = document.getElementById("showOtpCodeBtn");
+const authMobileHelp = document.getElementById("authMobileHelp");
 const authDoorNote = document.getElementById("authDoorNote");
 const magicLinkSubmitBtn = magicLinkForm ? magicLinkForm.querySelector("button[type='submit']") : null;
 const messageForm = document.getElementById("messageForm");
@@ -207,14 +211,14 @@ const ENTRY_DOOR_LABELS = {
   invitation: "Invitation",
 };
 const ADMIN_ENTRY_LINKS = [
-  { label: "Atelier direct", source: "direct", door: "direct" },
-  { label: "Morjane téléphone", source: "direct", door: "morjane" },
-  { label: "Porte home", source: "site", door: "home" },
-  { label: "Porte footer", source: "site", door: "footer" },
-  { label: "QR téléphone", source: "qr", door: "phone" },
-  { label: "QR pro", source: "qr", door: "pro", segment: "pro" },
-  { label: "QR concert", source: "concert", door: "concert" },
-  { label: "Lien Instagram", source: "instagram", door: "instagram" },
+  { label: "Atelier direct", source: "direct", door: "direct", audience: "Lien neutre", note: "Pour tester ou envoyer l'entrée simple de l'Atelier." },
+  { label: "Morjane téléphone", source: "direct", door: "morjane", audience: "Admin / fondatrice", note: "Pour ouvrir ta session sur ton téléphone avec ton email fondateur." },
+  { label: "Porte home", source: "site", door: "home", audience: "Curieux du site", note: "La porte cachée du site public. Demande d'accès seulement." },
+  { label: "Porte footer", source: "site", door: "footer", audience: "Personnes qui cherchent", note: "Entrée discrète et claire depuis le bas du site." },
+  { label: "QR téléphone", source: "qr", door: "phone", audience: "Rencontre réelle", note: "Pour fond d'écran, affiche, carte ou moment spontané." },
+  { label: "QR pro", source: "qr", door: "pro", segment: "pro", audience: "Pros", note: "Préclasse la demande en profil pro sans ouvrir les chansons." },
+  { label: "QR concert", source: "concert", door: "concert", audience: "Après concert", note: "Pour garder le lien après une rencontre ou une date." },
+  { label: "Lien Instagram", source: "instagram", door: "instagram", audience: "Réseaux", note: "Pour transformer une curiosité Instagram en demande suivable." },
 ];
 const ATELIER_ACTES = [
   {
@@ -1241,9 +1245,24 @@ function renderAdminEntryLinks() {
     meta.className = "admin-entry-link__meta";
     meta.textContent = `${ENTRY_SOURCE_LABELS[entry.source] || entry.source} · ${getEntryDoorLabel(entry.door)}`;
 
+    const audience = document.createElement("p");
+    audience.className = "admin-entry-link__audience";
+    audience.textContent = entry.audience || "Entrée Atelier";
+
+    const note = document.createElement("p");
+    note.className = "admin-entry-link__note";
+    note.textContent = entry.note || "Demande d'accès seulement.";
+
+    const guard = document.createElement("p");
+    guard.className = "admin-entry-link__guard";
+    guard.textContent = "Validation requise avant écoute";
+
     item.appendChild(copy);
     item.appendChild(title);
     item.appendChild(meta);
+    item.appendChild(audience);
+    item.appendChild(note);
+    item.appendChild(guard);
     adminEntryLinks.appendChild(item);
   });
 }
@@ -3421,8 +3440,7 @@ async function loadTracks(options = {}) {
   if (selectedTrackId) {
     selectedTrack = tracks.find((track) => track.id === selectedTrackId) || selectedTrack;
   }
-  trackPlayCounts = await loadTrackPlayCounts(tracks.map((track) => track.id));
-  trackLikeCounts = await loadTrackLikeCounts(tracks.map((track) => track.id));
+  await loadTrackCounts(tracks.map((track) => track.id));
   userLikedTrackIds = await loadUserLikes(tracks.map((track) => track.id));
   hide(authView);
   if (shouldPreserveTrackView && tracks.some((track) => track.id === selectedTrackId)) {
@@ -3475,50 +3493,38 @@ async function loadTracks(options = {}) {
   }
 }
 
-async function loadTrackPlayCounts(trackIds) {
-  const counts = new Map();
-  if (!trackIds || trackIds.length === 0) {
-    return counts;
+async function loadTrackCounts(trackIds) {
+  trackPlayCounts = new Map();
+  trackLikeCounts = new Map();
+  if (!session?.access_token || !trackIds || trackIds.length === 0) {
+    return;
   }
 
-  const { data, error } = await supabase
-    .from("atelier_track_play_counts")
-    .select("track_id, play_count")
-    .in("track_id", trackIds);
-
-  if (error || !data) {
-    return counts;
+  let res = null;
+  let payload = {};
+  try {
+    res = await fetch("/.netlify/functions/get-track-counts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ trackIds }),
+    });
+    payload = await res.json().catch(() => ({}));
+  } catch (_) {
+    return;
   }
 
-  data.forEach((row) => {
-    counts.set(row.track_id, Number(row.play_count || 0));
+  if (!res.ok || !payload.ok || !payload.counts) {
+    return;
+  }
+
+  Object.entries(payload.counts).forEach(([trackId, counts]) => {
+    trackPlayCounts.set(trackId, Number(counts.play_count || 0));
+    trackLikeCounts.set(trackId, Number(counts.like_count || 0));
   });
-
-  return counts;
 }
-
-async function loadTrackLikeCounts(trackIds) {
-  const counts = new Map();
-  if (!trackIds || trackIds.length === 0) {
-    return counts;
-  }
-
-  const { data, error } = await supabase
-    .from("atelier_track_like_counts")
-    .select("track_id, like_count")
-    .in("track_id", trackIds);
-
-  if (error || !data) {
-    return counts;
-  }
-
-  data.forEach((row) => {
-    counts.set(row.track_id, Number(row.like_count || 0));
-  });
-
-  return counts;
-}
-
 async function loadUserLikes(trackIds) {
   const likes = new Set();
   if (!profile?.id || !trackIds || trackIds.length === 0) {
@@ -3917,6 +3923,64 @@ async function submitVote(choice) {
   voteStatus.textContent = error ? `Geste refusé. ${error.message || ""}`.trim() : "Geste gardé. Merci d'avoir écouté jusqu'à l'endroit juste.";
 }
 
+function revealOtpCodeForm({ focus = true, showMobileHelp = false } = {}) {
+  if (otpCodeForm) {
+    show(otpCodeForm);
+  }
+  if (authMobileHelp) {
+    if (showMobileHelp) {
+      show(authMobileHelp);
+    } else {
+      hide(authMobileHelp);
+    }
+  }
+  if (focus) {
+    otpCodeInput?.focus();
+  }
+}
+function normalizeOtpCode(value) {
+  return String(value || "").replace(/\D/g, "").slice(0, 8);
+}
+
+async function verifyEmailCode() {
+  const email = emailInput?.value.trim().toLowerCase() || "";
+  const token = normalizeOtpCode(otpCodeInput?.value || "");
+
+  if (!email) {
+    authStatus.textContent = "Entre le même email que celui utilisé pour recevoir le code.";
+    emailInput?.focus();
+    return;
+  }
+
+  if (token.length < 6) {
+    authStatus.textContent = "Code incomplet. Vérifie le mail reçu.";
+    otpCodeInput?.focus();
+    return;
+  }
+
+  authStatus.textContent = "Vérification du code...";
+  let result = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  if (result.error) {
+    result = await supabase.auth.verifyOtp({ email, token, type: "magiclink" });
+  }
+  if (result.error) {
+    result = await supabase.auth.verifyOtp({ email, token, type: "invite" });
+  }
+
+  if (result.error) {
+    const message = String(result.error.message || "").toLowerCase();
+    authStatus.textContent = message.includes("expired") || message.includes("invalid")
+      ? "Code expiré ou incorrect. Demande un nouveau mail si besoin."
+      : "Code impossible à vérifier pour le moment.";
+    return;
+  }
+
+  authStatus.textContent = "Connexion ouverte.";
+  if (otpCodeInput) {
+    otpCodeInput.value = "";
+  }
+  await loadSessionAndProfile();
+}
 async function submitMessage(content, tag = "emotion") {
   if (!selectedTrack || !profile) {
     messageStatus.textContent = "Choisissez d'abord une chanson avant de laisser une trace.";
@@ -4022,9 +4086,23 @@ magicLinkForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  authStatus.textContent = "Lien envoyé. Vérifie ta boîte mail.";
+  authStatus.textContent = "Mail envoyé. Ouvre le lien dans ton navigateur, ou entre le code reçu ici.";
+  revealOtpCodeForm({ focus: true, showMobileHelp: true });
   startMagicLinkCooldown(60);
 });
+
+if (showOtpCodeBtn) {
+  showOtpCodeBtn.addEventListener("click", () => {
+    revealOtpCodeForm({ focus: true, showMobileHelp: false });
+  });
+}
+
+if (otpCodeForm) {
+  otpCodeForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await verifyEmailCode();
+  });
+}
 
 voteButtons.forEach((btn) => {
   btn.addEventListener("click", () => submitVote(btn.dataset.vote));

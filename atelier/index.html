@@ -57,14 +57,25 @@
         <li class="is-current">Connexion email</li>
         <li>Validation membre du cercle</li>
       </ol>
-      <p>Entrez votre email pour recevoir un lien de connexion.</p>
+      <p>Entrez votre email pour recevoir un lien et un code de connexion.</p>
       <p id="authDoorNote" class="auth-door-note muted hidden"></p>
       <form id="magicLinkForm" class="stack">
         <input id="emailInput" type="email" placeholder="vous@email.com" required>
         <button type="submit">Recevoir le lien</button>
       </form>
+      <button id="showOtpCodeBtn" type="button" class="auth-code-toggle">J'ai un code</button>
+      <p id="authMobileHelp" class="auth-mobile-help muted hidden">Garde cette page ouverte. Si le mail ouvre une autre fenêtre, copie le code ici.</p>
+      <form id="otpCodeForm" class="otp-code-form hidden" aria-label="Connexion avec le code reçu par email">
+        <label for="otpCodeInput">Code reçu par email</label>
+        <div class="otp-code-form__row">
+          <input id="otpCodeInput" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" maxlength="8">
+          <button type="submit" class="ghost">Entrer</button>
+        </div>
+        <p class="otp-code-form__hint">Utilise le même email que celui du mail reçu.</p>
+      </form>
       <p id="authStatus" class="muted"></p>
-      <p class="auth-help muted">Si le lien n'arrive pas, vérifiez vos spams puis réessayez après 60 secondes.</p>
+      <p class="auth-help muted">Si le lien s'ouvre dans une fenêtre mail, revenez ici dans votre navigateur et entrez le code reçu.</p>
+      <p class="auth-help muted">Rien reçu ? Écris à <a href="mailto:booking@morjane.re">booking@morjane.re</a>.</p>
     </section>
 
     <section id="memberView" class="panel hidden ritual-reveal" data-ritual>

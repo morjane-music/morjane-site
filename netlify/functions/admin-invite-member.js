@@ -76,15 +76,16 @@ async function generateInviteLink(supabase, email, redirectTo, existingProfile) 
   }
 
   const actionLink = result.data?.properties?.action_link || "";
+  const emailOtp = result.data?.properties?.email_otp || "";
   const userId = result.data?.user?.id || existingProfile?.id || "";
   if (!actionLink || !userId) {
     return { ok: false, error: "missing_link" };
   }
 
-  return { ok: true, actionLink, userId };
+  return { ok: true, actionLink, emailOtp, userId };
 }
 
-async function sendInvitationEmail(email, actionLink, status, segment) {
+async function sendInvitationEmail(email, actionLink, status, segment, emailOtp = "") {
   const apiKey = process.env.RESEND_API_KEY || "";
   if (!apiKey) {
     return { ok: false, error: "missing_resend_key" };
@@ -124,6 +125,7 @@ async function sendInvitationEmail(email, actionLink, status, segment) {
     segmentCopy.line,
     "Tu peux entrer avec ce lien :",
     actionLink,
+    emailOtp ? `Code de connexion : ${emailOtp}` : "",
     "",
     `Profil d'ecoute : ${segment}`,
     segmentCopy.note,
@@ -139,6 +141,7 @@ async function sendInvitationEmail(email, actionLink, status, segment) {
       <p style="margin:24px 0">
         <a href="${actionLink}" style="display:inline-block;border:1px solid #c99852;color:#f4efe7;text-decoration:none;padding:12px 16px;border-radius:999px">Entrer dans l'Atelier</a>
       </p>
+      ${emailOtp ? `<p style="color:#f4efe7;font-size:18px;letter-spacing:.18em;margin:0 0 18px">Code : ${emailOtp}</p>` : ""}
       <p style="color:#9d9183;font-size:13px;line-height:1.6">Profil d'ecoute : ${segment}. ${segmentCopy.note} Le lien reste personnel. Ne le transfere pas.</p>
     </div>
   `;
@@ -272,7 +275,7 @@ exports.handler = async (event) => {
   }
 
   if (delivery === "email") {
-    const sent = await sendInvitationEmail(email, link.actionLink, memberStatus, audienceSegment);
+    const sent = await sendInvitationEmail(email, link.actionLink, memberStatus, audienceSegment, link.emailOtp || "");
     if (!sent.ok) {
       return json(500, { ok: false, error: sent.error });
     }

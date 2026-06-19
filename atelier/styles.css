@@ -135,7 +135,7 @@ body.is-listening::before {
 
 .atelier-circle-presence {
   display: flex;
-  align-items: center;
+  align-items: start;
   gap: 8px;
   margin-top: 10px;
   color: rgba(167, 155, 140, 0.9);
@@ -177,7 +177,7 @@ body.is-listening::before {
 
 .atelier-intro__badge {
   display: inline-flex;
-  align-items: center;
+  align-items: start;
   font-family: "Montserrat", "Inter", sans-serif;
   font-size: 11px;
   letter-spacing: 0.28em;
@@ -191,7 +191,7 @@ body.is-listening::before {
 
 .atelier-protection-badge {
   display: inline-flex;
-  align-items: center;
+  align-items: start;
   gap: 8px;
   margin-top: 10px;
   padding: 8px 12px;
@@ -387,9 +387,64 @@ button.ghost {
   font-size: 12px;
 }
 
+.auth-code-toggle {
+  width: auto;
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(201, 152, 82, 0.86);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.auth-mobile-help {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-left: 1px solid rgba(201, 152, 82, 0.42);
+  background: rgba(201, 152, 82, 0.07);
+  color: rgba(244, 239, 231, 0.78);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.otp-code-form {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(232, 223, 211, 0.1);
+}
+
+.otp-code-form label {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(232, 223, 211, 0.72);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.otp-code-form__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.otp-code-form input {
+  letter-spacing: 0.18em;
+}
+
+.otp-code-form__hint {
+  margin: 7px 0 0;
+  color: rgba(232, 223, 211, 0.52);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .member-top {
   display: flex;
-  align-items: center;
+  align-items: start;
   justify-content: space-between;
   gap: 12px;
 }
@@ -885,7 +940,7 @@ button.ghost {
 
 .admin-inbox-column-head {
   display: flex;
-  align-items: center;
+  align-items: start;
   justify-content: space-between;
   margin-bottom: 8px;
 }
@@ -969,7 +1024,7 @@ button.ghost {
 
 .admin-inbox-badge {
   display: inline-flex;
-  align-items: center;
+  align-items: start;
   padding: 2px 7px;
   border-radius: 999px;
   border: 1px solid rgba(201, 152, 82, 0.6);
@@ -995,7 +1050,7 @@ button.ghost {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 8px;
   margin-top: 10px;
-  align-items: center;
+  align-items: start;
 }
 
 .admin-tools input {
@@ -1036,7 +1091,7 @@ button.ghost {
 
 .admin-entry-links {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 8px;
   margin-top: 10px;
 }
@@ -1045,7 +1100,7 @@ button.ghost {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 2px 9px;
-  align-items: center;
+  align-items: start;
   padding: 8px;
   border: 1px solid rgba(232, 223, 211, 0.1);
   border-radius: 8px;
@@ -1053,13 +1108,16 @@ button.ghost {
 }
 
 .admin-entry-link button {
-  grid-row: span 2;
+  grid-row: span 4;
   min-height: 36px;
   padding: 7px 9px;
 }
 
 .admin-entry-link__title,
-.admin-entry-link__meta {
+.admin-entry-link__meta,
+.admin-entry-link__audience,
+.admin-entry-link__note,
+.admin-entry-link__guard {
   margin: 0;
 }
 
@@ -1071,6 +1129,30 @@ button.ghost {
 .admin-entry-link__meta {
   color: rgba(167, 155, 140, 0.88);
   font-size: 12px;
+}
+
+.admin-entry-link__audience {
+  color: rgba(201, 152, 82, 0.9);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-entry-link__note {
+  color: rgba(232, 223, 211, 0.62);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.admin-entry-link__guard {
+  width: fit-content;
+  padding: 3px 7px;
+  border: 1px solid rgba(201, 152, 82, 0.24);
+  border-radius: 999px;
+  color: rgba(232, 223, 211, 0.62);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .admin-inbox-actions {
@@ -1164,7 +1246,7 @@ button.ghost {
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: 10px;
-  align-items: center;
+  align-items: start;
 }
 
 .admin-live-avatar {
@@ -1352,7 +1434,7 @@ body.admin-compact .admin-note-input {
 
 .admin-member-head {
   display: flex;
-  align-items: center;
+  align-items: start;
   justify-content: space-between;
   gap: 10px;
   min-width: 0;
@@ -1458,7 +1540,7 @@ body.admin-compact .admin-note-input {
   width: fit-content;
   min-height: 34px;
   display: inline-flex;
-  align-items: center;
+  align-items: start;
   padding: 0 10px;
   border: 1px solid rgba(232, 223, 211, 0.14);
   border-radius: 999px;
@@ -1670,7 +1752,7 @@ body.admin-compact .admin-note-input {
 
 .admin-toggle-line {
   display: flex;
-  align-items: center;
+  align-items: start;
   gap: 8px;
   color: rgba(232, 223, 211, 0.78);
   font-size: 12px;
@@ -1710,7 +1792,7 @@ body.admin-compact .admin-note-input {
 
 .admin-check-group label {
   display: inline-flex;
-  align-items: center;
+  align-items: start;
   gap: 5px;
   padding: 4px 7px;
   border: 1px solid rgba(201, 152, 82, 0.2);
@@ -1922,7 +2004,7 @@ body.atelier-listening .atelier-player-frame {
 
 .track-timeline {
   display: flex;
-  align-items: center;
+  align-items: start;
   flex-wrap: wrap;
   gap: 8px;
   margin: 8px 0 12px;
@@ -2145,7 +2227,7 @@ body.atelier-listening .atelier-player-frame {
 
 .track-protection-banner__icon {
   display: inline-flex;
-  align-items: center;
+  align-items: start;
   justify-content: center;
   width: 34px;
   height: 34px;
@@ -2201,7 +2283,7 @@ body.atelier-listening .atelier-player-frame {
 .atelier-support a {
   min-height: 38px;
   display: inline-flex;
-  align-items: center;
+  align-items: start;
   padding: 0.62rem 0.82rem;
   border: 1px solid rgba(201, 152, 82, 0.26);
   color: rgba(232, 223, 211, 0.78);
@@ -2349,6 +2431,27 @@ body.atelier-listening .atelier-player-frame {
   .vote-grid button,
   .track-card {
     min-height: 44px;
+  }
+
+  .otp-code-form__row {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-code-toggle {
+    min-height: 36px;
+  }
+
+  .admin-entry-links {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-entry-link {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-entry-link button {
+    grid-row: auto;
+    width: 100%;
   }
 
   #trackTitle {
