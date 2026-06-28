@@ -257,6 +257,43 @@ body.is-listening::before {
   height: 6px;
 }
 
+body.atelier-member-ready .atelier-wrap {
+  margin-top: 4vh;
+}
+
+body.atelier-member-ready .atelier-header {
+  max-width: 640px;
+}
+
+body.atelier-member-ready .atelier-header h1 {
+  font-size: clamp(36px, 4.8vw, 54px);
+}
+
+body.atelier-member-ready .atelier-gate-subtitle,
+body.atelier-member-ready .circle-count,
+body.atelier-member-ready .atelier-circle-presence {
+  display: none;
+}
+
+body.atelier-member-ready .living-threshold {
+  margin: 8px 0 0;
+  text-align: left;
+  font-size: clamp(21px, 3vw, 28px);
+}
+
+body.atelier-member-ready .atelier-intro {
+  margin-top: 8px;
+}
+
+body.atelier-member-ready .atelier-intro p:not(.atelier-intro__badge):not(.atelier-protection-badge) {
+  display: none;
+}
+
+body.atelier-member-ready .panel {
+  background:
+    linear-gradient(180deg, rgba(201, 152, 82, 0.045), transparent 32%),
+    rgba(11, 10, 8, 0.74);
+}
 .protection-seal--large::after {
   left: 5px;
   top: 8px;
@@ -567,6 +604,15 @@ button.ghost {
 .acte-chooser__button small.has-news {
   color: rgba(201, 152, 82, 0.95);
 }
+.acte-chooser__button.is-closed-presence small {
+  color: rgba(232, 223, 211, 0.48);
+}
+
+.acte-chooser__button.is-closed-presence:not(.is-active) {
+  border-color: rgba(232, 223, 211, 0.12);
+  color: rgba(232, 223, 211, 0.46);
+}
+
 .acte-chooser__button.is-active {
   border-color: rgba(201, 152, 82, 0.54);
   background: rgba(201, 152, 82, 0.1);
@@ -631,11 +677,11 @@ button.ghost {
 }
 
 .track-card {
-  min-height: 148px;
+  min-height: 124px;
   display: grid;
   align-content: space-between;
-  gap: 14px;
-  padding: 16px;
+  gap: 10px;
+  padding: 15px;
   border-color: rgba(201, 152, 82, 0.28);
   background:
     linear-gradient(135deg, rgba(201, 152, 82, 0.12), transparent 45%),
@@ -887,6 +933,29 @@ button.ghost {
   border-top: 0;
 }
 
+.admin-panel-toggle {
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-panel.is-collapsed #adminUnlockForm,
+.admin-panel.is-collapsed #adminSecureContent {
+  display: none !important;
+}
+
+.admin-panel.is-collapsed {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 24%),
+    rgba(8, 8, 8, 0.54);
+}
+
+.admin-panel.is-collapsed .admin-panel__head {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
 .admin-panel h3 {
   margin: 14px 0 8px;
   padding-top: 10px;
@@ -1828,8 +1897,8 @@ body.admin-compact .admin-note-input {
 
 .atelier-player-frame {
   position: relative;
-  margin-top: 18px;
-  margin-bottom: 18px;
+  margin-top: 12px;
+  margin-bottom: 12px;
   padding: 20px 16px;
   border: 1px solid rgba(184, 137, 69, 0.24);
   border-radius: 16px;
@@ -1973,6 +2042,17 @@ body.atelier-listening .atelier-player-frame {
     0 0 34px rgba(184, 137, 69, 0.14);
 }
 
+.track-quick-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 4px 0 12px;
+}
+
+.track-quick-meta .muted {
+  margin: 0;
+}
 #trackLikeBtn {
   margin-top: 4px;
   margin-bottom: 2px;
@@ -2351,6 +2431,17 @@ body.atelier-listening .atelier-player-frame {
     padding: 0 12px;
   }
 
+  body.atelier-member-ready .atelier-wrap {
+    margin-top: 1.5vh;
+  }
+
+  body.atelier-member-ready .atelier-header h1 {
+    font-size: 26px;
+  }
+
+  body.atelier-member-ready .living-threshold {
+    font-size: 20px;
+  }
   .atelier-header h1 {
     font-size: 28px;
     letter-spacing: 0.05em;

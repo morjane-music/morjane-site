@@ -15,6 +15,7 @@ const acteChooser = document.getElementById("acteChooser");
 const memberPendingHelp = document.getElementById("memberPendingHelp");
 const atelierMovements = document.getElementById("atelierMovements");
 const adminPanel = document.getElementById("adminPanel");
+const adminPanelToggle = document.getElementById("adminPanelToggle");
 const adminUnlockForm = document.getElementById("adminUnlockForm");
 const adminPinInput = document.getElementById("adminPinInput");
 const adminUnlockStatus = document.getElementById("adminUnlockStatus");
@@ -538,6 +539,16 @@ function hide(el) {
   el.classList.add("hidden");
 }
 
+function setAdminPanelCollapsed(collapsed) {
+  if (!adminPanel) {
+    return;
+  }
+  adminPanel.classList.toggle("is-collapsed", collapsed);
+  if (adminPanelToggle) {
+    adminPanelToggle.textContent = collapsed ? "Ouvrir la console" : "Refermer la console";
+    adminPanelToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+  }
+}
 function setGateStatus(text) {
   gateStatus.textContent = text;
 }
@@ -3368,6 +3379,7 @@ async function loadSessionAndProfile() {
   session = sessionResult.data.session || null;
 
   if (!session) {
+    document.body.classList.remove("atelier-member-ready");
     stopPresenceHeartbeat();
     stopAdminLiveRefresh();
     applyEntryContextToAuthView();
@@ -3387,6 +3399,7 @@ async function loadSessionAndProfile() {
   profile = await ensureAtelierProfile();
 
   if (!profile || !isMember(profile.member_status)) {
+    document.body.classList.remove("atelier-member-ready");
     hide(authView);
     show(memberView);
     hide(trackView);
@@ -3408,6 +3421,7 @@ async function loadSessionAndProfile() {
     return;
   }
 
+  document.body.classList.add("atelier-member-ready");
   await loadTracks({ preserveTrackView: true });
 }
 
@@ -3468,6 +3482,7 @@ async function loadTracks(options = {}) {
 
   if (canManageMembers()) {
     if (adminPanel && !shouldPreserveTrackView) {
+      setAdminPanelCollapsed(true);
       show(adminPanel);
     }
     renderAdminTodayCards();
@@ -3609,10 +3624,6 @@ function createTrackCard(track) {
   meta.className = "track-list__meta";
   meta.textContent = `Écoutes du cercle : ${getTrackPlayCount(track.id)} · Marques : ${getTrackLikeCount(track.id)}`;
 
-  const hint = document.createElement("span");
-  hint.className = "track-card__hint";
-  hint.textContent = track.feedback_question || track.intent_note || getAudienceSegmentCopy(profile?.audience_segment).question;
-
   const cta = document.createElement("span");
   cta.className = "track-card__cta";
   cta.textContent = "Écouter la version";
@@ -3622,7 +3633,6 @@ function createTrackCard(track) {
   top.appendChild(status);
   btn.appendChild(top);
   btn.appendChild(meta);
-  btn.appendChild(hint);
   btn.appendChild(cta);
   li.appendChild(btn);
   return li;
@@ -3687,9 +3697,13 @@ function renderActeChooser(groups) {
 
     const count = document.createElement("small");
     const newCount = getNewTracksForGroup(group).length;
-    count.textContent = newCount
-      ? `${newCount} nouveau${newCount > 1 ? "x" : ""}`
-      : `${group.tracks.length} version${group.tracks.length > 1 ? "s" : ""}`;
+    const isClosedPresence = slug === "hors-acte" && group.tracks.length === 0 && newCount === 0;
+    button.classList.toggle("is-closed-presence", isClosedPresence);
+    count.textContent = isClosedPresence
+      ? "présence fermée"
+      : newCount
+        ? `${newCount} nouveau${newCount > 1 ? "x" : ""}`
+        : `${group.tracks.length} version${group.tracks.length > 1 ? "s" : ""}`;
     count.classList.toggle("has-news", newCount > 0);
     button.appendChild(label);
     button.appendChild(count);
@@ -3736,7 +3750,9 @@ function renderTrackList() {
   if (group.tracks.length === 0) {
     const empty = document.createElement("p");
     empty.className = "track-season__empty";
-    empty.textContent = "Aucune version ouverte dans cet acte pour le moment.";
+    empty.textContent = normalizeActeSlug(group.season) === "hors-acte"
+      ? "Présence fermée. Rien ne s'ouvre ici pour l'instant."
+      : "Aucune version ouverte dans cet acte pour le moment.";
     seasonItem.appendChild(empty);
     trackList.appendChild(seasonItem);
     return;
@@ -4118,6 +4134,12 @@ messageForm.addEventListener("submit", async (event) => {
   await submitMessage(content, feedbackTag?.value || "emotion");
 });
 
+if (adminPanelToggle && adminPanel) {
+  adminPanelToggle.addEventListener("click", () => {
+    setAdminPanelCollapsed(!adminPanel.classList.contains("is-collapsed"));
+  });
+}
+
 logoutBtn.addEventListener("click", async () => {
   await sendPresenceHeartbeat(false);
   stopPresenceHeartbeat();
@@ -4145,6 +4167,7 @@ backBtn.addEventListener("click", () => {
   hide(trackView);
   show(memberView);
   if (canManageMembers() && adminPanel) {
+    setAdminPanelCollapsed(true);
     show(adminPanel);
   }
 });

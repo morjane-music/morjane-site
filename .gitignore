@@ -1,2 +1,12 @@
 node_modules/
 
+
+# Local Netlify folder
+.netlify
+
+# Local environment variables
+.env
+.env.local
+
+# Local runtime lockfiles
+deno.lock

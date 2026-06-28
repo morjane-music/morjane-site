@@ -102,7 +102,7 @@
           <p class="section-kicker">Console privée</p>
           <h3>Administration du cercle</h3>
         </div>
-        <p class="muted">Une table de travail séparée de l'écoute, pour garder l'Atelier membre intact.</p>
+        <button id="adminPanelToggle" type="button" class="ghost admin-panel-toggle" aria-expanded="false">Ouvrir la console</button>
       </div>
       <form id="adminUnlockForm" class="stack">
         <label for="adminPinInput">Code admin personnel</label>
@@ -292,25 +292,6 @@
       <h2 id="trackTitle">Titre</h2>
       <p id="trackDecisionStatus" class="track-status-pill">En test</p>
       <div id="trackTimeline" class="track-timeline" aria-label="Evolution du morceau"></div>
-      <div id="trackIntentPanel" class="track-intent-panel hidden">
-        <p class="track-intent-label">Note de Morjane</p>
-        <p id="trackIntentNote" class="track-intent-text"></p>
-        <p class="track-intent-label">Question du moment</p>
-        <p id="trackFeedbackQuestion" class="track-intent-text"></p>
-      </div>
-      <p id="trackPlayCount" class="muted">Écoutes du cercle : -</p>
-      <p id="trackLikeCount" class="muted">Marques du cercle : -</p>
-      <button id="trackLikeBtn" type="button" class="ghost">♡ Marquer ce morceau</button>
-      <div class="track-protection-banner" role="note" aria-label="Protection du contenu">
-        <span class="track-protection-banner__icon" aria-hidden="true">
-          <span class="protection-seal protection-seal--large"></span>
-        </span>
-        <div>
-          <p class="track-protection-banner__title">Privé et sous copyright</p>
-          <p class="track-confidential-note">Écoute confidentielle du cercle privé. Merci de ne pas partager, enregistrer ou redistribuer ce contenu.</p>
-        </div>
-      </div>
-      <div id="trackWatermark" class="track-watermark hidden" aria-hidden="true"></div>
       <div class="atelier-player-frame">
         <p class="atelier-player-frame__whisper">Version ouverte. Écoute avant qu'elle se fige.</p>
         <div id="listeningChamber" class="listening-chamber" aria-live="polite">
@@ -321,6 +302,27 @@
         </div>
         <audio id="player" controls controlslist="nodownload noplaybackrate nofullscreen noremoteplayback" disableremoteplayback disablepictureinpicture preload="none"></audio>
       </div>
+      <div class="track-quick-meta">
+        <p id="trackPlayCount" class="muted">Écoutes du cercle : -</p>
+        <p id="trackLikeCount" class="muted">Marques du cercle : -</p>
+        <button id="trackLikeBtn" type="button" class="ghost">♡ Marquer ce morceau</button>
+      </div>
+      <div id="trackIntentPanel" class="track-intent-panel hidden">
+        <p class="track-intent-label">Note de Morjane</p>
+        <p id="trackIntentNote" class="track-intent-text"></p>
+        <p class="track-intent-label">Question du moment</p>
+        <p id="trackFeedbackQuestion" class="track-intent-text"></p>
+      </div>
+      <div class="track-protection-banner" role="note" aria-label="Protection du contenu">
+        <span class="track-protection-banner__icon" aria-hidden="true">
+          <span class="protection-seal protection-seal--large"></span>
+        </span>
+        <div>
+          <p class="track-protection-banner__title">Privé et sous copyright</p>
+          <p class="track-confidential-note">Écoute confidentielle du cercle privé. Merci de ne pas partager, enregistrer ou redistribuer ce contenu.</p>
+        </div>
+      </div>
+      <div id="trackWatermark" class="track-watermark hidden" aria-hidden="true"></div>
       <div class="listening-guide">
         <p class="listening-guide__title">Après l'écoute</p>
         <p>Choisissez le geste qui se rapproche le plus de votre ressenti, puis laissez-moi une trace plus libre si quelque chose reste.</p>
