@@ -67,7 +67,11 @@ body.is-listening::before {
   pointer-events: none;
   z-index: 1;
   background:
-    radial-gradient(ellipse at 52% 43%, transparent 0%, rgba(11, 11, 11, 0.12) 30%, rgba(11, 11, 11, 0.5) 70%, rgba(11, 11, 11, 0.72) 100%);
+    radial-gradient(ellipse at 58% 42%, rgba(201, 152, 82, 0.08), transparent 26%),
+    radial-gradient(ellipse at 52% 43%, transparent 0%, rgba(11, 11, 11, 0.08) 34%, rgba(11, 11, 11, 0.36) 72%, rgba(11, 11, 11, 0.58) 100%);
+  mix-blend-mode: screen;
+  opacity: 0.72;
+  animation: atelierListeningAura 9s ease-in-out infinite;
 }
 
 .atelier-wrap {
@@ -619,6 +623,17 @@ button.ghost {
   color: rgba(245, 228, 198, 0.96);
 }
 
+.atelier-closed-notebook {
+  width: fit-content;
+  margin: 22px 0 0 auto;
+  padding-top: 8px;
+  border-top: 1px solid rgba(232, 223, 211, 0.12);
+  color: rgba(232, 223, 211, 0.34);
+  font-family: "Cormorant Garamond", serif;
+  font-size: 22px;
+  font-style: italic;
+  pointer-events: none;
+}
 .track-list {
   display: grid;
   gap: 18px;
@@ -670,6 +685,27 @@ button.ghost {
   background: rgba(0, 0, 0, 0.22);
 }
 
+.track-season--closed-presence .track-season__head {
+  margin-bottom: 8px;
+}
+
+.track-season--closed-presence .track-season__head h3 {
+  color: rgba(232, 223, 211, 0.58);
+}
+
+.track-season--closed-presence .track-season__empty {
+  width: fit-content;
+  max-width: 100%;
+  padding: 10px 0;
+  border: 0;
+  border-top: 1px solid rgba(232, 223, 211, 0.12);
+  border-radius: 0;
+  background: transparent;
+  color: rgba(232, 223, 211, 0.42);
+  font-family: "Cormorant Garamond", serif;
+  font-size: 22px;
+  font-style: italic;
+}
 .track-list button,
 .track-card {
   width: 100%;
@@ -1700,6 +1736,32 @@ body.admin-compact .admin-note-input {
   padding: 8px 10px;
 }
 
+.admin-track-decision-box {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border: 1px solid rgba(201, 152, 82, 0.16);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(201, 152, 82, 0.055), transparent 58%),
+    rgba(0, 0, 0, 0.2);
+}
+
+.admin-track-decision-box__label {
+  margin: 0;
+  color: rgba(184, 137, 69, 0.9);
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.admin-track-decision-box__text {
+  margin: 0 0 4px;
+  color: rgba(232, 223, 211, 0.8);
+  font-size: 13px;
+  line-height: 1.45;
+}
 .admin-open-checklist {
   display: flex;
   flex-wrap: wrap;
@@ -2042,6 +2104,20 @@ body.atelier-listening .atelier-player-frame {
     0 0 34px rgba(184, 137, 69, 0.14);
 }
 
+.track-afterglow {
+  margin: 14px 0 0;
+  color: rgba(244, 239, 231, 0.64);
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(20px, 3vw, 28px);
+  font-style: italic;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.track-afterglow:not(.hidden) {
+  animation: traceAfterglow 1.2s ease forwards;
+}
 .track-quick-meta {
   display: flex;
   flex-wrap: wrap;
@@ -2230,6 +2306,23 @@ body.atelier-listening .atelier-player-frame {
   }
 }
 
+@keyframes atelierListeningAura {
+  0%, 100% {
+    opacity: 0.58;
+    filter: saturate(0.92) brightness(0.96);
+  }
+  50% {
+    opacity: 0.78;
+    filter: saturate(1.08) brightness(1.04);
+  }
+}
+
+@keyframes traceAfterglow {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 @keyframes chamberBreath {
   0%,
   100% {
@@ -2556,21 +2649,36 @@ body.atelier-listening .atelier-player-frame {
     margin-top: 10px;
   }
 
-  .track-list {
+.track-list {
     margin-top: 6px;
   }
 
   .acte-chooser {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-wrap: nowrap;
     gap: 7px;
+    margin-right: -12px;
+    padding-right: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
   }
 
   .acte-chooser__button {
+    flex: 0 0 148px;
     min-width: 0;
     padding: 9px 8px;
+    scroll-snap-align: start;
   }
 
+  .track-season--closed-presence .track-season__empty {
+    font-size: 20px;
+  }
+
+  .track-list__meta {
+    max-width: 28ch;
+    line-height: 1.35;
+  }
   .track-season__tracks {
     grid-template-columns: 1fr;
   }
@@ -2703,7 +2811,6 @@ body.atelier-listening .atelier-player-frame {
     gap: 5px;
     padding: 6px;
   }
-
   .admin-track-settings summary {
     min-height: 44px;
     padding: 0 12px;

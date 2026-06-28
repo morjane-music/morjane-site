@@ -94,6 +94,7 @@
       <div id="acteChooser" class="acte-chooser" aria-label="Choisir un acte"></div>
       <ul id="trackList" class="track-list"></ul>
       <p id="emptyTracks" class="muted hidden">Aucune version ouverte pour le moment. Le prochain acte arrivera ici.</p>
+      <div class="atelier-closed-notebook" aria-hidden="true">Carnet fermé</div>
     </section>
 
     <section id="adminPanel" class="admin-panel hidden ritual-reveal" data-ritual>
@@ -301,6 +302,7 @@
           <button id="traceRevealBtn" type="button" class="listening-chamber__trace hidden">Laisser une trace</button>
         </div>
         <audio id="player" controls controlslist="nodownload noplaybackrate nofullscreen noremoteplayback" disableremoteplayback disablepictureinpicture preload="none"></audio>
+        <p id="trackAfterglow" class="track-afterglow hidden">Quelque chose est resté ici.</p>
       </div>
       <div class="track-quick-meta">
         <p id="trackPlayCount" class="muted">Écoutes du cercle : -</p>
@@ -310,7 +312,7 @@
       <div id="trackIntentPanel" class="track-intent-panel hidden">
         <p class="track-intent-label">Note de Morjane</p>
         <p id="trackIntentNote" class="track-intent-text"></p>
-        <p class="track-intent-label">Question du moment</p>
+        <p id="trackFeedbackQuestionLabel" class="track-intent-label">Question du moment</p>
         <p id="trackFeedbackQuestion" class="track-intent-text"></p>
       </div>
       <div class="track-protection-banner" role="note" aria-label="Protection du contenu">

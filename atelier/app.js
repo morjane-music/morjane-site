@@ -72,6 +72,8 @@ const trackTimeline = document.getElementById("trackTimeline");
 const trackIntentPanel = document.getElementById("trackIntentPanel");
 const trackIntentNote = document.getElementById("trackIntentNote");
 const trackFeedbackQuestion = document.getElementById("trackFeedbackQuestion");
+const trackFeedbackQuestionLabel = document.getElementById("trackFeedbackQuestionLabel");
+const trackAfterglow = document.getElementById("trackAfterglow");
 const trackPlayCount = document.getElementById("trackPlayCount");
 const trackLikeCount = document.getElementById("trackLikeCount");
 const trackLikeBtn = document.getElementById("trackLikeBtn");
@@ -385,6 +387,35 @@ function getTrackDecisionCue(track) {
   return "Signal favorable";
 }
 
+function getAdminDecisionMoment(track) {
+  if (!track?.audio_ok) return "Corriger l'audio avant toute écoute.";
+  const status = track.decision_status || "testing";
+  if (status === "kept") return "Retenue : surveiller si les traces confirment.";
+  if (status === "rework") return "À retravailler : lire les doutes avant de modifier.";
+  if (status === "paused") return "En pause : garder la trace, ne pas forcer.";
+  if (status === "released") return "Sortie : garder pour mémoire de création.";
+  if (status === "archived") return "Archivée : invisible, utile seulement comme repère.";
+  const plays = Number(track.plays || 0);
+  const messages = Number(track.messages || 0);
+  if (plays < 5) return "Écouter encore : pas assez de signal.";
+  if (messages < 2) return "Demander plus de traces avant de décider.";
+  return "Décider bientôt : les premiers signaux existent.";
+}
+
+function getAdminTrackSnapshot(track) {
+  const keepVotes = Number(track.votes?.develop || 0);
+  const reviseVotes = Number(track.votes?.revise || 0);
+  const leaveVotes = Number(track.votes?.leave || 0);
+  const messages = Number(track.messages || 0);
+  const strongest = [
+    ["à garder", keepVotes],
+    ["à retravailler", reviseVotes],
+    ["à écarter", leaveVotes],
+  ].sort((a, b) => b[1] - a[1])[0];
+  const signal = strongest && strongest[1] > 0 ? `signal dominant : ${strongest[0]}` : "signal dominant : pas encore clair";
+  const traces = messages === 1 ? "1 trace reçue" : `${messages} traces reçues`;
+  return `${signal} · ${traces}`;
+}
 function getSeasonFallbackTitle(seasonId) {
   if (!seasonId) {
     return "Versions";
@@ -2375,6 +2406,25 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     stateBadge.textContent = simpleState.label;
     head.appendChild(stateBadge);
 
+    const decisionBox = document.createElement("div");
+    decisionBox.className = "admin-track-decision-box";
+    const decisionLabel = document.createElement("p");
+    decisionLabel.className = "admin-track-decision-box__label";
+    decisionLabel.textContent = "Décision du moment";
+    const decisionText = document.createElement("p");
+    decisionText.className = "admin-track-decision-box__text";
+    decisionText.textContent = getAdminDecisionMoment(track);
+    const snapshotLabel = document.createElement("p");
+    snapshotLabel.className = "admin-track-decision-box__label";
+    snapshotLabel.textContent = "Synthèse légère";
+    const snapshotText = document.createElement("p");
+    snapshotText.className = "admin-track-decision-box__text";
+    snapshotText.textContent = getAdminTrackSnapshot(track);
+    decisionBox.appendChild(decisionLabel);
+    decisionBox.appendChild(decisionText);
+    decisionBox.appendChild(snapshotLabel);
+    decisionBox.appendChild(snapshotText);
+
     const checklistData = getTrackOpeningChecklist(track);
     const checklist = document.createElement("div");
     checklist.className = "admin-open-checklist";
@@ -2563,6 +2613,7 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     settings.appendChild(announcementText);
     settings.appendChild(save);
     card.appendChild(head);
+    card.appendChild(decisionBox);
     card.appendChild(checklist);
     card.appendChild(settings);
     adminTrackCockpit.appendChild(card);
@@ -3172,22 +3223,46 @@ function resetListeningChamber() {
   if (traceRevealBtn) {
     hide(traceRevealBtn);
   }
+  if (trackFeedbackQuestionLabel) {
+    hide(trackFeedbackQuestionLabel);
+  }
+  if (trackFeedbackQuestion) {
+    hide(trackFeedbackQuestion);
+  }
+  if (trackAfterglow) {
+    hide(trackAfterglow);
+  }
+  document.body.classList.remove("is-listening-complete");
 }
 
-function updateListeningChamber() {
-  if (!player || !listeningChamberText || listeningQuestionShown || player.currentTime < 45) {
+function revealListeningQuestion() {
+  if (listeningQuestionShown) {
     return;
   }
-
   listeningQuestionShown = true;
-  listeningChamberText.textContent = "Qu'est-ce qui reste ?";
+  if (listeningChamberText) {
+    listeningChamberText.textContent = "Qu'est-ce qui reste ?";
+  }
   document.body.classList.add("is-question-ready");
   if (listeningChamber) {
     listeningChamber.dataset.state = "question";
   }
+  if (trackFeedbackQuestionLabel) {
+    show(trackFeedbackQuestionLabel);
+  }
+  if (trackFeedbackQuestion) {
+    show(trackFeedbackQuestion);
+  }
   if (traceRevealBtn) {
     show(traceRevealBtn);
   }
+}
+function updateListeningChamber() {
+  if (!player || listeningQuestionShown || player.currentTime < 45) {
+    return;
+  }
+
+  revealListeningQuestion();
 }
 
 function leaveListeningChamber() {
@@ -3573,6 +3648,13 @@ function getTrackLikeCount(trackId) {
   return Number(trackLikeCounts.get(trackId) || 0);
 }
 
+function formatCircleTrackMemory(trackId) {
+  const plays = getTrackPlayCount(trackId);
+  const likes = getTrackLikeCount(trackId);
+  const playText = plays === 1 ? "une fois" : `${plays} fois`;
+  const markText = likes === 1 ? "1 marque est restée" : `${likes} marques sont restées`;
+  return `Le cercle l'a écoutée ${playText} · ${markText}`;
+}
 function renderTrackLikeState() {
   if (!selectedTrack || !trackLikeBtn) {
     return;
@@ -3581,7 +3663,8 @@ function renderTrackLikeState() {
   trackLikeBtn.classList.toggle("is-active", isLiked);
   trackLikeBtn.textContent = isLiked ? "♥ Marque laissée" : "♡ Marquer ce morceau";
   if (trackLikeCount) {
-    trackLikeCount.textContent = `Marques du cercle : ${getTrackLikeCount(selectedTrack.id)}`;
+    trackLikeCount.textContent = "";
+    hide(trackLikeCount);
   }
 }
 
@@ -3622,7 +3705,7 @@ function createTrackCard(track) {
 
   const meta = document.createElement("span");
   meta.className = "track-list__meta";
-  meta.textContent = `Écoutes du cercle : ${getTrackPlayCount(track.id)} · Marques : ${getTrackLikeCount(track.id)}`;
+  meta.textContent = formatCircleTrackMemory(track.id);
 
   const cta = document.createElement("span");
   cta.className = "track-card__cta";
@@ -3654,8 +3737,8 @@ function renderAtelierMovements(groups) {
   const title = document.createElement("p");
   title.className = "atelier-movements__title";
   title.textContent = newTracks.length === 1
-    ? "Depuis ton dernier passage, une version a bougé."
-    : `Depuis ton dernier passage, ${newTracks.length} versions ont bougé.`;
+    ? "Le lieu a changé depuis ton dernier passage."
+    : `Le lieu a changé depuis ton dernier passage : ${newTracks.length} versions ont bougé.`;
 
   const list = document.createElement("ul");
   newTracks.slice(0, 4).forEach(({ track, season }) => {
@@ -3731,6 +3814,8 @@ function renderTrackList() {
 
   const seasonItem = document.createElement("li");
   seasonItem.className = "track-season";
+  const isClosedHorsActe = normalizeActeSlug(group.season) === "hors-acte" && group.tracks.length === 0;
+  seasonItem.classList.toggle("track-season--closed-presence", isClosedHorsActe);
 
   const heading = document.createElement("div");
   heading.className = "track-season__head";
@@ -3750,8 +3835,8 @@ function renderTrackList() {
   if (group.tracks.length === 0) {
     const empty = document.createElement("p");
     empty.className = "track-season__empty";
-    empty.textContent = normalizeActeSlug(group.season) === "hors-acte"
-      ? "Présence fermée. Rien ne s'ouvre ici pour l'instant."
+    empty.textContent = isClosedHorsActe
+      ? "Rien ne s'ouvre ici pour l'instant."
       : "Aucune version ouverte dans cet acte pour le moment.";
     seasonItem.appendChild(empty);
     trackList.appendChild(seasonItem);
@@ -3786,7 +3871,7 @@ async function selectTrack(trackId) {
     show(trackIntentPanel);
   }
   if (trackPlayCount) {
-    trackPlayCount.textContent = `Écoutes du cercle : ${getTrackPlayCount(selectedTrack.id)}`;
+    trackPlayCount.textContent = formatCircleTrackMemory(selectedTrack.id);
   }
   renderTrackLikeState();
   voteStatus.textContent = "Chargement de l'audio...";
@@ -3867,7 +3952,7 @@ async function logQualifiedPlay() {
   const next = getTrackPlayCount(selectedTrack.id) + 1;
   trackPlayCounts.set(selectedTrack.id, next);
   if (trackPlayCount) {
-    trackPlayCount.textContent = `Écoutes du cercle : ${next}`;
+    trackPlayCount.textContent = formatCircleTrackMemory(selectedTrack.id);
   }
   renderTrackList();
 }
@@ -4054,7 +4139,7 @@ async function submitMessage(content, tag = "emotion") {
     return;
   }
 
-  messageStatus.textContent = "Trace reçue. Elle reste entre vous et Morjane.";
+  messageStatus.textContent = "Ta trace est restée sur la table.";
   privateMessage.value = "";
 }
 
@@ -4195,6 +4280,11 @@ if (player) {
     if ("mediaSession" in navigator) {
       navigator.mediaSession.playbackState = "none";
     }
+    revealListeningQuestion();
+    if (trackAfterglow) {
+      show(trackAfterglow);
+    }
+    document.body.classList.add("is-listening-complete");
     sendPresenceHeartbeat(false);
     stopPresenceHeartbeat();
     stopWatermark();
