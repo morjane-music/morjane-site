@@ -94,6 +94,8 @@ const otpCodeInput = document.getElementById("otpCodeInput");
 const showOtpCodeBtn = document.getElementById("showOtpCodeBtn");
 const authMobileHelp = document.getElementById("authMobileHelp");
 const authDoorNote = document.getElementById("authDoorNote");
+const authModeHint = document.getElementById("authModeHint");
+const authModeButtons = Array.from(document.querySelectorAll("[data-auth-mode]"));
 const magicLinkSubmitBtn = magicLinkForm ? magicLinkForm.querySelector("button[type='submit']") : null;
 const messageForm = document.getElementById("messageForm");
 const feedbackTag = document.getElementById("feedbackTag");
@@ -113,6 +115,7 @@ let playLoggedForCurrentTrack = false;
 let listeningQuestionShown = false;
 let watermarkTimer = null;
 let adminMembersCache = [];
+let authEntryMode = "request";
 let adminInboxCache = [];
 let adminTrackCache = [];
 let adminAudioFilesCache = [];
@@ -821,21 +824,63 @@ function getEntryAdminLabel(member) {
   return getSourceLabel(getMemberSource(member));
 }
 
+function getAuthModeCopy(mode) {
+  if (mode === "access") {
+    return {
+      hint: "Si Morjane t'a déjà ouvert l'Atelier, entre ton email pour recevoir ton lien et ton code.",
+      button: "Recevoir mon code",
+      status: "Mail envoyé. Garde cette page ouverte, puis reviens coller le code si le lien s'ouvre ailleurs.",
+    };
+  }
+  return {
+    hint: "Entre ton email. Morjane validera l'accès si le cercle peut s'ouvrir.",
+    button: "Demander l'accès",
+    status: "Demande envoyée. Garde cette page ouverte : tu peux coller le code ici si le mail s'ouvre ailleurs.",
+  };
+}
+
+function setAuthEntryMode(mode, { focusEmail = false, showCode = false } = {}) {
+  authEntryMode = mode === "access" ? "access" : "request";
+  const copy = getAuthModeCopy(authEntryMode);
+
+  authModeButtons.forEach((button) => {
+    const isActive = button.dataset.authMode === authEntryMode;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+
+  if (authModeHint) {
+    authModeHint.textContent = copy.hint;
+  }
+  if (magicLinkSubmitBtn) {
+    magicLinkSubmitBtn.textContent = copy.button;
+  }
+  if (showCode) {
+    revealOtpCodeForm({ focus: true, showMobileHelp: true });
+  }
+  if (focusEmail) {
+    emailInput?.focus();
+  }
+}
+
 function applyEntryContextToAuthView() {
   if (!authDoorNote) {
+    setAuthEntryMode("request");
     return;
   }
   const context = getCurrentEntryContext();
   if (!context || (!context.source && !context.door)) {
     hide(authDoorNote);
+    setAuthEntryMode("request");
     return;
   }
 
   const source = normalizeEntrySource(context.source);
   const door = normalizeEntryDoor(context.door);
+  const accessDoors = new Set(["morjane", "pro", "invitation"]);
   const lines = {
     phone: "Tu es devant l'Atelier. Laisse ton email, Morjane ouvrira si c'est le bon moment.",
-    pro: "Porte pro. Laisse ton email pour demander un accès d'écoute adapté.",
+    pro: "Porte pro. Si Morjane t'a invité, utilise ton email pour recevoir ton code.",
     concert: "Tu arrives par une rencontre. Laisse ton email pour garder le fil.",
     instagram: "Tu viens d'Instagram. Laisse ton email pour demander l'accès.",
     home: "Tu as trouvé la fissure. Laisse ton email pour demander l'accès.",
@@ -843,12 +888,14 @@ function applyEntryContextToAuthView() {
     menu: "L'Atelier n'est pas public. Laisse ton email pour demander l'accès.",
     morjane: "Connexion Morjane. Utilise ton email admin/fondateur pour ouvrir ta session sur ce téléphone.",
   };
+
+  const shouldUseAccessMode = accessDoors.has(door) || source === "invitation";
+  setAuthEntryMode(shouldUseAccessMode ? "access" : "request");
   authDoorNote.textContent = lines[door] || (source === "qr"
     ? "Cette porte ouvre une demande, pas les chansons directement. Laisse ton email pour être reconnu."
     : "Laisse ton email pour demander l'accès à l'Atelier.");
   show(authDoorNote);
 }
-
 function getAccessLabel(member) {
   const status = String(member?.member_status || "pending");
   return ({
@@ -4187,17 +4234,23 @@ magicLinkForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  authStatus.textContent = "Mail envoyé. Ouvre le lien dans ton navigateur, ou entre le code reçu ici.";
+  authStatus.textContent = getAuthModeCopy(authEntryMode).status;
   revealOtpCodeForm({ focus: true, showMobileHelp: true });
   startMagicLinkCooldown(60);
 });
 
+authModeButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setAuthEntryMode(button.dataset.authMode, { focusEmail: true });
+  });
+});
+
 if (showOtpCodeBtn) {
   showOtpCodeBtn.addEventListener("click", () => {
-    revealOtpCodeForm({ focus: true, showMobileHelp: false });
+    setAuthEntryMode("access");
+    revealOtpCodeForm({ focus: true, showMobileHelp: true });
   });
 }
-
 if (otpCodeForm) {
   otpCodeForm.addEventListener("submit", async (event) => {
     event.preventDefault();

@@ -51,33 +51,41 @@
       </div>
     </header>
 
-    <section id="authView" class="panel hidden ritual-reveal" data-ritual>
-      <h2>Connexion membre</h2>
-      <ol class="access-steps" aria-label="Étapes d'accès">
-        <li class="is-current">Connexion email</li>
-        <li>Validation membre du cercle</li>
-      </ol>
-      <p>Entrez votre email pour recevoir un lien et un code de connexion.</p>
+    <section id="authView" class="panel auth-panel hidden ritual-reveal" data-ritual>
+      <p class="section-kicker">Entrée privée</p>
+      <h2>Entrer dans l'Atelier</h2>
+      <p class="auth-intro">L'Atelier est privé. Choisis ce qui correspond à ton passage.</p>
+      <div class="auth-choice" role="group" aria-label="Choisir un mode d'entrée">
+        <button type="button" class="auth-choice__card is-active" data-auth-mode="request" aria-pressed="true">
+          <span>Demander une place</span>
+          <small>Pour rejoindre le cercle d'écoute.</small>
+        </button>
+        <button type="button" class="auth-choice__card" data-auth-mode="access" aria-pressed="false">
+          <span>J'ai déjà un accès</span>
+          <small>Si Morjane t'a déjà ouvert l'Atelier.</small>
+        </button>
+      </div>
       <p id="authDoorNote" class="auth-door-note muted hidden"></p>
+      <p id="authModeHint" class="auth-mode-hint muted">Entre ton email. Morjane validera l'accès si le cercle peut s'ouvrir.</p>
       <form id="magicLinkForm" class="stack">
-        <input id="emailInput" type="email" placeholder="vous@email.com" required>
-        <button type="submit">Recevoir le lien</button>
+        <label id="authEmailLabel" class="sr-only" for="emailInput">Email</label>
+        <input id="emailInput" type="email" placeholder="vous@email.com" autocomplete="email" required>
+        <button type="submit">Demander l'accès</button>
       </form>
       <button id="showOtpCodeBtn" type="button" class="auth-code-toggle">J'ai un code</button>
-      <p id="authMobileHelp" class="auth-mobile-help muted hidden">Garde cette page ouverte. Si le mail ouvre une autre fenêtre, copie le code ici.</p>
+      <p id="authMobileHelp" class="auth-mobile-help muted hidden">Garde cette page ouverte. Si le mail s'ouvre dans une autre fenêtre, reviens ici et copie le code reçu.</p>
       <form id="otpCodeForm" class="otp-code-form hidden" aria-label="Connexion avec le code reçu par email">
         <label for="otpCodeInput">Code reçu par email</label>
         <div class="otp-code-form__row">
           <input id="otpCodeInput" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" maxlength="8">
           <button type="submit" class="ghost">Entrer</button>
         </div>
-        <p class="otp-code-form__hint">Utilise le même email que celui du mail reçu.</p>
+        <p class="otp-code-form__hint">Même email que dans le mail reçu.</p>
       </form>
       <p id="authStatus" class="muted"></p>
-      <p class="auth-help muted">Si le lien s'ouvre dans une fenêtre mail, revenez ici dans votre navigateur et entrez le code reçu.</p>
+      <p class="auth-help muted">Sur téléphone : garde cette page ouverte, ouvre le mail, puis reviens ici si tu dois coller le code.</p>
       <p class="auth-help muted">Rien reçu ? Écris à <a href="mailto:booking@morjane.re">booking@morjane.re</a>.</p>
     </section>
-
     <section id="memberView" class="panel hidden ritual-reveal" data-ritual>
       <div class="member-top">
         <div>
