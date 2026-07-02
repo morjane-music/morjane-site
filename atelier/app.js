@@ -64,6 +64,12 @@ const adminInviteNote = document.getElementById("adminInviteNote");
 const adminInviteStatusText = document.getElementById("adminInviteStatusText");
 const adminCreateInviteLinkBtn = document.getElementById("adminCreateInviteLinkBtn");
 const adminEntryLinks = document.getElementById("adminEntryLinks");
+const adminKeyForm = document.getElementById("adminKeyForm");
+const adminKeyLabel = document.getElementById("adminKeyLabel");
+const adminKeySegment = document.getElementById("adminKeySegment");
+const adminKeyStatus = document.getElementById("adminKeyStatus");
+const adminKeyMaxUses = document.getElementById("adminKeyMaxUses");
+const adminKeyStatusText = document.getElementById("adminKeyStatusText");
 const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
 const trackTitle = document.getElementById("trackTitle");
@@ -94,6 +100,9 @@ const otpCodeInput = document.getElementById("otpCodeInput");
 const showOtpCodeBtn = document.getElementById("showOtpCodeBtn");
 const authMobileHelp = document.getElementById("authMobileHelp");
 const authDoorNote = document.getElementById("authDoorNote");
+const atelierKeyForm = document.getElementById("atelierKeyForm");
+const atelierKeyInput = document.getElementById("atelierKeyInput");
+const atelierKeyStatus = document.getElementById("atelierKeyStatus");
 const authModeHint = document.getElementById("authModeHint");
 const authModeButtons = Array.from(document.querySelectorAll("[data-auth-mode]"));
 const magicLinkSubmitBtn = magicLinkForm ? magicLinkForm.querySelector("button[type='submit']") : null;
@@ -115,7 +124,9 @@ let playLoggedForCurrentTrack = false;
 let listeningQuestionShown = false;
 let watermarkTimer = null;
 let adminMembersCache = [];
-let authEntryMode = "request";
+let authEntryMode = "key";
+let atelierKeyClaimToken = "";
+let atelierKeyReady = false;
 let adminInboxCache = [];
 let adminTrackCache = [];
 let adminAudioFilesCache = [];
@@ -838,22 +849,30 @@ function getEntryAdminLabel(member) {
 }
 
 function getAuthModeCopy(mode) {
-  if (mode === "access") {
-    return {
-      hint: "Si Morjane t'a déjà ouvert l'Atelier, entre ton email pour recevoir ton lien et ton code.",
-      button: "Recevoir mon code",
-      status: "Mail envoyé. Garde cette page ouverte, puis reviens coller le code si le lien s'ouvre ailleurs.",
+  if (mode === "key") {
+    return atelierKeyReady ? {
+      hint: "Cle reconnue. Entre ton email pour rattacher cette cle a ton acces Atelier.",
+      button: "Recevoir mon lien lie a la cle",
+      status: "Cle rattachee. Garde cette page ouverte, puis reviens coller le code si le mail s'ouvre ailleurs.",
+    } : {
+      hint: "Entre ta cle. Si elle est reconnue, tu pourras rattacher ton email au cercle.",
+      button: "Recevoir mon lien lie a la cle",
+      status: "Cle reconnue. Entre ton email pour recevoir ton lien personnel.",
     };
   }
   return {
-    hint: "Entre ton email. Tu ne verras les chansons que si Morjane ouvre ton accès.",
-    button: "Demander l'accès",
-    status: "Demande envoyée. Garde cette page ouverte : tu peux coller le code ici si le mail s'ouvre ailleurs. Les chansons resteront fermées tant que l'accès n'est pas validé.",
+    hint: "Entre ton email. Tu ne verras les chansons que si Morjane ouvre ton acces.",
+    button: "Recevoir un lien par mail",
+    status: "Mail envoye. Garde cette page ouverte : tu peux coller le code ici si le mail s'ouvre ailleurs. Les chansons resteront fermees tant que l'acces n'est pas valide.",
   };
 }
 
 function setAuthEntryMode(mode, { focusEmail = false, showCode = false } = {}) {
-  authEntryMode = mode === "access" ? "access" : "request";
+  authEntryMode = mode === "key" ? "key" : "access";
+  if (authEntryMode !== "key") {
+    atelierKeyClaimToken = "";
+    atelierKeyReady = false;
+  }
   const copy = getAuthModeCopy(authEntryMode);
 
   authModeButtons.forEach((button) => {
@@ -862,6 +881,12 @@ function setAuthEntryMode(mode, { focusEmail = false, showCode = false } = {}) {
     button.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
 
+  if (atelierKeyForm) {
+    atelierKeyForm.classList.toggle("hidden", authEntryMode !== "key");
+  }
+  if (magicLinkForm) {
+    magicLinkForm.classList.toggle("hidden", authEntryMode === "key" && !atelierKeyReady);
+  }
   if (authModeHint) {
     authModeHint.textContent = copy.hint;
   }
@@ -876,15 +901,25 @@ function setAuthEntryMode(mode, { focusEmail = false, showCode = false } = {}) {
   }
 }
 
+function getKeyFromUrl() {
+  try {
+    return new URLSearchParams(window.location.search).get("key") || "";
+  } catch (_) {
+    return "";
+  }
+}
+
 function applyEntryContextToAuthView() {
   if (!authDoorNote) {
-    setAuthEntryMode("request");
+    setAuthEntryMode("key");
     return;
   }
   const context = getCurrentEntryContext();
+  const urlKey = getKeyFromUrl();
   if (!context || (!context.source && !context.door)) {
     hide(authDoorNote);
-    setAuthEntryMode("request");
+    setAuthEntryMode(urlKey ? "key" : "access");
+    if (urlKey && atelierKeyInput) atelierKeyInput.value = urlKey;
     return;
   }
 
@@ -893,21 +928,22 @@ function applyEntryContextToAuthView() {
   const accessDoors = new Set(["morjane", "pro", "invitation"]);
   const lines = {
     phone: "Tu es devant l'Atelier. Laisse ton email, Morjane ouvrira si c'est le bon moment.",
-    pro: "Porte pro. Si Morjane t'a invité, utilise ton email pour recevoir ton code.",
+    pro: "Porte pro. Si Morjane t'a invite, utilise ton email pour recevoir ton code.",
     concert: "Tu arrives par une rencontre. Laisse ton email pour garder le fil.",
-    instagram: "Tu viens d'Instagram. Laisse ton email pour demander l'accès.",
-    invitation: "Morjane t'a ouvert une place dans l'Atelier. Utilise le même email pour recevoir ton code.",
-    home: "Tu as trouvé la fissure. Laisse ton email pour demander l'accès.",
-    footer: "L'Atelier n'est pas public. Laisse ton email pour demander l'accès.",
-    menu: "L'Atelier n'est pas public. Laisse ton email pour demander l'accès.",
-    morjane: "Connexion Morjane. Utilise ton email admin/fondateur pour ouvrir ta session sur ce téléphone.",
+    instagram: "Tu viens d'Instagram. Laisse ton email pour demander l'acces.",
+    invitation: "Morjane t'a ouvert une place dans l'Atelier. Utilise le meme email pour recevoir ton code.",
+    home: "Tu as trouve la fissure. Laisse ton email pour demander l'acces.",
+    footer: "L'Atelier n'est pas public. Laisse ton email pour demander l'acces.",
+    menu: "L'Atelier n'est pas public. Laisse ton email pour demander l'acces.",
+    morjane: "Connexion Morjane. Utilise ton email admin/fondateur pour ouvrir ta session sur ce telephone.",
   };
 
-  const shouldUseAccessMode = accessDoors.has(door) || source === "invitation";
-  setAuthEntryMode(shouldUseAccessMode ? "access" : "request");
+  const shouldUseAccessMode = !urlKey && (accessDoors.has(door) || source === "invitation");
+  setAuthEntryMode(shouldUseAccessMode ? "access" : "key");
+  if (urlKey && atelierKeyInput) atelierKeyInput.value = urlKey;
   authDoorNote.textContent = lines[door] || (source === "qr"
-    ? "Cette porte ouvre une demande, pas les chansons directement. Laisse ton email pour être reconnu."
-    : "Laisse ton email pour demander l'accès à l'Atelier.");
+    ? "Cette porte ouvre une demande, pas les chansons directement. Laisse ton email pour etre reconnu."
+    : "Laisse ton email pour demander l'acces a l'Atelier.");
   show(authDoorNote);
 }
 function getAccessLabel(member) {
@@ -3213,6 +3249,41 @@ async function updateMemberMeta(userId, fields) {
   }
 }
 
+async function createAtelierKey() {
+  if (!canManageMembers() || !session?.access_token || !adminKeyStatusText) {
+    return;
+  }
+  adminKeyStatusText.textContent = "Creation de la cle...";
+  try {
+    const res = await fetch("/.netlify/functions/admin-create-invite-key", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        label: adminKeyLabel?.value || "Cle Atelier",
+        audience_segment: adminKeySegment?.value || "public",
+        member_status: adminKeyStatus?.value || "member",
+        max_uses: adminKeyMaxUses?.value || 1,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok || !data.url) {
+      adminKeyStatusText.textContent = `Cle impossible (${data.error || res.status}).`;
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(data.url);
+      adminKeyStatusText.textContent = `Cle copiee : ${data.key}`;
+    } catch (_) {
+      adminKeyStatusText.textContent = `Cle creee : ${data.key} - ${data.url}`;
+    }
+    if (adminKeyLabel) adminKeyLabel.value = "";
+  } catch (_) {
+    adminKeyStatusText.textContent = "Erreur reseau.";
+  }
+}
 async function sendAdminInvite(delivery = "email") {
   if (!canManageMembers() || !session?.access_token || !adminInviteEmail) {
     return;
@@ -4104,6 +4175,39 @@ async function submitVote(choice) {
   voteStatus.textContent = error ? `Geste refusé. ${error.message || ""}`.trim() : "Geste gardé. Merci d'avoir écouté jusqu'à l'endroit juste.";
 }
 
+async function validateAtelierKey() {
+  const rawKey = atelierKeyInput?.value.trim() || "";
+  if (!rawKey) {
+    if (atelierKeyStatus) atelierKeyStatus.textContent = "Entre la cle recue.";
+    atelierKeyInput?.focus();
+    return;
+  }
+  if (atelierKeyStatus) atelierKeyStatus.textContent = "Verification de la cle...";
+  atelierKeyClaimToken = "";
+  atelierKeyReady = false;
+  try {
+    const res = await fetch("/.netlify/functions/validate-atelier-key", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: rawKey }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok || !data.claimToken) {
+      if (atelierKeyStatus) {
+        atelierKeyStatus.textContent = data.error === "key_unavailable" ? "Cette cle n'ouvre rien pour le moment." : "Cle impossible a verifier.";
+      }
+      return;
+    }
+    atelierKeyClaimToken = data.claimToken;
+    atelierKeyReady = true;
+    if (atelierKeyStatus) {
+      atelierKeyStatus.textContent = "Cle reconnue. Entre ton email pour recevoir ton lien personnel.";
+    }
+    setAuthEntryMode("key", { focusEmail: true });
+  } catch (_) {
+    if (atelierKeyStatus) atelierKeyStatus.textContent = "Connexion instable. Reessaie dans un instant.";
+  }
+}
 function revealOtpCodeForm({ focus = true, showMobileHelp = false } = {}) {
   if (otpCodeForm) {
     show(otpCodeForm);
@@ -4247,6 +4351,7 @@ magicLinkForm.addEventListener("submit", async (event) => {
         email,
         entry: entryContext,
         redirectTo: getAtelierEmailRedirectUrl(),
+        keyToken: authEntryMode === "key" ? atelierKeyClaimToken : "",
       }),
     });
     data = await response.json().catch(() => ({}));
@@ -4274,9 +4379,20 @@ magicLinkForm.addEventListener("submit", async (event) => {
 
 authModeButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    setAuthEntryMode(button.dataset.authMode, { focusEmail: true });
+    const mode = button.dataset.authMode;
+    setAuthEntryMode(mode, { focusEmail: mode !== "key" });
+    if (mode === "key") {
+      atelierKeyInput?.focus();
+    }
   });
 });
+
+if (atelierKeyForm) {
+  atelierKeyForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await validateAtelierKey();
+  });
+}
 
 if (showOtpCodeBtn) {
   showOtpCodeBtn.addEventListener("click", () => {
@@ -4418,6 +4534,13 @@ if (adminInviteForm) {
 if (adminCreateInviteLinkBtn) {
   adminCreateInviteLinkBtn.addEventListener("click", async () => {
     await sendAdminInvite("link");
+  });
+}
+
+if (adminKeyForm) {
+  adminKeyForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await createAtelierKey();
   });
 }
 

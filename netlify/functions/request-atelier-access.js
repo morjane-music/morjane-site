@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const { createClient } = require("@supabase/supabase-js");
 const { trackFunctionEvent } = require("./_lib/atelier-observability");
 
@@ -17,6 +18,45 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
+function hashValue(value) {
+  return crypto.createHash("sha256").update(String(value || ""), "utf8").digest("hex");
+}
+
+function cleanToken(value) {
+  return String(value || "").trim().slice(0, 160);
+}
+
+function isOpenStatus(status) {
+  return ["member", "priority", "founder"].includes(String(status || ""));
+}
+
+async function getKeyGrantFromToken(supabase, token) {
+  const cleaned = cleanToken(token);
+  if (!cleaned) {
+    return { grant: null, error: null };
+  }
+
+  const tokenHash = hashValue(cleaned);
+  const result = await supabase
+    .from("atelier_invitation_keys")
+    .select("id, label, member_status, audience_segment, max_uses, uses_count, is_active, expires_at, claim_token_expires_at")
+    .eq("claim_token_hash", tokenHash)
+    .maybeSingle();
+
+  if (result.error) {
+    return { grant: null, error: "key_lookup_failed", detail: result.error.message || "" };
+  }
+
+  const key = result.data;
+  const expired = key?.expires_at && new Date(key.expires_at).getTime() <= Date.now();
+  const claimExpired = key?.claim_token_expires_at && new Date(key.claim_token_expires_at).getTime() <= Date.now();
+  const exhausted = key && Number(key.uses_count || 0) >= Number(key.max_uses || 1);
+  if (!key || !key.is_active || expired || claimExpired || exhausted) {
+    return { grant: null, error: "key_unavailable" };
+  }
+
+  return { grant: key, error: null };
+}
 function cleanEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -115,7 +155,7 @@ async function getOrCreateAuthUser(supabase, email) {
   return { user: null, error: created.error?.message || retry.error || "user_create_failed" };
 }
 
-async function prepareProfile(supabase, user, email, entry) {
+async function prepareProfile(supabase, user, email, entry, keyGrant = null) {
   const existing = await supabase
     .from("atelier_profiles")
     .select("id, role, member_status, audience_status, audience_segment, source, access_source, access_wave")
@@ -127,16 +167,18 @@ async function prepareProfile(supabase, user, email, entry) {
   }
 
   const current = existing.data || {};
+  const keyStatus = keyGrant?.member_status === "priority" ? "priority" : "member";
+  const shouldOpenWithKey = keyGrant && !isOpenStatus(current.member_status);
   const payload = {
     id: user.id,
     email,
     role: current.role || "member",
-    member_status: current.member_status || "pending",
-    audience_status: current.audience_status || "new",
-    audience_segment: current.audience_segment || entry.segment || null,
-    source: current.source || getProfileSource(entry),
-    access_source: current.access_source || entry.source || "site",
-    access_wave: current.access_wave || entry.door || "direct",
+    member_status: shouldOpenWithKey ? keyStatus : (current.member_status || "pending"),
+    audience_status: shouldOpenWithKey ? (keyStatus === "priority" ? "vip" : "approved") : (current.audience_status || "new"),
+    audience_segment: current.audience_segment || keyGrant?.audience_segment || entry.segment || null,
+    source: current.source || (keyGrant ? "invitation" : getProfileSource(entry)),
+    access_source: current.access_source || (keyGrant ? "invitation" : entry.source || "site"),
+    access_wave: current.access_wave || (keyGrant ? `key:${keyGrant.label || keyGrant.id}` : entry.door || "direct"),
   };
 
   const saved = await supabase
@@ -238,6 +280,7 @@ exports.handler = async (event) => {
   const email = cleanEmail(payload.email);
   const entry = cleanEntry(payload.entry);
   const redirectTo = getRedirectTo(payload.redirectTo);
+  const keyToken = cleanToken(payload.keyToken);
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   if (!isValidEmail(email)) {
@@ -250,6 +293,19 @@ exports.handler = async (event) => {
     });
     return json(400, { ok: false, error: "invalid_email" });
   }
+
+  const keyGrantResult = await getKeyGrantFromToken(supabase, keyToken);
+  if (keyGrantResult.error) {
+    await trackFunctionEvent(supabase, {
+      function_name: "request-atelier-access",
+      status: "error",
+      error_code: keyGrantResult.error,
+      latency_ms: Date.now() - startedAt,
+      meta: { entry_source: entry.source, entry_door: entry.door, detail: keyGrantResult.detail || null },
+    });
+    return json(403, { ok: false, error: keyGrantResult.error });
+  }
+  const keyGrant = keyGrantResult.grant;
 
   const authUser = await getOrCreateAuthUser(supabase, email);
   if (!authUser.user) {
@@ -264,7 +320,7 @@ exports.handler = async (event) => {
     return json(500, { ok: false, error: "request_failed" });
   }
 
-  const prepared = await prepareProfile(supabase, authUser.user, email, entry);
+  const prepared = await prepareProfile(supabase, authUser.user, email, entry, keyGrant);
   if (!prepared.ok) {
     await trackFunctionEvent(supabase, {
       function_name: "request-atelier-access",
@@ -294,6 +350,20 @@ exports.handler = async (event) => {
 
   await logMagicLink(supabase, email, "sent");
 
+  if (keyGrant) {
+    await supabase
+      .from("atelier_invitation_keys")
+      .update({
+        uses_count: Number(keyGrant.uses_count || 0) + 1,
+        claimed_by: authUser.user.id,
+        claimed_email: email,
+        claimed_at: new Date().toISOString(),
+        claim_token_hash: null,
+        claim_token_expires_at: null,
+      })
+      .eq("id", keyGrant.id);
+  }
+
   const alreadyInside = ["member", "priority", "founder"].includes(prepared.profile?.member_status);
   const notified = alreadyInside ? false : await sendAdminNotification(email, entry);
 
@@ -308,6 +378,7 @@ exports.handler = async (event) => {
       entry_source: entry.source,
       entry_door: entry.door,
       entry_segment: entry.segment,
+      key_grant: Boolean(keyGrant),
     },
   });
 

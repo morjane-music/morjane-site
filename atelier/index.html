@@ -54,23 +54,29 @@
     <section id="authView" class="panel auth-panel hidden ritual-reveal" data-ritual>
       <p class="section-kicker">Entrée privée</p>
       <h2>Entrer dans l'Atelier</h2>
-      <p class="auth-intro">L'Atelier est privé. Tu peux demander une place, ou revenir avec un accès déjà ouvert.</p>
+      <p class="auth-intro">L'Atelier est prive. Tu peux entrer avec une cle, ou recevoir un lien par mail si ton acces existe deja.</p>
       <div class="auth-choice" role="group" aria-label="Choisir un mode d'entrée">
-        <button type="button" class="auth-choice__card is-active" data-auth-mode="request" aria-pressed="true">
-          <span>Demander une place</span>
-          <small>Pour rejoindre le cercle d'écoute.</small>
+        <button type="button" class="auth-choice__card is-active" data-auth-mode="key" aria-pressed="true">
+          <span>Entrer avec une cle</span>
+          <small>Pour une invitation recue en vrai, en QR ou en message.</small>
         </button>
         <button type="button" class="auth-choice__card" data-auth-mode="access" aria-pressed="false">
-          <span>J'ai déjà un accès</span>
-          <small>Si Morjane t'a déjà ouvert l'Atelier.</small>
+          <span>Recevoir un lien par mail</span>
+          <small>Deja membre, demande classique ou retour dans le cercle.</small>
         </button>
       </div>
+      <form id="atelierKeyForm" class="atelier-key-form stack">
+        <label class="sr-only" for="atelierKeyInput">Cle Atelier</label>
+        <input id="atelierKeyInput" type="text" inputmode="text" autocomplete="one-time-code" placeholder="MOR-XXXX-XXXX-XXXX">
+        <button id="atelierKeySubmitBtn" type="submit">Valider la cle</button>
+      </form>
+      <p id="atelierKeyStatus" class="auth-key-status muted"></p>
       <p id="authDoorNote" class="auth-door-note muted hidden"></p>
-      <p id="authModeHint" class="auth-mode-hint muted">Entre ton email. Tu ne verras les chansons que si Morjane ouvre ton accès.</p>
-      <form id="magicLinkForm" class="stack">
+      <p id="authModeHint" class="auth-mode-hint muted">Entre ta cle. Si elle est reconnue, tu pourras rattacher ton email au cercle.</p>
+      <form id="magicLinkForm" class="stack hidden">
         <label id="authEmailLabel" class="sr-only" for="emailInput">Email</label>
         <input id="emailInput" type="email" placeholder="vous@email.com" autocomplete="email" required>
-        <button type="submit">Demander l'accès</button>
+        <button type="submit">Recevoir un lien par mail</button>
       </form>
       <button id="showOtpCodeBtn" type="button" class="auth-code-toggle">J'ai un code</button>
       <p id="authMobileHelp" class="auth-mobile-help muted hidden">Garde cette page ouverte. Si le mail s'ouvre dans une autre fenêtre, reviens ici et copie le code reçu.</p>
@@ -151,6 +157,25 @@
         <summary>Liens et QR</summary>
         <p class="muted">Ces liens ne donnent pas accès aux chansons. Ils qualifient seulement l'entrée avant validation.</p>
         <div id="adminEntryLinks" class="admin-entry-links"></div>
+        <form id="adminKeyForm" class="admin-key-form">
+          <h3>Creer une cle</h3>
+          <div class="admin-invite-grid">
+            <input id="adminKeyLabel" type="text" placeholder="Nom de la cle">
+            <select id="adminKeySegment" aria-label="Profil de cle">
+              <option value="public">Public</option>
+              <option value="proche">Proche</option>
+              <option value="artiste">Artiste</option>
+              <option value="pro">Pro</option>
+            </select>
+            <select id="adminKeyStatus" aria-label="Acces par cle">
+              <option value="member">Membre</option>
+              <option value="priority">Prioritaire</option>
+            </select>
+            <input id="adminKeyMaxUses" type="number" min="1" max="50" value="1" aria-label="Nombre d'utilisations">
+            <button type="submit" class="ghost">Creer + copier</button>
+          </div>
+          <p id="adminKeyStatusText" class="muted"></p>
+        </form>
       </details>
       <nav class="admin-main-tabs" aria-label="Navigation admin">
         <button type="button" class="admin-main-tab is-active" data-admin-section="requests">Demandes</button>
