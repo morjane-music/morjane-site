@@ -598,6 +598,20 @@ button.ghost {
   text-transform: uppercase;
 }
 
+.season-note__instruction {
+  margin-top: 8px !important;
+  color: rgba(232, 223, 211, 0.74);
+}
+
+.season-note__progress {
+  width: fit-content;
+  margin-top: 9px !important;
+  padding-top: 7px;
+  border-top: 1px solid rgba(201, 152, 82, 0.22);
+  color: rgba(201, 152, 82, 0.86);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
 .season-note__memory {
   margin-top: 7px !important;
   color: rgba(232, 223, 211, 0.62);
@@ -1085,6 +1099,12 @@ button.ghost {
   background: rgba(201, 152, 82, 0.04);
 }
 
+.admin-member-journey {
+  margin: 6px 0 0;
+  color: rgba(232, 223, 211, 0.6);
+  font-size: 12px;
+  line-height: 1.45;
+}
 .admin-members-list {
   display: grid;
   gap: 8px;

@@ -451,15 +451,28 @@ function getActeDefinition(slug) {
   return ATELIER_ACTES.find((acte) => acte.slug === slug) || null;
 }
 
+function canSeeRestrictedActesForProfile(member) {
+  const segment = normalizeAudienceSegment(member?.audience_segment);
+  const status = String(member?.member_status || "");
+  return member?.role === "admin" || segment === "proche" || status === "priority" || status === "founder";
+}
+
 function canSeeActe(acte) {
   if (!acte?.restricted) {
     return true;
   }
-  const segment = normalizeAudienceSegment(profile?.audience_segment);
-  const status = String(profile?.member_status || "");
-  return profile?.role === "admin" || segment === "proche" || status === "priority" || status === "founder";
+  return canSeeRestrictedActesForProfile(profile);
 }
 
+function getVisibleActeLabelsForMember(member) {
+  if (!isMember(member?.member_status) && member?.role !== "admin") {
+    return "aucun acte tant que l'accès n'est pas ouvert";
+  }
+  return ATELIER_ACTES
+    .filter((acte) => !acte.restricted || canSeeRestrictedActesForProfile(member))
+    .map((acte) => acte.title)
+    .join(", ");
+}
 function formatSeasonTitle(season) {
   const knownActe = getActeDefinition(normalizeActeSlug(season));
   if (knownActe) {
@@ -833,9 +846,9 @@ function getAuthModeCopy(mode) {
     };
   }
   return {
-    hint: "Entre ton email. Morjane validera l'accès si le cercle peut s'ouvrir.",
+    hint: "Entre ton email. Tu ne verras les chansons que si Morjane ouvre ton accès.",
     button: "Demander l'accès",
-    status: "Demande envoyée. Garde cette page ouverte : tu peux coller le code ici si le mail s'ouvre ailleurs.",
+    status: "Demande envoyée. Garde cette page ouverte : tu peux coller le code ici si le mail s'ouvre ailleurs. Les chansons resteront fermées tant que l'accès n'est pas validé.",
   };
 }
 
@@ -883,6 +896,7 @@ function applyEntryContextToAuthView() {
     pro: "Porte pro. Si Morjane t'a invité, utilise ton email pour recevoir ton code.",
     concert: "Tu arrives par une rencontre. Laisse ton email pour garder le fil.",
     instagram: "Tu viens d'Instagram. Laisse ton email pour demander l'accès.",
+    invitation: "Morjane t'a ouvert une place dans l'Atelier. Utilise le même email pour recevoir ton code.",
     home: "Tu as trouvé la fissure. Laisse ton email pour demander l'accès.",
     footer: "L'Atelier n'est pas public. Laisse ton email pour demander l'accès.",
     menu: "L'Atelier n'est pas public. Laisse ton email pour demander l'accès.",
@@ -1394,6 +1408,10 @@ function createAdminMemberRow(member) {
   const entry = getEntryAdminLabel(member);
   meta.textContent = `Accès réel : ${getAccessLabel(member)} | Suivi : ${getQueueLabel(member)} | Profil : ${segment} | Entrée : ${entry}`;
   content.appendChild(meta);
+  const journey = document.createElement("p");
+  journey.className = "admin-member-journey";
+  journey.textContent = `Parcours : ${getAccessLabel(member)} · ${getVisibleActeLabelsForMember(member)} · ${entry}`;
+  content.appendChild(journey);
 
   const fields = document.createElement("div");
   fields.className = "admin-member-fields";
@@ -1827,6 +1845,17 @@ function renderWaveNote() {
   body.textContent = `${segment.welcome} Ton écoute aide à voir ce qui tient, ce qui manque et ce qui reste.`;
   memberWaveNote.appendChild(title);
   memberWaveNote.appendChild(body);
+  const instruction = document.createElement("p");
+  instruction.className = "season-note__instruction";
+  instruction.textContent = "Écoute une fois sans chercher à répondre. Reviens ensuite laisser ce qui reste.";
+  memberWaveNote.appendChild(instruction);
+  const progress = document.createElement("p");
+  progress.className = "season-note__progress";
+  const count = tracks.length;
+  progress.textContent = count > 0
+    ? `${count} version${count > 1 ? "s" : ""} ouverte${count > 1 ? "s" : ""} pour toi aujourd'hui.`
+    : "Rien ne s'ouvre ici aujourd'hui.";
+  memberWaveNote.appendChild(progress);
   const memoryLine = getLastVisitMemoryLine();
   if (memoryLine) {
     const memory = document.createElement("p");
@@ -3288,7 +3317,7 @@ function revealListeningQuestion() {
   }
   listeningQuestionShown = true;
   if (listeningChamberText) {
-    listeningChamberText.textContent = "Qu'est-ce qui reste ?";
+    listeningChamberText.textContent = "Tu peux laisser une trace, ou garder le morceau avec toi.";
   }
   document.body.classList.add("is-question-ready");
   if (listeningChamber) {
@@ -3514,7 +3543,7 @@ async function loadSessionAndProfile() {
     if (adminPanel) {
       hide(adminPanel);
     }
-    authStatus.textContent = "Connectez-vous pour entrer dans l'acte ouvert.";
+    authStatus.textContent = "Choisis ton entrée, puis garde cette page ouverte si tu attends un code.";
     return;
   }
 
@@ -3534,7 +3563,7 @@ async function loadSessionAndProfile() {
     if (adminPanel) {
       hide(adminPanel);
     }
-    memberMeta.textContent = "Sur le seuil de l'Atelier.";
+    memberMeta.textContent = "Ta demande est reçue. Tu n'as rien d'autre à faire pour l'instant.";
     trackList.innerHTML = "";
     if (acteChooser) {
       acteChooser.innerHTML = "";
@@ -3591,7 +3620,7 @@ async function loadTracks(options = {}) {
   }
   renderTrackList();
 
-  memberMeta.textContent = `Bienvenue, ${getMemberDisplayName()} - ${getAudienceStatusLabel(profile.member_status)}`;
+  memberMeta.textContent = `Accès ouvert pour ${getMemberDisplayName()} - ${getAudienceStatusLabel(profile.member_status)}. Prends le temps.`;
   renderWaveNote();
   rememberAtelierVisit();
   await loadMemberPersonalStats();
@@ -3763,6 +3792,10 @@ function createTrackCard(track) {
   top.appendChild(status);
   btn.appendChild(top);
   btn.appendChild(meta);
+  const hint = document.createElement("span");
+  hint.className = "track-card__hint";
+  hint.textContent = "Écoute d'abord. Réponds seulement si quelque chose reste.";
+  btn.appendChild(hint);
   btn.appendChild(cta);
   li.appendChild(btn);
   return li;
@@ -3883,8 +3916,8 @@ function renderTrackList() {
     const empty = document.createElement("p");
     empty.className = "track-season__empty";
     empty.textContent = isClosedHorsActe
-      ? "Rien ne s'ouvre ici pour l'instant."
-      : "Aucune version ouverte dans cet acte pour le moment.";
+      ? "Rien ne s'ouvre ici aujourd'hui."
+      : "Rien ne s'ouvre dans cet acte aujourd'hui.";
     seasonItem.appendChild(empty);
     trackList.appendChild(seasonItem);
     return;

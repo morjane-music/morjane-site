@@ -54,7 +54,7 @@
     <section id="authView" class="panel auth-panel hidden ritual-reveal" data-ritual>
       <p class="section-kicker">Entrée privée</p>
       <h2>Entrer dans l'Atelier</h2>
-      <p class="auth-intro">L'Atelier est privé. Choisis ce qui correspond à ton passage.</p>
+      <p class="auth-intro">L'Atelier est privé. Tu peux demander une place, ou revenir avec un accès déjà ouvert.</p>
       <div class="auth-choice" role="group" aria-label="Choisir un mode d'entrée">
         <button type="button" class="auth-choice__card is-active" data-auth-mode="request" aria-pressed="true">
           <span>Demander une place</span>
@@ -66,7 +66,7 @@
         </button>
       </div>
       <p id="authDoorNote" class="auth-door-note muted hidden"></p>
-      <p id="authModeHint" class="auth-mode-hint muted">Entre ton email. Morjane validera l'accès si le cercle peut s'ouvrir.</p>
+      <p id="authModeHint" class="auth-mode-hint muted">Entre ton email. Tu ne verras les chansons que si Morjane ouvre ton accès.</p>
       <form id="magicLinkForm" class="stack">
         <label id="authEmailLabel" class="sr-only" for="emailInput">Email</label>
         <input id="emailInput" type="email" placeholder="vous@email.com" autocomplete="email" required>
@@ -97,11 +97,11 @@
       <p id="memberMeta" class="muted"></p>
       <div id="memberPersonalStats" class="member-personal-stats hidden"></div>
       <div id="memberWaveNote" class="season-note member-wave-note hidden"></div>
-      <p id="memberPendingHelp" class="member-pending-help hidden">Ta demande est reçue. L'Atelier ouvre par vagues pour garder l'écoute intime et utile. Si ton accès est validé, les chansons apparaîtront ici.</p>
+      <p id="memberPendingHelp" class="member-pending-help hidden">Ta demande est bien arrivée. Morjane ouvre l'Atelier par vagues pour garder l'écoute juste. Tu n'as rien d'autre à faire pour l'instant.</p>
       <div id="atelierMovements" class="atelier-movements hidden" aria-live="polite"></div>
       <div id="acteChooser" class="acte-chooser" aria-label="Choisir un acte"></div>
       <ul id="trackList" class="track-list"></ul>
-      <p id="emptyTracks" class="muted hidden">Aucune version ouverte pour le moment. Le prochain acte arrivera ici.</p>
+      <p id="emptyTracks" class="muted hidden">Rien ne s'ouvre ici aujourd'hui. Morjane travaille encore de l'autre côté.</p>
       <div class="atelier-closed-notebook" aria-hidden="true">Carnet fermé</div>
     </section>
 
@@ -302,7 +302,7 @@
       <p id="trackDecisionStatus" class="track-status-pill">En test</p>
       <div id="trackTimeline" class="track-timeline" aria-label="Evolution du morceau"></div>
       <div class="atelier-player-frame">
-        <p class="atelier-player-frame__whisper">Version ouverte. Écoute avant qu'elle se fige.</p>
+        <p class="atelier-player-frame__whisper">Version ouverte. Écoute une fois sans chercher à répondre.</p>
         <div id="listeningChamber" class="listening-chamber" aria-live="polite">
           <span class="listening-chamber__line listening-chamber__line--one" aria-hidden="true"></span>
           <span class="listening-chamber__line listening-chamber__line--two" aria-hidden="true"></span>
