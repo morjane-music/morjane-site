@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://morjane.re/data/press.schema.json",
+  "title": "Références presse et médias de MORJANE",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "items", "candidateMedia", "note"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/pressItem" }
+    },
+    "candidateMedia": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidateMedia" }
+    },
+    "note": { "type": "string" }
+  },
+  "$defs": {
+    "pressItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "media", "title", "date", "url", "type", "relatedWork", "description", "source", "verified", "status"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "media": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "date": { "type": ["string", "null"], "format": "date" },
+        "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "type": { "enum": ["article", "TV", "radio", "vidéo", "événement"] },
+        "relatedWork": { "type": ["string", "null"] },
+        "description": { "type": ["string", "null"] },
+        "source": { "type": "string", "format": "uri" },
+        "verified": { "const": true },
+        "status": { "enum": ["published", "archived"] }
+      }
+    },
+    "candidateMedia": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "verifiedSourceUrl", "status"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "verifiedSourceUrl": { "type": ["string", "null"], "format": "uri" },
+        "status": { "const": "source-required" }
+      }
+    }
+  }
+}

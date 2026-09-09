@@ -1,6 +1,13 @@
 const { createClient } = require("@supabase/supabase-js");
 
-exports.handler = async () => {
+exports.handler = async (event) => {
+  if (event.httpMethod !== "GET") {
+    return {
+      statusCode: 405,
+      headers: { "Content-Type": "application/json", "Allow": "GET", "Cache-Control": "no-store" },
+      body: JSON.stringify({ ok: false, error: "method_not_allowed" }),
+    };
+  }
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -30,7 +37,7 @@ exports.handler = async () => {
     statusCode: 200,
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "no-store",
+      "Cache-Control": "public, max-age=60, s-maxage=300",
     },
     body: JSON.stringify({ ok: true, members: query.count || 0 }),
   };

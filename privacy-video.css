@@ -1,0 +1,110 @@
+.privacy-video {
+  position: relative;
+  overflow: hidden;
+  background: #050505;
+}
+
+.privacy-video__poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.video-frame .privacy-video__poster {
+  filter: saturate(0.82) contrast(1.08) brightness(0.82);
+}
+
+.privacy-video__trigger {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  border: 0;
+  background: linear-gradient(180deg, rgba(3, 3, 3, 0.08), rgba(3, 3, 3, 0.5));
+  color: rgba(236, 224, 200, 0.94);
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  transition: background-color 280ms ease;
+}
+
+.privacy-video__play {
+  width: clamp(48px, 6vw, 68px);
+  height: clamp(48px, 6vw, 68px);
+  display: grid;
+  place-items: center;
+  padding-left: 3px;
+  border: 1px solid rgba(201, 152, 82, 0.58);
+  border-radius: 50%;
+  background: rgba(3, 3, 3, 0.58);
+  color: rgba(236, 224, 200, 0.96);
+  font-family: Montserrat, sans-serif;
+  font-size: 14px;
+  transition: border-color 280ms ease, background-color 280ms ease, transform 280ms ease;
+}
+
+.privacy-video__notice {
+  max-width: 30ch;
+  color: rgba(236, 224, 200, 0.82);
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.88);
+}
+
+.privacy-video__trigger:hover,
+.privacy-video__trigger:focus-visible {
+  background: linear-gradient(180deg, rgba(3, 3, 3, 0.02), rgba(3, 3, 3, 0.38));
+}
+
+.privacy-video__trigger:hover .privacy-video__play,
+.privacy-video__trigger:focus-visible .privacy-video__play {
+  border-color: rgba(232, 223, 211, 0.82);
+  background: rgba(3, 3, 3, 0.72);
+  transform: scale(1.025);
+}
+
+.privacy-video__trigger:focus-visible {
+  outline: 2px solid rgba(232, 223, 211, 0.95);
+  outline-offset: -4px;
+}
+
+.privacy-video > iframe {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.privacy-video.is-playing::before,
+.privacy-video.is-playing::after {
+  display: none;
+}
+
+.privacy-video noscript a {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  color: rgba(236, 224, 200, 0.9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .privacy-video__trigger,
+  .privacy-video__play {
+    transition: none;
+  }
+}

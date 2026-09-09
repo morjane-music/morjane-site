@@ -1,0 +1,76 @@
+{
+  "artistId": "morjane",
+  "works": [
+    {
+      "id": "flamboyante",
+      "type": "musicRecording",
+      "title": "Flamboyante",
+      "url": "https://morjane.re/musique/flamboyante",
+      "artwork": "/assets/images/flamboyante-cover.jpg",
+      "date": null,
+      "credits": [{ "name": "MORJANE", "relation": "byArtist" }],
+      "presentation": "Eske ou sen parey ?",
+      "video": "https://www.youtube.com/embed/xlTTKGUBPHg",
+      "streaming": [{ "platform": "Spotify", "url": "https://open.spotify.com/track/4GDU8GSymO4hRBeG2wSyrR" }],
+      "catalogSources": [{ "platform": "Amazon Music", "url": "https://music.amazon.com/artists/B0CWLDWHKV/morjane", "relation": "listedOnArtistProfile" }],
+      "appearsOn": [
+        { "name": "SHANNKÈR 2024", "url": "https://music.amazon.com/albums/B0DRJP2ZR2", "source": "Amazon Music", "verified": true },
+        { "name": "Les talents de Saint-Pierre 2025", "url": "https://music.amazon.com/albums/B0FB3LFT5S", "source": "Amazon Music", "verified": true }
+      ],
+      "missing": ["date", "completeCredits", "isrc"],
+      "source": ["index.html", "assets/epk/Morjane-EPK.pdf"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "que-le-silence-seffondre",
+      "type": "musicRecording",
+      "title": "Que le silence s'effondre",
+      "url": "https://morjane.re/musique/que-le-silence-seffondre",
+      "artwork": "/assets/images/cover-quelesilenceseffondre.png",
+      "date": "2026-04-24",
+      "credits": [
+        { "name": "Axel Delapaix", "relation": "byArtist" },
+        { "name": "MORJANE", "relation": "featuredArtist" }
+      ],
+      "presentation": null,
+      "video": "https://www.youtube.com/embed/NmeI142swxo",
+      "streaming": [
+        { "platform": "Spotify", "url": "https://open.spotify.com/album/1mKFFYuHWrd1fRmkLn6HX6" },
+        { "platform": "Apple Music", "url": "https://music.apple.com/us/album/que-le-silence-seffondre-feat-morjane-single/1892268748?uo=4" },
+        { "platform": "Deezer", "url": "https://www.deezer.com/album/957776751" },
+        { "platform": "Amazon Music", "url": "https://music.amazon.com/albums/B0GWM7Y7M8" },
+        { "platform": "iTunes", "url": "https://music.apple.com/us/album/que-le-silence-seffondre-feat-morjane-single/1892268748?uo=4&app=itunes&at=1001lry3&ct=dashboard" }
+      ],
+      "catalogSources": [{ "platform": "Amazon Music", "url": "https://music.amazon.com/albums/B0GWM7Y7M8", "relation": "releasePage" }],
+      "missing": ["completeCredits", "isrc"],
+      "source": ["index.html", "assets/epk/Morjane-EPK.pdf", "https://distrokid.com/hyperfollow/axeldelapaix/que-le-silence-seffondre-feat-morjane", "https://music.amazon.com/albums/B0GWM7Y7M8", "https://www.youtube.com/watch?v=NmeI142swxo"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "sororite",
+      "type": "musicRecording",
+      "title": "Sororité",
+      "url": "https://morjane.re/musique/sororite",
+      "artwork": "/assets/images/sororite-cover.PNG",
+      "date": null,
+      "credits": [
+        { "name": "Blue Noon", "relation": "creator" },
+        { "name": "Collectif Sèr", "relation": "byArtist" },
+        { "name": "MORJANE", "relation": "featuredArtist" }
+      ],
+      "presentation": null,
+      "video": "https://www.youtube.com/embed/ciT738e59PU",
+      "streaming": [
+        { "platform": "Apple Music", "url": "https://music.apple.com/us/song/sororit%C3%A9-feat-karolyn-paenseum-morjane-l%C3%A9l%C3%B4-la-flor/1882995979" },
+        { "platform": "Deezer", "url": "https://www.deezer.com/album/933313521" }
+      ],
+      "catalogSources": [{ "platform": "Amazon Music", "url": "https://music.amazon.com/artists/B0CWLDWHKV/morjane", "relation": "listedOnArtistProfile" }],
+      "missing": ["date", "completeCredits", "isrc"],
+      "source": ["index.html", "assets/epk/Morjane-EPK.pdf"],
+      "verified": true,
+      "status": "published"
+    }
+  ]
+}

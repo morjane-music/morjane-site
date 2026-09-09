@@ -28,19 +28,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const lightbox = document.querySelector('.epk-lightbox');
   const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
   const closeBtn = document.querySelector('.epk-lightbox-close');
+  let lightboxTrigger = null;
 
   if (lightbox && lightboxImg && closeBtn) {
 
-    document.querySelectorAll('.epk-photo img').forEach(img => {
-      img.addEventListener('click', () => {
+    const pageRegions = [...document.body.children].filter(element => element !== lightbox);
+
+    document.querySelectorAll('.epk-photo-open').forEach(button => {
+      button.addEventListener('click', () => {
+        const img = button.querySelector('img');
+        if (!img) return;
+        lightboxTrigger = button;
         lightboxImg.src = img.src;
+        lightboxImg.alt = img.alt;
         lightbox.hidden = false;
+        document.body.classList.add('epk-lightbox-open');
+        pageRegions.forEach(element => { element.inert = true; });
+        closeBtn.focus();
       });
     });
 
     const closeLightbox = () => {
       lightbox.hidden = true;
       lightboxImg.src = '';
+      lightboxImg.alt = '';
+      document.body.classList.remove('epk-lightbox-open');
+      pageRegions.forEach(element => { element.inert = false; });
+      lightboxTrigger?.focus();
+      lightboxTrigger = null;
     };
 
     closeBtn.addEventListener('click', closeLightbox);
@@ -54,6 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && !lightbox.hidden) {
         closeLightbox();
+      }
+
+      if (e.key === 'Tab' && !lightbox.hidden) {
+        e.preventDefault();
+        closeBtn.focus();
       }
     });
   }
@@ -82,10 +102,12 @@ const burger = document.querySelector('.epk-burger');
 const nav = document.querySelector('.epk-nav');
 
 if (burger && nav) {
-  const closeEpkMenu = () => {
+  const closeEpkMenu = (restoreFocus = false) => {
     nav.classList.remove('is-open');
     burger.setAttribute('aria-expanded', 'false');
+    burger.setAttribute('aria-label', 'Ouvrir le menu');
     document.body.classList.remove('menu-open');
+    if (restoreFocus) burger.focus();
   };
 
   burger.setAttribute('aria-expanded', 'false');
@@ -94,7 +116,9 @@ if (burger && nav) {
     event.stopPropagation();
     const isOpen = nav.classList.toggle('is-open');
     burger.setAttribute('aria-expanded', String(isOpen));
+    burger.setAttribute('aria-label', isOpen ? 'Fermer le menu' : 'Ouvrir le menu');
     document.body.classList.toggle('menu-open', isOpen);
+    if (isOpen) window.requestAnimationFrame(() => nav.querySelector('a')?.focus());
   });
 
   nav.querySelectorAll('a').forEach(link => {
@@ -113,7 +137,22 @@ if (burger && nav) {
 
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && nav.classList.contains('is-open')) {
-      closeEpkMenu();
+      event.preventDefault();
+      closeEpkMenu(true);
+      return;
+    }
+
+    if (event.key === 'Tab' && nav.classList.contains('is-open')) {
+      const focusable = [burger, ...nav.querySelectorAll('a')];
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
   });
 

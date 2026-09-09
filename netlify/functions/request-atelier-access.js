@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const { createClient } = require("@supabase/supabase-js");
 const { trackFunctionEvent } = require("./_lib/atelier-observability");
+const { canRecoverProfile, normalizeAccessMode } = require("./_lib/atelier-access");
 
 function json(statusCode, body) {
   return {
@@ -30,32 +31,27 @@ function isOpenStatus(status) {
   return ["member", "priority", "founder"].includes(String(status || ""));
 }
 
-async function getKeyGrantFromToken(supabase, token) {
+async function consumeKeyGrant(supabase, token, user, email) {
   const cleaned = cleanToken(token);
   if (!cleaned) {
-    return { grant: null, error: null };
+    return { grant: null, error: "key_required" };
   }
 
   const tokenHash = hashValue(cleaned);
-  const result = await supabase
-    .from("atelier_invitation_keys")
-    .select("id, label, member_status, audience_segment, max_uses, uses_count, is_active, expires_at, claim_token_expires_at")
-    .eq("claim_token_hash", tokenHash)
-    .maybeSingle();
+  const result = await supabase.rpc("atelier_consume_invitation_claim", {
+    target_claim_token_hash: tokenHash,
+    target_user_id: user.id,
+    target_email: email,
+  });
 
   if (result.error) {
-    return { grant: null, error: "key_lookup_failed", detail: result.error.message || "" };
+    return { grant: null, error: "key_claim_failed", detail: result.error.message || "" };
   }
-
-  const key = result.data;
-  const expired = key?.expires_at && new Date(key.expires_at).getTime() <= Date.now();
-  const claimExpired = key?.claim_token_expires_at && new Date(key.claim_token_expires_at).getTime() <= Date.now();
-  const exhausted = key && Number(key.uses_count || 0) >= Number(key.max_uses || 1);
-  if (!key || !key.is_active || expired || claimExpired || exhausted) {
+  const grant = result.data && typeof result.data === "object" ? result.data : null;
+  if (!grant?.ok) {
     return { grant: null, error: "key_unavailable" };
   }
-
-  return { grant: key, error: null };
+  return { grant, error: null };
 }
 function cleanEmail(value) {
   return String(value || "").trim().toLowerCase();
@@ -155,7 +151,16 @@ async function getOrCreateAuthUser(supabase, email) {
   return { user: null, error: created.error?.message || retry.error || "user_create_failed" };
 }
 
-async function prepareProfile(supabase, user, email, entry, keyGrant = null) {
+async function getProfile(supabase, userId) {
+  const result = await supabase
+    .from("atelier_profiles")
+    .select("id, role, member_status")
+    .eq("id", userId)
+    .maybeSingle();
+  return result.error ? null : result.data;
+}
+
+async function prepareProfile(supabase, user, email, entry, keyGrant = null, adultConfirmed = false) {
   const existing = await supabase
     .from("atelier_profiles")
     .select("id, role, member_status, audience_status, audience_segment, source, access_source, access_wave")
@@ -179,6 +184,8 @@ async function prepareProfile(supabase, user, email, entry, keyGrant = null) {
     source: current.source || (keyGrant ? "invitation" : getProfileSource(entry)),
     access_source: current.access_source || (keyGrant ? "invitation" : entry.source || "site"),
     access_wave: current.access_wave || (keyGrant ? `key:${keyGrant.label || keyGrant.id}` : entry.door || "direct"),
+    last_activity_at: new Date().toISOString(),
+    adult_confirmed_at: adultConfirmed ? new Date().toISOString() : undefined,
   };
 
   const saved = await supabase
@@ -207,6 +214,74 @@ async function sendMagicLink(supabaseUrl, anonKey, email, redirectTo) {
     return { ok: false, error: result.error.message || "magic_link_failed" };
   }
   return { ok: true };
+}
+
+async function generateRecoveryLink(supabase, email, redirectTo) {
+  const result = await supabase.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+    options: { redirectTo },
+  });
+  if (result.error) {
+    return { ok: false, error: result.error.message || "recovery_link_failed" };
+  }
+  const actionLink = result.data?.properties?.action_link || "";
+  const emailOtp = result.data?.properties?.email_otp || "";
+  if (!actionLink) {
+    return { ok: false, error: "missing_recovery_link" };
+  }
+  return { ok: true, actionLink, emailOtp };
+}
+
+async function sendRecoveryEmail(email, actionLink, emailOtp = "") {
+  const apiKey = process.env.RESEND_API_KEY || "";
+  if (!apiKey) {
+    return { ok: false, error: "missing_resend_key" };
+  }
+  const from = process.env.ATELIER_RECOVERY_FROM_EMAIL
+    || "Atelier MORJANE <atelier@auth.morjane.re>";
+  const safeLink = escapeHtml(actionLink);
+  const safeOtp = escapeHtml(emailOtp);
+  const subject = "Connexion à la console MORJANE";
+  const text = [
+    "Connexion sécurisée à la console MORJANE.",
+    "",
+    "Ouvre ce lien personnel :",
+    actionLink,
+    emailOtp ? `Code de connexion : ${emailOtp}` : "",
+    "",
+    "Si tu n'es pas à l'origine de cette demande, ignore ce message.",
+  ].filter(Boolean).join("\n");
+  const html = `
+    <div style="font-family:Inter,Arial,sans-serif;background:#090706;color:#f4efe7;padding:24px">
+      <p style="color:#c99852;letter-spacing:.12em;text-transform:uppercase;margin:0 0 16px">Console MORJANE</p>
+      <h1 style="font-size:22px;margin:0 0 14px">Connexion sécurisée</h1>
+      <p style="color:#c8bcae;line-height:1.6">Utilise ce lien personnel pour ouvrir ta session.</p>
+      <p style="margin:24px 0"><a href="${safeLink}" style="display:inline-block;border:1px solid #c99852;color:#f4efe7;text-decoration:none;padding:12px 16px;border-radius:999px">Ouvrir la console</a></p>
+      ${safeOtp ? `<p style="color:#f4efe7;font-size:18px;letter-spacing:.18em;margin:0 0 18px">Code : ${safeOtp}</p>` : ""}
+      <p style="color:#9d9183;font-size:13px;line-height:1.6">Si tu n'es pas à l'origine de cette demande, ignore ce message.</p>
+    </div>
+  `;
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ from, to: email, subject, text, html }),
+  });
+  if (!response.ok) {
+    return { ok: false, error: `resend_${response.status}` };
+  }
+  return { ok: true };
+}
+
+async function sendRecoveryAccess(supabase, email, redirectTo) {
+  const generated = await generateRecoveryLink(supabase, email, redirectTo);
+  if (!generated.ok) {
+    return generated;
+  }
+  return sendRecoveryEmail(email, generated.actionLink, generated.emailOtp);
 }
 
 async function logMagicLink(supabase, email, result, errorCode = null) {
@@ -278,10 +353,16 @@ exports.handler = async (event) => {
   }
 
   const email = cleanEmail(payload.email);
+  const adultConfirmed = payload.adultConfirmed === true;
+  const mode = normalizeAccessMode(payload.mode);
   const entry = cleanEntry(payload.entry);
   const redirectTo = getRedirectTo(payload.redirectTo);
   const keyToken = cleanToken(payload.keyToken);
   const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+  if (!adultConfirmed) {
+    return json(403, { ok: false, error: "adult_confirmation_required" });
+  }
 
   if (!isValidEmail(email)) {
     await trackFunctionEvent(supabase, {
@@ -294,21 +375,19 @@ exports.handler = async (event) => {
     return json(400, { ok: false, error: "invalid_email" });
   }
 
-  const keyGrantResult = await getKeyGrantFromToken(supabase, keyToken);
-  if (keyGrantResult.error) {
-    await trackFunctionEvent(supabase, {
-      function_name: "request-atelier-access",
-      status: "error",
-      error_code: keyGrantResult.error,
-      latency_ms: Date.now() - startedAt,
-      meta: { entry_source: entry.source, entry_door: entry.door, detail: keyGrantResult.detail || null },
-    });
-    return json(403, { ok: false, error: keyGrantResult.error });
-  }
-  const keyGrant = keyGrantResult.grant;
-
-  const authUser = await getOrCreateAuthUser(supabase, email);
+  const authUser = mode === "recovery"
+    ? await findAuthUserByEmail(supabase, email).then(({ user, error }) => ({ user, created: false, error }))
+    : await getOrCreateAuthUser(supabase, email);
   if (!authUser.user) {
+    if (mode === "recovery" && !authUser.error) {
+      await trackFunctionEvent(supabase, {
+        function_name: "request-atelier-access",
+        status: "ok",
+        latency_ms: Date.now() - startedAt,
+        meta: { mode, recovery_match: false, entry_source: entry.source, entry_door: entry.door },
+      });
+      return json(200, { ok: true, outcome: "recovery_requested" });
+    }
     await trackFunctionEvent(supabase, {
       function_name: "request-atelier-access",
       status: "error",
@@ -320,7 +399,41 @@ exports.handler = async (event) => {
     return json(500, { ok: false, error: "request_failed" });
   }
 
-  const prepared = await prepareProfile(supabase, authUser.user, email, entry, keyGrant);
+  const existingProfile = await getProfile(supabase, authUser.user.id);
+  if (mode === "recovery") {
+    const canRecover = canRecoverProfile(existingProfile);
+    if (!canRecover) {
+      await trackFunctionEvent(supabase, {
+        function_name: "request-atelier-access",
+        status: "ok",
+        latency_ms: Date.now() - startedAt,
+        meta: { mode, recovery_match: false, entry_source: entry.source, entry_door: entry.door },
+      });
+      return json(200, { ok: true, outcome: "recovery_requested" });
+    }
+  }
+
+  let keyGrant = null;
+  if (mode === "invitation") {
+    const keyGrantResult = await consumeKeyGrant(supabase, keyToken, authUser.user, email);
+    if (keyGrantResult.error) {
+      await trackFunctionEvent(supabase, {
+        function_name: "request-atelier-access",
+        status: "error",
+        error_code: keyGrantResult.error,
+        latency_ms: Date.now() - startedAt,
+        meta: { mode, entry_source: entry.source, entry_door: entry.door, detail: keyGrantResult.detail || null },
+      });
+      return json(403, { ok: false, error: keyGrantResult.error });
+    }
+    keyGrant = keyGrantResult.grant;
+  }
+
+  const prepared = mode === "invitation"
+    ? { ok: true, profile: { member_status: keyGrant.member_status } }
+    : (mode === "recovery"
+      ? { ok: true, profile: existingProfile }
+      : await prepareProfile(supabase, authUser.user, email, entry, null, adultConfirmed));
   if (!prepared.ok) {
     await trackFunctionEvent(supabase, {
       function_name: "request-atelier-access",
@@ -333,7 +446,29 @@ exports.handler = async (event) => {
     return json(500, { ok: false, error: "profile_prepare_failed" });
   }
 
-  const magic = await sendMagicLink(supabaseUrl, anonKey, email, redirectTo);
+  if (mode === "request") {
+    const alreadyInside = isOpenStatus(prepared.profile?.member_status) || existingProfile?.role === "admin";
+    const notified = alreadyInside ? false : await sendAdminNotification(email, entry);
+    await trackFunctionEvent(supabase, {
+      function_name: "request-atelier-access",
+      status: "ok",
+      latency_ms: Date.now() - startedAt,
+      meta: {
+        mode,
+        notified,
+        already_inside: alreadyInside,
+        auth_user_created: Boolean(authUser.created),
+        entry_source: entry.source,
+        entry_door: entry.door,
+        entry_segment: entry.segment,
+      },
+    });
+    return json(200, { ok: true, outcome: "request_received" });
+  }
+
+  const magic = mode === "recovery"
+    ? await sendRecoveryAccess(supabase, email, redirectTo)
+    : await sendMagicLink(supabaseUrl, anonKey, email, redirectTo);
   if (!magic.ok) {
     const lower = String(magic.error || "").toLowerCase();
     const errorCode = lower.includes("rate limit") ? "rate_limited" : "magic_link_failed";
@@ -350,37 +485,20 @@ exports.handler = async (event) => {
 
   await logMagicLink(supabase, email, "sent");
 
-  if (keyGrant) {
-    await supabase
-      .from("atelier_invitation_keys")
-      .update({
-        uses_count: Number(keyGrant.uses_count || 0) + 1,
-        claimed_by: authUser.user.id,
-        claimed_email: email,
-        claimed_at: new Date().toISOString(),
-        claim_token_hash: null,
-        claim_token_expires_at: null,
-      })
-      .eq("id", keyGrant.id);
-  }
-
-  const alreadyInside = ["member", "priority", "founder"].includes(prepared.profile?.member_status);
-  const notified = alreadyInside ? false : await sendAdminNotification(email, entry);
-
   await trackFunctionEvent(supabase, {
     function_name: "request-atelier-access",
     status: "ok",
     latency_ms: Date.now() - startedAt,
     meta: {
-      notified,
-      already_inside: alreadyInside,
+      mode,
+      already_inside: true,
       auth_user_created: Boolean(authUser.created),
       entry_source: entry.source,
       entry_door: entry.door,
       entry_segment: entry.segment,
-      key_grant: Boolean(keyGrant),
+      key_grant: mode === "invitation",
     },
   });
 
-  return json(200, { ok: true });
+  return json(200, { ok: true, outcome: mode === "invitation" ? "invitation_activated" : "recovery_sent" });
 };

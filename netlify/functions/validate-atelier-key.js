@@ -62,47 +62,14 @@ exports.handler = async (event) => {
   }
 
   const keyHash = hashValue(normalizedKey);
-  const keyRes = await supabase
-    .from("atelier_invitation_keys")
-    .select("id, label, member_status, audience_segment, max_uses, uses_count, is_active, expires_at")
-    .eq("key_hash", keyHash)
-    .maybeSingle();
-
-  if (keyRes.error) {
-    await trackFunctionEvent(supabase, {
-      function_name: "validate-atelier-key",
-      status: "error",
-      error_code: "query_failed",
-      latency_ms: Date.now() - startedAt,
-      meta: { message: keyRes.error.message || null },
-    });
-    return json(500, { ok: false, error: "key_lookup_failed" });
-  }
-
-  const key = keyRes.data;
-  const expired = key?.expires_at && new Date(key.expires_at).getTime() <= Date.now();
-  const exhausted = key && Number(key.uses_count || 0) >= Number(key.max_uses || 1);
-  if (!key || !key.is_active || expired || exhausted) {
-    await trackFunctionEvent(supabase, {
-      function_name: "validate-atelier-key",
-      status: "error",
-      error_code: "key_unavailable",
-      latency_ms: Date.now() - startedAt,
-      meta: { found: Boolean(key), expired: Boolean(expired), exhausted: Boolean(exhausted) },
-    });
-    return json(403, { ok: false, error: "key_unavailable" });
-  }
-
   const claimToken = crypto.randomBytes(24).toString("base64url");
   const claimTokenHash = hashValue(claimToken);
   const claimExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-  const update = await supabase
-    .from("atelier_invitation_keys")
-    .update({
-      claim_token_hash: claimTokenHash,
-      claim_token_expires_at: claimExpiresAt,
-    })
-    .eq("id", key.id);
+  const update = await supabase.rpc("atelier_claim_invitation_key", {
+    target_key_hash: keyHash,
+    target_claim_token_hash: claimTokenHash,
+    target_claim_expires_at: claimExpiresAt,
+  });
 
   if (update.error) {
     await trackFunctionEvent(supabase, {
@@ -113,6 +80,16 @@ exports.handler = async (event) => {
       meta: { message: update.error.message || null },
     });
     return json(500, { ok: false, error: "claim_prepare_failed" });
+  }
+  const key = update.data && typeof update.data === "object" ? update.data : null;
+  if (!key?.ok) {
+    await trackFunctionEvent(supabase, {
+      function_name: "validate-atelier-key",
+      status: "error",
+      error_code: "key_unavailable",
+      latency_ms: Date.now() - startedAt,
+    });
+    return json(403, { ok: false, error: "key_unavailable" });
   }
 
   await trackFunctionEvent(supabase, {

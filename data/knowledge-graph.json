@@ -1,0 +1,439 @@
+{
+  "version": 3,
+  "updatedAt": "2026-09-09",
+  "visibility": "internal",
+  "nodes": [
+    {
+      "id": "artist-morjane",
+      "type": "artist",
+      "name": "MORJANE",
+      "url": "https://morjane.re/",
+      "relation": [
+        { "type": "stageNameOf", "target": "identity-morgane-payet", "source": "https://www.francetvpro.fr/contenu-de-presse/68706567" },
+        { "type": "participantIn", "target": "event-shannker", "source": "https://www.francetvpro.fr/contenu-de-presse/68706567" },
+        { "type": "finalistIn", "target": "event-shannker", "source": "https://www.francetvpro.fr/contenu-de-presse/69255826" },
+        { "type": "performs", "target": "work-flamboyante", "source": "https://open.spotify.com/track/4GDU8GSymO4hRBeG2wSyrR" },
+        { "type": "featuredArtistOn", "target": "work-que-le-silence-seffondre", "source": "https://music.amazon.com/albums/B0GWM7Y7M8" },
+        { "type": "featuredArtistOn", "target": "work-sororite", "source": "https://music.amazon.com/artists/B0CWLDWHKV/morjane" },
+        { "type": "historicallyCollaboratedWith", "target": "collaborator-antwane", "source": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/", "temporalStatus": "historical" },
+        { "type": "historicallyCoFounded", "target": "partner-la-ravinerie", "source": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/", "temporalStatus": "historical" },
+        { "type": "programmedAt", "target": "event-fete-musique-saint-pierre-2025", "source": "https://radiococo.re/koi-i-fe-pou-la-fet-la-mizik-tour-dile-des-bons-plans/" },
+        { "type": "semiFinalistIn", "target": "event-tremplin-des-voix", "source": "https://morjane.re/epk" },
+        { "type": "performedAt", "target": "event-festival-kartye-pesher", "source": "https://morjane.re/epk" },
+        { "type": "awardRecipientAt", "target": "event-art-gadiamb", "source": "https://morjane.re/epk" },
+        { "type": "guestAt", "target": "event-kerveguen", "source": "https://morjane.re/epk" },
+        { "type": "mentionedBy", "target": "source-francetvpro-shannker-saison-3", "source": "https://www.francetvpro.fr/contenu-de-presse/68706567" },
+        { "type": "mentionedBy", "target": "source-francetvpro-shannker-finale", "source": "https://www.francetvpro.fr/contenu-de-presse/69255826" },
+        { "type": "mentionedBy", "target": "source-actumedias-shannker", "source": "https://actu-medias.info/2024/10/shannker-revient-pour-une-3eme-edition-reunion-la-1ere.html" },
+        { "type": "mentionedBy", "target": "source-passions-reunion-artistes-unis", "source": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/" },
+        { "type": "mentionedBy", "target": "source-radio-coco-fete-musique", "source": "https://radiococo.re/koi-i-fe-pou-la-fet-la-mizik-tour-dile-des-bons-plans/" }
+      ],
+      "source": [
+        "https://morjane.re/",
+        "https://www.francetvpro.fr/contenu-de-presse/68706567",
+        "https://music.amazon.com/artists/B0CWLDWHKV/morjane"
+      ],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "identity-morgane-payet",
+      "type": "civilIdentity",
+      "name": "Morgane Payet",
+      "url": "https://morjane.re/#artist",
+      "relation": [{ "type": "usesStageName", "target": "artist-morjane", "source": "https://www.francetvpro.fr/contenu-de-presse/68706567" }],
+      "source": [
+        "https://www.francetvpro.fr/contenu-de-presse/68706567",
+        "https://www.francetvpro.fr/contenu-de-presse/69270512",
+        "https://www.francetvpro.fr/contenu-de-presse/69255826",
+        "https://www.francetvpro.fr/contenu-de-presse/69227834"
+      ],
+      "verified": true,
+      "status": "canonical"
+    },
+    {
+      "id": "work-flamboyante",
+      "type": "musicRecording",
+      "name": "Flamboyante",
+      "url": "https://morjane.re/musique/flamboyante",
+      "relation": [
+        { "type": "byArtist", "target": "artist-morjane", "source": "https://open.spotify.com/track/4GDU8GSymO4hRBeG2wSyrR" },
+        { "type": "appearsOn", "target": "album-shannker-2024", "source": "https://music.amazon.com/albums/B0DRJP2ZR2" },
+        { "type": "appearsOn", "target": "album-talents-saint-pierre-2025", "source": "https://music.amazon.com/albums/B0FB3LFT5S" }
+      ],
+      "source": ["https://open.spotify.com/track/4GDU8GSymO4hRBeG2wSyrR", "https://music.amazon.com/artists/B0CWLDWHKV/morjane"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "work-que-le-silence-seffondre",
+      "type": "musicRecording",
+      "name": "Que le silence s'effondre",
+      "url": "https://morjane.re/musique/que-le-silence-seffondre",
+      "date": "2026-04-24",
+      "relation": [
+        { "type": "featuredArtist", "target": "artist-morjane", "source": "https://music.amazon.com/artists/B0CWLDWHKV/morjane" },
+        { "type": "collaborationWith", "target": "collaborator-axel-delapaix", "source": "https://morjane.re/musique/que-le-silence-seffondre" },
+        { "type": "hasVideo", "target": "video-que-le-silence-seffondre", "source": "https://www.youtube.com/watch?v=NmeI142swxo" }
+      ],
+      "source": ["https://distrokid.com/hyperfollow/axeldelapaix/que-le-silence-seffondre-feat-morjane", "https://music.amazon.com/albums/B0GWM7Y7M8", "https://www.youtube.com/watch?v=NmeI142swxo"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "work-sororite",
+      "type": "musicRecording",
+      "name": "Sororité",
+      "url": "https://morjane.re/musique/sororite",
+      "relation": [
+        { "type": "featuredArtist", "target": "artist-morjane", "source": "https://music.amazon.com/artists/B0CWLDWHKV/morjane" },
+        { "type": "collaborationWith", "target": "collaborator-collectif-ser", "source": "https://morjane.re/musique/sororite" },
+        { "type": "hasVideo", "target": "video-sororite", "source": "https://www.youtube.com/embed/ciT738e59PU" }
+      ],
+      "source": ["https://music.amazon.com/artists/B0CWLDWHKV/morjane", "https://music.apple.com/us/song/sororit%C3%A9-feat-karolyn-paenseum-morjane-l%C3%A9l%C3%B4-la-flor/1882995979"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "work-5-etoiles",
+      "type": "musicRecording",
+      "name": "5 étoiles",
+      "url": null,
+      "relation": [
+        { "type": "historicallyPerformedBy", "target": "artist-morjane", "source": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/", "temporalStatus": "historical" },
+        { "type": "historicallyPerformedBy", "target": "collaborator-antwane", "source": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/", "temporalStatus": "historical" }
+      ],
+      "source": ["https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/"],
+      "verified": true,
+      "status": "historical",
+      "visibility": "internal"
+    },
+    {
+      "id": "project-acte-1-dans-la-fissure",
+      "type": "project",
+      "name": "Acte I : Dans la Fissure",
+      "url": "https://morjane.re/acte1",
+      "relation": [{ "type": "byArtist", "target": "artist-morjane", "source": "https://morjane.re/acte1" }],
+      "source": ["https://morjane.re/acte1"],
+      "verified": true,
+      "status": "noindex"
+    },
+    {
+      "id": "collaborator-axel-delapaix",
+      "type": "collaborator",
+      "name": "Axel Delapaix",
+      "url": null,
+      "relation": [{ "type": "collaboratesOn", "target": "work-que-le-silence-seffondre", "source": "https://morjane.re/musique/que-le-silence-seffondre" }],
+      "source": ["https://morjane.re/musique/que-le-silence-seffondre"],
+      "verified": true,
+      "status": "url-missing"
+    },
+    {
+      "id": "collaborator-collectif-ser",
+      "type": "collaborator",
+      "name": "Collectif Sèr",
+      "url": null,
+      "relation": [{ "type": "collaboratesOn", "target": "work-sororite", "source": "https://morjane.re/musique/sororite" }],
+      "source": ["https://morjane.re/musique/sororite"],
+      "verified": true,
+      "status": "url-missing"
+    },
+    {
+      "id": "collaborator-antwane",
+      "type": "formerCollaborator",
+      "name": "Antwane",
+      "url": null,
+      "relation": [
+        { "type": "historicallyCollaboratedWith", "target": "artist-morjane", "source": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/", "temporalStatus": "historical" },
+        { "type": "historicallyCollaboratedOn", "target": "work-5-etoiles", "source": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/", "temporalStatus": "historical" }
+      ],
+      "source": ["https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/"],
+      "verified": true,
+      "status": "historical",
+      "visibility": "internal"
+    },
+    {
+      "id": "partner-la-ravinerie",
+      "type": "formerOrganization",
+      "name": "La Ravinerie",
+      "url": null,
+      "relation": [
+        { "type": "historicallyCoFoundedBy", "target": "artist-morjane", "source": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/", "temporalStatus": "historical" }
+      ],
+      "source": ["https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/", "owner-statement:2026-08-31"],
+      "verified": true,
+      "status": "historical-inactive",
+      "visibility": "internal"
+    },
+    {
+      "id": "event-shannker",
+      "type": "event",
+      "name": "SHANNKÈR",
+      "url": "https://www.francetvpro.fr/contenu-de-presse/68706567",
+      "relation": [
+        { "type": "hasParticipant", "target": "artist-morjane", "source": "https://www.francetvpro.fr/contenu-de-presse/68706567" },
+        { "type": "hasFinalist", "target": "artist-morjane", "source": "https://www.francetvpro.fr/contenu-de-presse/69255826" }
+      ],
+      "source": ["https://www.francetvpro.fr/contenu-de-presse/68706567", "https://www.francetvpro.fr/contenu-de-presse/69255826"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "event-fete-musique-saint-pierre-2025",
+      "type": "event",
+      "name": "Fête de la musique à Saint-Pierre 2025",
+      "url": "https://radiococo.re/koi-i-fe-pou-la-fet-la-mizik-tour-dile-des-bons-plans/",
+      "relation": [{ "type": "programsArtist", "target": "artist-morjane", "source": "https://radiococo.re/koi-i-fe-pou-la-fet-la-mizik-tour-dile-des-bons-plans/" }],
+      "source": ["https://radiococo.re/koi-i-fe-pou-la-fet-la-mizik-tour-dile-des-bons-plans/"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "event-tremplin-des-voix",
+      "type": "event",
+      "name": "Tremplin des Voix",
+      "url": null,
+      "description": "Demi-finaliste — autrice-compositrice-interprète",
+      "relation": [{ "type": "hasSemiFinalist", "target": "artist-morjane", "source": "https://morjane.re/epk" }],
+      "source": ["https://morjane.re/", "https://morjane.re/epk"],
+      "verified": true,
+      "status": "verified-no-external-url"
+    },
+    {
+      "id": "event-festival-kartye-pesher",
+      "type": "event",
+      "name": "Festival Kartyé Péshèr",
+      "url": null,
+      "description": "Performance live",
+      "relation": [{ "type": "featuresPerformer", "target": "artist-morjane", "source": "https://morjane.re/epk" }],
+      "source": ["https://morjane.re/", "https://morjane.re/epk"],
+      "verified": true,
+      "status": "verified-no-external-url"
+    },
+    {
+      "id": "event-art-gadiamb",
+      "type": "event",
+      "name": "Art Gadiamb",
+      "url": null,
+      "description": "Prix du Coup de Cœur Étudiant",
+      "relation": [{ "type": "awardedArtist", "target": "artist-morjane", "source": "https://morjane.re/epk" }],
+      "source": ["https://morjane.re/", "https://morjane.re/epk"],
+      "verified": true,
+      "status": "verified-no-external-url"
+    },
+    {
+      "id": "event-kerveguen",
+      "type": "event",
+      "name": "Kerveguen",
+      "url": null,
+      "description": "Guest — Les Hurlements d’Léo",
+      "relation": [{ "type": "hostedGuest", "target": "artist-morjane", "source": "https://morjane.re/epk" }],
+      "source": ["https://morjane.re/", "https://morjane.re/epk"],
+      "verified": true,
+      "status": "verified-no-external-url"
+    },
+    {
+      "id": "album-shannker-2024",
+      "type": "musicAlbum",
+      "name": "SHANNKÈR 2024",
+      "url": "https://music.amazon.com/albums/B0DRJP2ZR2",
+      "relation": [{ "type": "includesRecording", "target": "work-flamboyante", "source": "https://music.amazon.com/albums/B0DRJP2ZR2" }],
+      "source": ["https://music.amazon.com/albums/B0DRJP2ZR2"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "album-talents-saint-pierre-2025",
+      "type": "musicAlbum",
+      "name": "Les talents de Saint-Pierre 2025",
+      "url": "https://music.amazon.com/albums/B0FB3LFT5S",
+      "relation": [{ "type": "includesRecording", "target": "work-flamboyante", "source": "https://music.amazon.com/albums/B0FB3LFT5S" }],
+      "source": ["https://music.amazon.com/albums/B0FB3LFT5S"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "platform-spotify",
+      "type": "platform",
+      "name": "Spotify",
+      "url": "https://open.spotify.com/artist/0B5Ta7mUfgxXd8OlZ3C2Zw",
+      "relation": [{ "type": "officialProfileOf", "target": "artist-morjane", "source": "https://open.spotify.com/artist/0B5Ta7mUfgxXd8OlZ3C2Zw" }],
+      "source": ["https://open.spotify.com/artist/0B5Ta7mUfgxXd8OlZ3C2Zw"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "platform-amazon-music",
+      "type": "platform",
+      "name": "Amazon Music",
+      "url": "https://music.amazon.com/artists/B0CWLDWHKV/morjane",
+      "relation": [{ "type": "officialProfileOf", "target": "artist-morjane", "source": "https://music.amazon.com/artists/B0CWLDWHKV/morjane" }],
+      "source": ["https://music.amazon.com/artists/B0CWLDWHKV/morjane"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "platform-youtube",
+      "type": "platform",
+      "name": "YouTube",
+      "url": "https://www.youtube.com/@Morjane_music",
+      "relation": [{ "type": "officialProfileOf", "target": "artist-morjane", "source": "https://www.youtube.com/@Morjane_music" }],
+      "source": ["https://www.youtube.com/@Morjane_music"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "platform-instagram",
+      "type": "platform",
+      "name": "Instagram",
+      "url": "https://www.instagram.com/morjane_music/",
+      "relation": [{ "type": "officialProfileOf", "target": "artist-morjane", "source": "https://www.instagram.com/morjane_music/" }],
+      "source": ["https://www.instagram.com/morjane_music/"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "platform-tiktok",
+      "type": "platform",
+      "name": "TikTok",
+      "url": "https://www.tiktok.com/@morjane_music",
+      "relation": [{ "type": "officialProfileOf", "target": "artist-morjane", "source": "https://www.tiktok.com/@morjane_music" }],
+      "source": ["https://www.tiktok.com/@morjane_music"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "platform-facebook",
+      "type": "platform",
+      "name": "Facebook",
+      "url": "https://www.facebook.com/people/Morjane-music/61559098903828/",
+      "relation": [{ "type": "officialProfileOf", "target": "artist-morjane", "source": "https://www.facebook.com/people/Morjane-music/61559098903828/" }],
+      "source": ["https://www.facebook.com/people/Morjane-music/61559098903828/"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "video-flamboyante",
+      "type": "video",
+      "name": "Flamboyante - MORJANE",
+      "url": "https://www.youtube.com/watch?v=xlTTKGUBPHg",
+      "description": "Clip officiel de Flamboyante par MORJANE.",
+      "relation": [{ "type": "videoFor", "target": "work-flamboyante", "source": "https://www.youtube.com/watch?v=xlTTKGUBPHg" }],
+      "source": ["https://www.youtube.com/watch?v=xlTTKGUBPHg"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "video-que-le-silence-seffondre",
+      "type": "video",
+      "name": "Que le silence s'effondre - Axel Delapaix × MORJANE",
+      "url": "https://www.youtube.com/watch?v=NmeI142swxo",
+      "description": "Clip officiel de Que le silence s'effondre, collaboration entre Axel Delapaix et MORJANE.",
+      "relation": [{ "type": "videoFor", "target": "work-que-le-silence-seffondre", "source": "https://www.youtube.com/watch?v=NmeI142swxo" }],
+      "source": ["https://www.youtube.com/watch?v=NmeI142swxo"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "video-sororite",
+      "type": "video",
+      "name": "Collectif Sèr - Sororité",
+      "url": "https://www.youtube.com/watch?v=ciT738e59PU",
+      "description": "Vidéo officielle de Sororité, interprétée par les artistes du Collectif Sèr, dont MORJANE.",
+      "relation": [{ "type": "videoFor", "target": "work-sororite", "source": "https://www.youtube.com/watch?v=ciT738e59PU" }],
+      "source": ["https://www.youtube.com/watch?v=ciT738e59PU"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "partner-hors-cadre-studio",
+      "type": "partner",
+      "name": "Hors Cadre Studio",
+      "url": "https://horscadrestudio.re",
+      "relation": [{ "type": "siteCreditFor", "target": "artist-morjane", "source": "https://morjane.re/" }],
+      "source": ["https://morjane.re/"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "source-francetvpro-shannker-saison-3",
+      "type": "mediaSource",
+      "name": "SHANNKER — saison 3",
+      "url": "https://www.francetvpro.fr/contenu-de-presse/68706567",
+      "relation": [{ "type": "mentionsArtist", "target": "artist-morjane", "source": "https://www.francetvpro.fr/contenu-de-presse/68706567" }],
+      "source": ["https://www.francetvpro.fr/contenu-de-presse/68706567"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "source-francetvpro-shannker-episode-2",
+      "type": "mediaSource",
+      "name": "SHANNKER — épisode 2",
+      "url": "https://www.francetvpro.fr/contenu-de-presse/69227834",
+      "relation": [{ "type": "mentionsArtist", "target": "artist-morjane", "source": "https://www.francetvpro.fr/contenu-de-presse/69227834" }],
+      "source": ["https://www.francetvpro.fr/contenu-de-presse/69227834"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "source-francetvpro-shannker-episode-4",
+      "type": "mediaSource",
+      "name": "SHANNKER — épisode 4",
+      "url": "https://www.francetvpro.fr/contenu-de-presse/69270512",
+      "relation": [{ "type": "mentionsArtist", "target": "artist-morjane", "source": "https://www.francetvpro.fr/contenu-de-presse/69270512" }],
+      "source": ["https://www.francetvpro.fr/contenu-de-presse/69270512"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "source-francetvpro-shannker-finale",
+      "type": "mediaSource",
+      "name": "SHANNKER — finale",
+      "url": "https://www.francetvpro.fr/contenu-de-presse/69255826",
+      "relation": [
+        { "type": "mentionsArtist", "target": "artist-morjane", "source": "https://www.francetvpro.fr/contenu-de-presse/69255826" },
+        { "type": "documentsFinalist", "target": "artist-morjane", "source": "https://www.francetvpro.fr/contenu-de-presse/69255826" }
+      ],
+      "source": ["https://www.francetvpro.fr/contenu-de-presse/69255826"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "source-actumedias-shannker",
+      "type": "mediaSource",
+      "name": "Le concours de chant « Shannker » revient pour une 3ème édition sur Réunion La 1ère !",
+      "url": "https://actu-medias.info/2024/10/shannker-revient-pour-une-3eme-edition-reunion-la-1ere.html",
+      "relation": [{ "type": "mentionsArtist", "target": "artist-morjane", "source": "https://actu-medias.info/2024/10/shannker-revient-pour-une-3eme-edition-reunion-la-1ere.html" }],
+      "source": ["https://actu-medias.info/2024/10/shannker-revient-pour-une-3eme-edition-reunion-la-1ere.html"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "source-passions-reunion-artistes-unis",
+      "type": "mediaSource",
+      "name": "Des artistes réunionnais unis par la musique",
+      "url": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/",
+      "relation": [
+        { "type": "mentionsArtist", "target": "artist-morjane", "source": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/" },
+        { "type": "documentsHistoricalCollaboration", "target": "work-5-etoiles", "source": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/", "temporalStatus": "historical" },
+        { "type": "documentsHistoricalOrganization", "target": "partner-la-ravinerie", "source": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/", "temporalStatus": "historical" }
+      ],
+      "source": ["https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/"],
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "source-radio-coco-fete-musique",
+      "type": "mediaSource",
+      "name": "Koi i fé pou la fèt la mizik ? Tour de l’île des bons plans",
+      "url": "https://radiococo.re/koi-i-fe-pou-la-fet-la-mizik-tour-dile-des-bons-plans/",
+      "relation": [
+        { "type": "mentionsArtist", "target": "artist-morjane", "source": "https://radiococo.re/koi-i-fe-pou-la-fet-la-mizik-tour-dile-des-bons-plans/" },
+        { "type": "documentsProgramming", "target": "event-fete-musique-saint-pierre-2025", "source": "https://radiococo.re/koi-i-fe-pou-la-fet-la-mizik-tour-dile-des-bons-plans/" }
+      ],
+      "source": ["https://radiococo.re/koi-i-fe-pou-la-fet-la-mizik-tour-dile-des-bons-plans/"],
+      "verified": true,
+      "status": "published"
+    }
+  ]
+}

@@ -3,56 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cookies | Morjane</title>
+  <title>Cookies et stockages locaux | MORJANE</title>
   <link rel="canonical" href="https://morjane.re/cookies">
   <meta name="robots" content="index,follow">
-  <meta name="description" content="Informations cookies de morjane.re et de l'Atelier maquettes.">
+  <meta name="description" content="Cookies techniques, authentification Supabase, préférences locales et contenus tiers utilisés sur morjane.re.">
   <link rel="icon" type="image/png" href="/favicon.png">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/legal.css">
 </head>
-<body>
+<body class="legal-page">
   <a href="/" class="legal-back" aria-label="Retour au site">← Retour</a>
-  <main class="section-simple" style="max-width: 900px; margin: 96px auto 48px; padding: 0 24px;">
-    <h1 style="font-family: Montserrat, sans-serif; letter-spacing: 0.08em;">Cookies</h1>
-    <p style="margin-top: 16px;">Dernière mise à jour : 6 mars 2026</p>
+  <main class="legal-main">
+    <p class="legal-kicker">Navigateur</p>
+    <h1>Cookies et stockages locaux</h1>
+    <p class="legal-updated">Dernière mise à jour : 7 septembre 2026</p>
+    <p class="legal-intro">morjane.re n’utilise pas Google Analytics ni un autre outil de mesure d’audience. Les stockages décrits ci-dessous servent à l’authentification, à la sécurité ou au fonctionnement demandé.</p>
 
-    <h2 style="margin-top: 28px;">1. Cookies essentiels</h2>
-    <p>L’Atelier privé utilise la session de connexion Supabase pour maintenir l’accès membre. Un cookie technique peut aussi être utilisé pour les outils d’administration.</p>
+    <section class="legal-section"><h2>1. Cookies techniques du site</h2>
+      <table class="legal-table"><thead><tr><th>Nom</th><th>Rôle</th><th>Durée maximale</th></tr></thead><tbody>
+        <tr><td><code>morjane_set_session</code></td><td>Autoriser côté serveur l’accès à la page et aux médias privés du set.</td><td>4 heures</td></tr>
+        <tr><td><code>morjane_acte1_session</code></td><td>Autoriser côté serveur l’accès à la présentation privée Acte I et à ses ressources dédiées.</td><td>4 heures</td></tr>
+        <tr><td><code>atelier_admin_gate</code></td><td>Confirmer temporairement le déverrouillage de l’administration Atelier en complément de la session Supabase.</td><td>12 heures</td></tr>
+      </tbody></table>
+      <p>Ces cookies sont techniques, signés, <code>HttpOnly</code> et <code>Secure</code>. Leur blocage empêche les espaces concernés de fonctionner. La déconnexion Atelier invalide le gate d’administration.</p>
+    </section>
 
-    <h2 style="margin-top: 28px;">2. Mesure d’audience</h2>
-    <p>Le site peut utiliser des outils de mesure d’audience pour comprendre la fréquentation des pages.</p>
+    <section class="legal-section"><h2>2. Authentification Supabase dans localStorage</h2>
+      <p>La bibliothèque Supabase conserve par défaut la session de l’Atelier dans le <code>localStorage</code> du navigateur. Il s’agit d’un stockage local et non d’un cookie. Il permet de maintenir la connexion entre deux pages et est supprimé par la déconnexion Supabase ou par l’effacement des données du site dans le navigateur.</p>
+    </section>
 
-    <h2 style="margin-top: 28px;">3. Gestion des cookies</h2>
-    <p>Vous pouvez supprimer ou bloquer les cookies depuis les paramètres de votre navigateur. Certaines fonctionnalités connectées, comme la session Atelier ou l’administration, peuvent alors ne plus fonctionner correctement.</p>
+    <section class="legal-section"><h2>3. Préférences locales Atelier</h2>
+      <p>L’Atelier utilise uniquement des valeurs utiles à l’expérience :</p>
+      <ul>
+        <li>date de dernière visite, afin d’identifier les nouveautés ;</li>
+        <li>identifiants des mouvements déjà vus ;</li>
+        <li>contexte/provenance d’entrée, supprimé après son enregistrement ;</li>
+        <li>préférence de densité de l’interface d’administration ;</li>
+        <li>dernier instant de consultation de la messagerie d’administration.</li>
+      </ul>
+      <p>Ces valeurs restent dans le navigateur. Les états propres au membre et à l’administration sont nettoyés lors de la déconnexion Atelier.</p>
+    </section>
 
-    <h2 style="margin-top: 28px;">4. Contact</h2>
-    <p>Pour toute question liée aux cookies, contactez <a href="mailto:booking@morjane.re">booking@morjane.re</a>.</p>
+    <section class="legal-section"><h2>4. YouTube après action volontaire</h2>
+      <p>Avant un clic, le site affiche une image locale et aucun lecteur YouTube n’est chargé. Après l’action volontaire « Lire », un lecteur provenant de <strong>youtube-nocookie.com</strong> est créé. YouTube peut alors déposer ou lire ses propres stockages et recevoir des données techniques conformément à sa politique.</p>
+    </section>
+
+    <section class="legal-section"><h2>5. Formulaire de contact</h2>
+      <p>Le formulaire public est envoyé à Formspree. Il ne nécessite pas le dépôt d’un cookie de mesure d’audience par morjane.re. Le service destinataire peut traiter les informations techniques nécessaires à la transmission selon sa propre politique.</p>
+    </section>
+
+    <section class="legal-section"><h2>6. Gestion depuis le navigateur</h2>
+      <p>Vous pouvez supprimer les cookies et le stockage local depuis les réglages de votre navigateur. Cette opération vous déconnecte de l’Atelier et des pages protégées. Aucun bandeau de consentement publicitaire ou analytique n’est affiché, car le site ne dépose pas de traceur de cette nature.</p>
+    </section>
+
+    <section class="legal-section"><h2>7. Contact</h2><p>Pour toute question : <a href="mailto:morjane.muzik@gmail.com">morjane.muzik@gmail.com</a>.</p></section>
+    <footer class="legal-footer"><a href="/mentions-legales/">Mentions légales</a> · <a href="/confidentialite">Confidentialité</a> · <a href="/">Site officiel</a></footer>
   </main>
-
-  <style>
-    .legal-back {
-      position: fixed;
-      top: 22px;
-      left: 22px;
-      z-index: 20;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 9px 13px;
-      border: 1px solid rgba(201, 152, 82, 0.55);
-      border-radius: 999px;
-      background: rgba(11, 11, 11, 0.85);
-      color: rgba(232, 223, 211, 0.94);
-      text-decoration: none;
-      letter-spacing: 0.08em;
-      font-size: 12px;
-      transition: background 0.2s ease, border-color 0.2s ease;
-    }
-
-    .legal-back:hover {
-      background: rgba(201, 152, 82, 0.16);
-      border-color: rgba(201, 152, 82, 0.78);
-    }
-  </style>
 </body>
 </html>

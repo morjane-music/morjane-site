@@ -1,6 +1,7 @@
 const { createClient } = require("@supabase/supabase-js");
 const { trackFunctionEvent } = require("./_lib/atelier-observability");
 const { hasValidAdminGate } = require("./_lib/admin-gate");
+const { canRecoverProfile } = require("./_lib/atelier-access");
 
 function getBearerToken(header) {
   if (!header) {
@@ -52,6 +53,7 @@ const QUEUE_FIELDS = [
   "access_wave",
   "admin_note",
   "last_admin_action_at",
+  "adult_confirmed_at",
 ];
 
 function hasMissingQueueColumns(error) {
@@ -65,6 +67,52 @@ function cleanText(value, maxLength = 240) {
   }
   const cleaned = value.trim();
   return cleaned ? cleaned.slice(0, maxLength) : null;
+}
+
+function cleanPageNumber(value, fallback, max) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, Math.min(max, parsed)) : fallback;
+}
+
+function cleanSearch(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[(),%_]/g, " ")
+    .replace(/\s+/g, " ")
+    .slice(0, 120);
+}
+
+function applyProfileFilters(query, { view, search, segment }) {
+  let next = query;
+  if (view === "decision") {
+    next = next
+      .in("member_status", ["none", "pending"])
+      .or("audience_status.is.null,audience_status.in.(new,waiting)");
+  } else if (view === "members") {
+    next = next.or("role.eq.admin,member_status.in.(member,founder,priority)");
+  } else if (view === "history") {
+    next = next.or("member_status.in.(blocked,archived),audience_status.in.(refused,archived)");
+  }
+  if (segment) {
+    next = next.eq("audience_segment", segment);
+  }
+  if (search) {
+    const pattern = `*${search}*`;
+    next = next.or(`email.ilike.${pattern},source.ilike.${pattern},access_source.ilike.${pattern},access_wave.ilike.${pattern}`);
+  }
+  return next;
+}
+
+async function wasAccessEmailSentRecently(supabase, userId, seconds = 60) {
+  const since = new Date(Date.now() - seconds * 1000).toISOString();
+  const result = await supabase
+    .from("atelier_admin_audit_logs")
+    .select("id", { count: "exact", head: true })
+    .eq("target_type", "atelier_profile")
+    .eq("target_id", userId)
+    .eq("action", "member_access_email_sent")
+    .gte("created_at", since);
+  return !result.error && Number(result.count || 0) > 0;
 }
 
 function getUpdateForAction(action) {
@@ -100,11 +148,27 @@ async function sendAccessEmail(supabase, userId) {
   if (profile.error || !to) {
     return { ok: false, error: "missing_email" };
   }
+  let link = await supabase.auth.admin.generateLink({
+    type: "magiclink",
+    email: to,
+    options: { redirectTo: "https://morjane.re/atelier/" },
+  });
+  if (link.error) {
+    link = await supabase.auth.admin.generateLink({
+      type: "invite",
+      email: to,
+      options: { redirectTo: "https://morjane.re/atelier/" },
+    });
+  }
+  const actionLink = link.data?.properties?.action_link || "";
+  const emailOtp = link.data?.properties?.email_otp || "";
+  if (link.error || !actionLink) {
+    return { ok: false, error: "access_link_failed" };
+  }
   const from = process.env.ATELIER_FROM_EMAIL
     || process.env.ATELIER_DIGEST_FROM_EMAIL
     || process.env.RESEND_FROM_EMAIL
     || "Atelier Morjane <atelier@morjane.re>";
-  const url = "https://morjane.re/atelier/";
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -115,8 +179,8 @@ async function sendAccessEmail(supabase, userId) {
       from,
       to,
       subject: "Ton accès à l'Atelier Morjane est ouvert",
-      text: `Ton accès à l'Atelier est ouvert.\n\nEntre ici : ${url}\n\nSi le site te le demande, reconnecte-toi avec le même email.`,
-      html: `<p>Ton accès à l'Atelier est ouvert.</p><p><a href="${url}">Entrer dans l'Atelier</a></p><p>Si le site te le demande, reconnecte-toi avec le même email.</p>`,
+      text: `Ton accès à l'Atelier est ouvert.\n\nEntre ici : ${actionLink}${emailOtp ? `\n\nCode de secours : ${emailOtp}` : ""}\n\nCe lien est personnel.`,
+      html: `<p>Ton accès à l'Atelier est ouvert.</p><p><a href="${actionLink}">Entrer dans l'Atelier</a></p>${emailOtp ? `<p>Code de secours : <strong>${emailOtp}</strong></p>` : ""}<p>Ce lien est personnel.</p>`,
     }),
   });
   if (!res.ok) {
@@ -190,20 +254,33 @@ exports.handler = async (event) => {
   const adminUserId = auth.adminUserId || null;
 
   if (event.httpMethod === "GET") {
+    const params = event.queryStringParameters || {};
+    const page = cleanPageNumber(params.page, 1, 100000);
+    const perPage = cleanPageNumber(params.per_page, 25, 50);
+    const view = ["decision", "members", "history", "all"].includes(params.view) ? params.view : "decision";
+    const search = cleanSearch(params.search);
+    const segment = ["public", "proche", "artiste", "pro"].includes(params.segment) ? params.segment : "";
+    const from = (page - 1) * perPage;
+    const to = from + perPage - 1;
     let queueColumnsAvailable = true;
-    let result = await supabase
+    let query = supabase
       .from("atelier_profiles")
-      .select("id, email, role, member_status, audience_status, audience_segment, source, access_source, access_wave, admin_note, last_admin_action_at, created_at")
-      .order("created_at", { ascending: false })
-      .limit(100);
+      .select("id, email, role, member_status, audience_status, audience_segment, source, access_source, access_wave, admin_note, last_admin_action_at, adult_confirmed_at, created_at", { count: "exact" })
+      .order("created_at", { ascending: false });
+    query = applyProfileFilters(query, { view, search, segment });
+    let result = await query.range(from, to);
 
     if (result.error && hasMissingQueueColumns(result.error)) {
       queueColumnsAvailable = false;
-      result = await supabase
+      let fallback = supabase
         .from("atelier_profiles")
-        .select("id, email, role, member_status, created_at")
-        .order("created_at", { ascending: false })
-        .limit(100);
+        .select("id, email, role, member_status, created_at", { count: "exact" })
+        .order("created_at", { ascending: false });
+      if (view === "decision") fallback = fallback.in("member_status", ["none", "pending"]);
+      if (view === "members") fallback = fallback.or("role.eq.admin,member_status.in.(member,founder,priority)");
+      if (view === "history") fallback = fallback.in("member_status", ["blocked", "archived"]);
+      if (search) fallback = fallback.ilike("email", `*${search}*`);
+      result = await fallback.range(from, to);
     }
 
     if (result.error) {
@@ -231,7 +308,18 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      body: JSON.stringify({ ok: true, members: result.data || [], queueColumnsAvailable }),
+      body: JSON.stringify({
+        ok: true,
+        members: result.data || [],
+        queueColumnsAvailable,
+        pagination: {
+          page,
+          per_page: perPage,
+          total: Number(result.count || 0),
+          total_pages: Math.max(1, Math.ceil(Number(result.count || 0) / perPage)),
+        },
+        filters: { view, search, segment },
+      }),
     };
   }
 
@@ -261,24 +349,45 @@ exports.handler = async (event) => {
       };
     }
 
-    if ((action === "revoke" || action === "refuse" || action === "archive") && userId === adminUserId) {
+    const targetBefore = await getTargetProfile(supabase, userId);
+    if (!targetBefore) {
+      return {
+        statusCode: 404,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ok: false, error: "profile_not_found" }),
+      };
+    }
+    const roleChangingActions = ["approve", "approve_and_send_access_email", "revoke", "vip", "refuse", "archive"];
+    if (targetBefore?.role === "admin" && roleChangingActions.includes(action)) {
       await trackFunctionEvent(supabase, {
         function_name: "admin-members",
         status: "error",
-        error_code: "self_revoke_blocked",
+        error_code: "admin_role_change_blocked",
         latency_ms: Date.now() - startedAt,
         meta: { method: "POST" },
       });
       return {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ok: false, error: "self_revoke_blocked" }),
+        body: JSON.stringify({ ok: false, error: "admin_role_change_blocked" }),
       };
     }
 
-    const targetBefore = await getTargetProfile(supabase, userId);
-
     if (action === "send_access_email") {
+      if (!canRecoverProfile(targetBefore)) {
+        return {
+          statusCode: 403,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ok: false, error: "access_not_open" }),
+        };
+      }
+      if (await wasAccessEmailSentRecently(supabase, userId)) {
+        return {
+          statusCode: 429,
+          headers: { "Content-Type": "application/json", "Retry-After": "60" },
+          body: JSON.stringify({ ok: false, error: "access_email_rate_limited" }),
+        };
+      }
       const sent = await sendAccessEmail(supabase, userId);
       if (!sent.ok) {
         await trackFunctionEvent(supabase, {
@@ -378,7 +487,10 @@ exports.handler = async (event) => {
 
     let accessEmail = null;
     if (action === "approve_and_send_access_email") {
-      accessEmail = await sendAccessEmail(supabase, userId);
+      const recentlySent = await wasAccessEmailSentRecently(supabase, userId);
+      accessEmail = recentlySent
+        ? { ok: false, error: "access_email_rate_limited" }
+        : await sendAccessEmail(supabase, userId);
       if (!accessEmail.ok) {
         await trackFunctionEvent(supabase, {
           function_name: "admin-members",
@@ -386,6 +498,15 @@ exports.handler = async (event) => {
           error_code: accessEmail.error,
           latency_ms: Date.now() - startedAt,
           meta: { method: "POST", action, approved: true },
+        });
+      }
+      if (accessEmail.ok && adminUserId) {
+        await supabase.from("atelier_admin_audit_logs").insert({
+          admin_user_id: adminUserId,
+          action: "member_access_email_sent",
+          target_type: "atelier_profile",
+          target_id: userId,
+          details: { action, target_email: targetBefore.email || null },
         });
       }
     }

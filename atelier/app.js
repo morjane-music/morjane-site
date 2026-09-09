@@ -1,4 +1,12 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const { createClient } = window.supabase || {};
+
+if (typeof createClient !== "function") {
+  throw new Error("Supabase client unavailable");
+}
+
+const IS_ADMIN_ROUTE = /^\/atelier\/admin(?:\/|$)/.test(window.location.pathname);
+const ADMIN_RETURN_STORAGE_KEY = "atelier_admin_return";
+document.body.classList.toggle("atelier-admin-route", IS_ADMIN_ROUTE);
 
 const gateStatus = document.getElementById("gateStatus");
 const authView = document.getElementById("authView");
@@ -16,6 +24,7 @@ const memberPendingHelp = document.getElementById("memberPendingHelp");
 const atelierMovements = document.getElementById("atelierMovements");
 const adminPanel = document.getElementById("adminPanel");
 const adminPanelToggle = document.getElementById("adminPanelToggle");
+const adminLogoutBtn = document.getElementById("adminLogoutBtn");
 const adminUnlockForm = document.getElementById("adminUnlockForm");
 const adminPinInput = document.getElementById("adminPinInput");
 const adminUnlockStatus = document.getElementById("adminUnlockStatus");
@@ -25,6 +34,7 @@ const adminMembersList = document.getElementById("adminMembersList");
 const adminWeeklyStats = document.getElementById("adminWeeklyStats");
 const adminInboxList = document.getElementById("adminInboxList");
 const adminInboxUnread = document.getElementById("adminInboxUnread");
+const adminInboxStatusFilters = document.getElementById("adminInboxStatusFilters");
 const adminInboxTrackFilter = document.getElementById("adminInboxTrackFilter");
 const adminInboxSenderFilter = document.getElementById("adminInboxSenderFilter");
 const copyAtelierLinkBtn = document.getElementById("copyAtelierLinkBtn");
@@ -51,7 +61,15 @@ const copyAdminAnnouncementBtn = document.getElementById("copyAdminAnnouncementB
 const adminSignalBoard = document.getElementById("adminSignalBoard");
 const exportSignalCsvBtn = document.getElementById("exportSignalCsvBtn");
 const adminStatusPanel = document.getElementById("adminStatusPanel");
+const privateProfessionalInviteForm = document.getElementById("privateProfessionalInviteForm");
+const privateAccessAdminStatus = document.getElementById("privateAccessAdminStatus");
+const privateInvitationsList = document.getElementById("privateInvitationsList");
+const privateGrantsList = document.getElementById("privateGrantsList");
 const adminAuditLog = document.getElementById("adminAuditLog");
+const adminAuditSearch = document.getElementById("adminAuditSearch");
+const adminAuditTypeFilter = document.getElementById("adminAuditTypeFilter");
+const adminAuditDateFilter = document.getElementById("adminAuditDateFilter");
+const adminAuditMoreBtn = document.getElementById("adminAuditMoreBtn");
 const adminLiveListeners = document.getElementById("adminLiveListeners");
 const adminTodayCards = document.getElementById("adminTodayCards");
 const adminDensityToggle = document.getElementById("adminDensityToggle");
@@ -69,9 +87,17 @@ const adminKeyLabel = document.getElementById("adminKeyLabel");
 const adminKeySegment = document.getElementById("adminKeySegment");
 const adminKeyStatus = document.getElementById("adminKeyStatus");
 const adminKeyMaxUses = document.getElementById("adminKeyMaxUses");
+const adminKeyExpiresAt = document.getElementById("adminKeyExpiresAt");
 const adminKeyStatusText = document.getElementById("adminKeyStatusText");
+const adminKeyList = document.getElementById("adminKeyList");
+const adminRefreshKeysBtn = document.getElementById("adminRefreshKeysBtn");
+const adminMemberSegmentFilter = document.getElementById("adminMemberSegmentFilter");
+const adminMembersPrevBtn = document.getElementById("adminMembersPrevBtn");
+const adminMembersNextBtn = document.getElementById("adminMembersNextBtn");
+const adminMembersPageInfo = document.getElementById("adminMembersPageInfo");
 const tabPendingBtn = document.getElementById("tabPendingBtn");
 const tabMembersBtn = document.getElementById("tabMembersBtn");
+const tabHistoryBtn = document.getElementById("tabHistoryBtn");
 const trackTitle = document.getElementById("trackTitle");
 const trackDecisionStatus = document.getElementById("trackDecisionStatus");
 const trackTimeline = document.getElementById("trackTimeline");
@@ -94,6 +120,7 @@ const privateMessage = document.getElementById("privateMessage");
 const memberReplies = document.getElementById("memberReplies");
 
 const magicLinkForm = document.getElementById("magicLinkForm");
+const adultConfirmation = document.getElementById("adultConfirmation");
 const emailInput = document.getElementById("emailInput");
 const otpCodeForm = document.getElementById("otpCodeForm");
 const otpCodeInput = document.getElementById("otpCodeInput");
@@ -124,18 +151,28 @@ let playLoggedForCurrentTrack = false;
 let listeningQuestionShown = false;
 let watermarkTimer = null;
 let adminMembersCache = [];
-let authEntryMode = "key";
+let authEntryMode = "request";
 let atelierKeyClaimToken = "";
 let atelierKeyReady = false;
 let adminInboxCache = [];
+let adminInboxStatusFilter = "todo";
+let adminSelectedMessageId = null;
 let adminTrackCache = [];
+let adminSelectedTrackId = null;
+let adminSeasonCache = [];
 let adminAudioFilesCache = [];
 let adminLastSeenIso = null;
 let adminInboxUnreadOnly = false;
 let adminViewMode = "pending";
+let adminMemberPage = 1;
+let adminMemberTotal = 0;
+let adminMemberTotalPages = 1;
+let adminMemberSearchTimer = null;
 let magicLinkCooldownTimer = null;
 let voteCooldownUntil = 0;
 let adminUnlocked = false;
+let adminAuditCache = [];
+let adminAuditVisibleCount = 25;
 let presenceHeartbeatTimer = null;
 let adminLiveRefreshTimer = null;
 let selectedActeSlug = "acte-i";
@@ -152,6 +189,7 @@ const ATELIER_LAST_VISIT_STORAGE_KEY = "atelier_last_visit_at";
 const ATELIER_SEEN_MOVEMENTS_STORAGE_KEY = "atelier_seen_movement_track_ids";
 const ATELIER_NEW_TRACK_WINDOW_DAYS = 14;
 const ATELIER_ENTRY_CONTEXT_STORAGE_KEY = "atelier_entry_context";
+const ATELIER_ENTRY_CONTEXT_TTL_MS = 6 * 60 * 60 * 1000;
 const ADMIN_MEMBER_STATUS_LABELS = {
   new: "nouveau",
   waiting: "à relancer",
@@ -359,7 +397,7 @@ function clearMediaSession() {
   try {
     navigator.mediaSession.metadata = null;
   } catch (_) {
-    // no-op
+    if (adminInviteStatusText) adminInviteStatusText.textContent = "Erreur réseau pendant l'action.";
   }
 }
 
@@ -794,6 +832,11 @@ function getStoredEntryContext() {
     if (!parsed || typeof parsed !== "object") {
       return null;
     }
+    const capturedAt = new Date(parsed.captured_at || 0).getTime();
+    if (!Number.isFinite(capturedAt) || Date.now() - capturedAt > ATELIER_ENTRY_CONTEXT_TTL_MS) {
+      localStorage.removeItem(ATELIER_ENTRY_CONTEXT_STORAGE_KEY);
+      return null;
+    }
     return {
       source: normalizeEntrySource(parsed.source) || "direct",
       door: normalizeEntryDoor(parsed.door) || "direct",
@@ -849,7 +892,7 @@ function getEntryAdminLabel(member) {
 }
 
 function getAuthModeCopy(mode) {
-  if (mode === "key") {
+  if (mode === "invitation") {
     return atelierKeyReady ? {
       hint: "Cle reconnue. Entre ton email pour rattacher cette cle a ton acces Atelier.",
       button: "Recevoir mon lien lie a la cle",
@@ -860,16 +903,23 @@ function getAuthModeCopy(mode) {
       status: "Cle reconnue. Entre ton email pour recevoir ton lien personnel.",
     };
   }
+  if (mode === "recovery") {
+    return {
+      hint: "Entre l'email de ton acces existant. Si ton compte est ouvert, tu recevras un lien personnel.",
+      button: "Retrouver mon acces",
+      status: "Si cet email correspond a un acces ouvert, le lien vient d'etre envoye.",
+    };
+  }
   return {
-    hint: "Entre ton email. Tu ne verras les chansons que si Morjane ouvre ton acces.",
-    button: "Recevoir un lien par mail",
-    status: "Mail envoye. Garde cette page ouverte : tu peux coller le code ici si le mail s'ouvre ailleurs. Les chansons resteront fermees tant que l'acces n'est pas valide.",
+    hint: "Laisse ton email. Ta demande restera en attente jusqu'a la decision de Morjane.",
+    button: "Envoyer ma demande",
+    status: "Demande recue. Morjane l'examinera avant tout envoi d'acces.",
   };
 }
 
 function setAuthEntryMode(mode, { focusEmail = false, showCode = false } = {}) {
-  authEntryMode = mode === "key" ? "key" : "access";
-  if (authEntryMode !== "key") {
+  authEntryMode = ["invitation", "request", "recovery"].includes(mode) ? mode : "request";
+  if (authEntryMode !== "invitation") {
     atelierKeyClaimToken = "";
     atelierKeyReady = false;
   }
@@ -882,10 +932,10 @@ function setAuthEntryMode(mode, { focusEmail = false, showCode = false } = {}) {
   });
 
   if (atelierKeyForm) {
-    atelierKeyForm.classList.toggle("hidden", authEntryMode !== "key");
+    atelierKeyForm.classList.toggle("hidden", authEntryMode !== "invitation");
   }
   if (magicLinkForm) {
-    magicLinkForm.classList.toggle("hidden", authEntryMode === "key" && !atelierKeyReady);
+    magicLinkForm.classList.toggle("hidden", authEntryMode === "invitation" && !atelierKeyReady);
   }
   if (authModeHint) {
     authModeHint.textContent = copy.hint;
@@ -893,7 +943,17 @@ function setAuthEntryMode(mode, { focusEmail = false, showCode = false } = {}) {
   if (magicLinkSubmitBtn) {
     magicLinkSubmitBtn.textContent = copy.button;
   }
-  if (showCode) {
+  if (showOtpCodeBtn) {
+    hide(showOtpCodeBtn);
+  }
+  if (otpCodeForm) {
+    hide(otpCodeForm);
+  }
+  if (authMobileHelp) {
+    hide(authMobileHelp);
+  }
+  if (showCode && authEntryMode !== "request") {
+    show(showOtpCodeBtn);
     revealOtpCodeForm({ focus: true, showMobileHelp: true });
   }
   if (focusEmail) {
@@ -909,37 +969,57 @@ function getKeyFromUrl() {
   }
 }
 
+function removeKeyFromCurrentUrl() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("key")) return;
+  url.searchParams.delete("key");
+  const next = `${url.pathname}${url.searchParams.toString() ? `?${url.searchParams.toString()}` : ""}${url.hash}`;
+  window.history.replaceState({}, "", next);
+}
+
 function applyEntryContextToAuthView() {
+  if (IS_ADMIN_ROUTE) {
+    if (authDoorNote) {
+      hide(authDoorNote);
+    }
+    setAuthEntryMode("recovery", { showCode: true });
+    return;
+  }
   if (!authDoorNote) {
-    setAuthEntryMode("key");
+    setAuthEntryMode("request");
     return;
   }
   const context = getCurrentEntryContext();
   const urlKey = getKeyFromUrl();
   if (!context || (!context.source && !context.door)) {
     hide(authDoorNote);
-    setAuthEntryMode(urlKey ? "key" : "access");
+    setAuthEntryMode(urlKey ? "invitation" : "request");
     if (urlKey && atelierKeyInput) atelierKeyInput.value = urlKey;
     return;
   }
 
   const source = normalizeEntrySource(context.source);
   const door = normalizeEntryDoor(context.door);
-  const accessDoors = new Set(["morjane", "pro", "invitation"]);
+  const recoveryDoors = new Set(["morjane", "pro", "invitation"]);
   const lines = {
     phone: "Tu es devant l'Atelier. Laisse ton email, Morjane ouvrira si c'est le bon moment.",
     pro: "Porte pro. Si Morjane t'a invite, utilise ton email pour recevoir ton code.",
     concert: "Tu arrives par une rencontre. Laisse ton email pour garder le fil.",
     instagram: "Tu viens d'Instagram. Laisse ton email pour demander l'acces.",
     invitation: "Morjane t'a ouvert une place dans l'Atelier. Utilise le meme email pour recevoir ton code.",
-    home: "Tu as trouve la fissure. Laisse ton email pour demander l'acces.",
+    home: "Tu arrives depuis le site de Morjane. Tu peux demander a rejoindre le Cercle.",
     footer: "L'Atelier n'est pas public. Laisse ton email pour demander l'acces.",
     menu: "L'Atelier n'est pas public. Laisse ton email pour demander l'acces.",
+    epk: "Tu arrives depuis l'EPK. Tu peux demander a rejoindre le Cercle.",
+    epk_menu: "Tu arrives depuis l'EPK. Tu peux demander a rejoindre le Cercle.",
+    epk_footer: "Tu arrives depuis l'EPK. Tu peux demander a rejoindre le Cercle.",
     morjane: "Connexion Morjane. Utilise ton email admin/fondateur pour ouvrir ta session sur ce telephone.",
   };
 
-  const shouldUseAccessMode = !urlKey && (accessDoors.has(door) || source === "invitation");
-  setAuthEntryMode(shouldUseAccessMode ? "access" : "key");
+  const mode = urlKey || door === "key"
+    ? "invitation"
+    : (recoveryDoors.has(door) || source === "invitation" ? "recovery" : "request");
+  setAuthEntryMode(mode);
   if (urlKey && atelierKeyInput) atelierKeyInput.value = urlKey;
   authDoorNote.textContent = lines[door] || (source === "qr"
     ? "Cette porte ouvre une demande, pas les chansons directement. Laisse ton email pour etre reconnu."
@@ -991,7 +1071,7 @@ function startMagicLinkCooldown(seconds = 60) {
       clearInterval(magicLinkCooldownTimer);
       magicLinkCooldownTimer = null;
       magicLinkSubmitBtn.disabled = false;
-      magicLinkSubmitBtn.textContent = "Recevoir le lien";
+      magicLinkSubmitBtn.textContent = getAuthModeCopy(authEntryMode).button;
       return;
     }
     magicLinkSubmitBtn.textContent = `Réessayer dans ${remaining}s`;
@@ -1093,32 +1173,62 @@ function renderAdminTodayCards() {
   if (!adminTodayCards) {
     return;
   }
-  adminTodayCards.innerHTML = `
-    <article class="admin-weekly-card">
-      <p class="admin-weekly-label">Live maintenant</p>
-      <p class="admin-weekly-value">${Number(adminTodayState.liveNow || 0)}</p>
-    </article>
-    <article class="admin-weekly-card">
-      <p class="admin-weekly-label">Messages non traités</p>
-      <p class="admin-weekly-value">${Number(adminTodayState.pendingMessages || 0)}</p>
-    </article>
-    <article class="admin-weekly-card">
-      <p class="admin-weekly-label">Écoutes aujourd'hui</p>
-      <p class="admin-weekly-value">${Number(adminTodayState.playsToday || 0)}</p>
-    </article>
-    <article class="admin-weekly-card">
-      <p class="admin-weekly-label">Membres actifs 7j</p>
-      <p class="admin-weekly-value">${Number(adminTodayState.activeMembers7d || 0)}</p>
-    </article>
-    <article class="admin-weekly-card">
-      <p class="admin-weekly-label">Demandes à traiter</p>
-      <p class="admin-weekly-value">${Number(adminTodayState.pendingMembers || 0)}</p>
-    </article>
-    <article class="admin-weekly-card">
-      <p class="admin-weekly-label">Audios à corriger</p>
-      <p class="admin-weekly-value">${Number(adminTodayState.brokenAudioCount || 0)}</p>
+  const actionCard = (label, value, section) => `
+    <button type="button" class="admin-today-card admin-today-card--action ${value > 0 ? "is-needed" : "is-zero"}" data-admin-jump="${section}">
+      <span class="admin-weekly-label">${label}</span>
+      <strong class="admin-weekly-value">${Number(value || 0)}</strong>
+      <span class="admin-today-card__cue">${value > 0 ? "Ouvrir" : "Rien à traiter"}</span>
+    </button>
+  `;
+  const metricCard = (label, value) => `
+    <article class="admin-today-card admin-today-card--metric ${value > 0 ? "" : "is-zero"}">
+      <p class="admin-weekly-label">${label}</p>
+      <p class="admin-weekly-value">${Number(value || 0)}</p>
     </article>
   `;
+  adminTodayCards.innerHTML = `
+    <div class="admin-today-actions" aria-label="Actions prioritaires">
+      ${actionCard("Demandes à décider", adminTodayState.pendingMembers, "requests")}
+      ${actionCard("Messages à traiter", adminTodayState.pendingMessages, "messages")}
+      ${actionCard("Audios à corriger", adminTodayState.brokenAudioCount, "tracks")}
+    </div>
+    <div class="admin-today-metrics" aria-label="Indicateurs du jour">
+      ${metricCard("Écoutes aujourd'hui", adminTodayState.playsToday)}
+      ${metricCard("Live maintenant", adminTodayState.liveNow)}
+      ${metricCard("Membres actifs 7j", adminTodayState.activeMembers7d)}
+    </div>
+  `;
+}
+
+function rememberAdminReturn() {
+  if (!IS_ADMIN_ROUTE) {
+    return;
+  }
+  try {
+    localStorage.setItem(ADMIN_RETURN_STORAGE_KEY, JSON.stringify({
+      path: "/atelier/admin/",
+      createdAt: Date.now(),
+    }));
+  } catch (_) {
+    // The code-based login still remains available without local storage.
+  }
+}
+
+function redirectToRememberedAdminRoute() {
+  if (IS_ADMIN_ROUTE || profile?.role !== "admin") {
+    return false;
+  }
+  try {
+    const saved = JSON.parse(localStorage.getItem(ADMIN_RETURN_STORAGE_KEY) || "null");
+    localStorage.removeItem(ADMIN_RETURN_STORAGE_KEY);
+    if (saved?.path === "/atelier/admin/" && Date.now() - Number(saved.createdAt || 0) < 15 * 60 * 1000) {
+      window.location.replace(saved.path);
+      return true;
+    }
+  } catch (_) {
+    localStorage.removeItem(ADMIN_RETURN_STORAGE_KEY);
+  }
+  return false;
 }
 
 function renderAdminWeeklyStats(data) {
@@ -1418,6 +1528,45 @@ function appendAdminMemberDetails(content, member, fields, note, saveMeta) {
   content.appendChild(details);
 }
 
+function createDecisionRequestRow(member) {
+  const row = document.createElement("div");
+  row.className = "admin-member-item";
+  const head = document.createElement("div");
+  head.className = "admin-member-head";
+  const email = document.createElement("p");
+  email.className = "admin-member-email";
+  email.textContent = member.email || "email inconnu";
+  const badge = document.createElement("span");
+  badge.className = "admin-member-badge is-new";
+  badge.textContent = "à décider";
+  head.appendChild(email);
+  head.appendChild(badge);
+
+  const facts = document.createElement("p");
+  facts.className = "admin-member-meta";
+  const requestedAt = member.created_at ? formatInboxDate(member.created_at) : "date inconnue";
+  const segmentKey = normalizeAudienceSegment(member.audience_segment);
+  const segment = ADMIN_MEMBER_SEGMENT_LABELS[segmentKey] || segmentKey || "non défini";
+  facts.textContent = `Demande : ${requestedAt} · Provenance : ${getEntryAdminLabel(member)} · Profil : ${segment}`;
+
+  const adult = document.createElement("p");
+  adult.className = "admin-member-meta";
+  adult.textContent = member.adult_confirmed_at
+    ? `18+ confirmé lors de la demande · Statut : ${getQueueLabel(member)}`
+    : `Confirmation 18+ non enregistrée · Statut : ${getQueueLabel(member)}`;
+
+  const actions = document.createElement("div");
+  actions.className = "admin-member-actions";
+  actions.appendChild(createMemberAction("Accepter + envoyer l'accès", "approve_and_send_access_email", member.id));
+  actions.appendChild(createMemberAction("Refuser", "refuse", member.id));
+
+  row.appendChild(head);
+  row.appendChild(facts);
+  row.appendChild(adult);
+  row.appendChild(actions);
+  return row;
+}
+
 function createAdminMemberRow(member) {
   const row = document.createElement("div");
   row.className = "admin-member-item";
@@ -1504,9 +1653,22 @@ function createAdminMemberRow(member) {
 
   const actions = document.createElement("div");
   actions.className = "admin-member-actions";
-  actions.appendChild(createMemberAction("Valider + envoyer", "approve_and_send_access_email", member.id));
-  actions.appendChild(createMemberAction("Valider", "approve", member.id));
-  actions.appendChild(createMemberAction("Envoyer accès", "send_access_email", member.id));
+  const adminRoleProtected = member.role === "admin";
+  const protectAdminRoleAction = (button) => {
+    if (adminRoleProtected) {
+      button.disabled = true;
+      button.title = "Le rôle admin ne peut pas être modifié depuis une action membre.";
+    }
+    return button;
+  };
+  actions.appendChild(protectAdminRoleAction(createMemberAction("Valider + envoyer", "approve_and_send_access_email", member.id)));
+  actions.appendChild(protectAdminRoleAction(createMemberAction("Valider", "approve", member.id)));
+  const resendAccess = createMemberAction("Renvoyer l'accès", "send_access_email", member.id);
+  if (!isMember(member.member_status) && member.role !== "admin") {
+    resendAccess.disabled = true;
+    resendAccess.title = "Le renvoi est disponible uniquement pour un profil déjà autorisé.";
+  }
+  actions.appendChild(resendAccess);
   actions.appendChild(createCopyInvitationAction(member));
   actions.appendChild(createPersonalLinkAction(member));
 
@@ -1515,15 +1677,10 @@ function createAdminMemberRow(member) {
   const secondarySummary = document.createElement("summary");
   secondarySummary.textContent = "Plus";
   secondary.appendChild(secondarySummary);
-  secondary.appendChild(createMemberAction("Prioritaire", "vip", member.id));
-  secondary.appendChild(createMemberAction("Refuser", "refuse", member.id));
-  secondary.appendChild(createMemberAction("Archiver", "archive", member.id));
-  const revokeBtn = createMemberAction("Retirer", "revoke", member.id);
-  if (member.id && member.id === profile?.id) {
-    revokeBtn.disabled = true;
-    revokeBtn.title = "Impossible de retirer votre propre accès admin.";
-  }
-  secondary.appendChild(revokeBtn);
+  secondary.appendChild(protectAdminRoleAction(createMemberAction("Prioritaire", "vip", member.id)));
+  secondary.appendChild(protectAdminRoleAction(createMemberAction("Refuser", "refuse", member.id)));
+  secondary.appendChild(protectAdminRoleAction(createMemberAction("Archiver", "archive", member.id)));
+  secondary.appendChild(protectAdminRoleAction(createMemberAction("Retirer", "revoke", member.id)));
   actions.appendChild(secondary);
 
   const saveMeta = document.createElement("button");
@@ -1556,7 +1713,16 @@ async function loadAdminMembers() {
   adminMembersList.innerHTML = "<p class=\"muted\">Chargement...</p>";
 
   try {
-    const res = await fetch("/.netlify/functions/admin-members", {
+    const params = new URLSearchParams({
+      view: adminViewMode === "pending" ? "decision" : adminViewMode,
+      page: String(adminMemberPage),
+      per_page: "25",
+    });
+    const search = String(adminSearchInput?.value || "").trim();
+    const segment = String(adminMemberSegmentFilter?.value || "").trim();
+    if (search) params.set("search", search);
+    if (segment) params.set("segment", segment);
+    const res = await fetch(`/.netlify/functions/admin-members?${params.toString()}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
@@ -1567,6 +1733,15 @@ async function loadAdminMembers() {
     }
 
     adminMembersCache = (data.members || []).filter((member) => member.email);
+    adminMemberTotal = Number(data.pagination?.total || 0);
+    adminMemberTotalPages = Math.max(1, Number(data.pagination?.total_pages || 1));
+    const returnedPage = Math.max(1, Number(data.pagination?.page || adminMemberPage));
+    if (returnedPage > adminMemberTotalPages && adminMemberTotal > 0) {
+      adminMemberPage = adminMemberTotalPages;
+      await loadAdminMembers();
+      return;
+    }
+    adminMemberPage = Math.min(returnedPage, adminMemberTotalPages);
     renderAdminMembers();
   } catch (_) {
     adminMembersList.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
@@ -1578,48 +1753,33 @@ function renderAdminMembers() {
     return;
   }
   if (adminMembersSummary) {
-    const counts = adminMembersCache.reduce((acc, member) => {
-      const status = getQueueStatus(member);
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {});
-    adminMembersSummary.innerHTML = `
-      <span>Nouveaux ${counts.new || 0}</span>
-      <span>A relancer ${counts.waiting || 0}</span>
-      <span>Valides ${counts.approved || 0}</span>
-      <span>Prioritaires ${counts.vip || 0}</span>
-      <span>Refuses ${counts.refused || 0}</span>
-    `;
+    const label = adminViewMode === "pending" ? "À décider" : adminViewMode === "history" ? "Refusés / archivés" : "Cercle actif";
+    adminMembersSummary.innerHTML = `<span>${label} ${adminMemberTotal}</span>`;
   }
-  const term = String(adminSearchInput?.value || "").trim().toLowerCase();
-  const filtered = adminMembersCache.filter((member) => {
-    const queueStatus = getQueueStatus(member);
-    const pendingStatuses = ["new", "waiting", "refused", "archived"];
-    const statusOk = adminViewMode === "pending"
-      ? !isMember(member.member_status) || pendingStatuses.includes(queueStatus)
-      : isMember(member.member_status) || member.role === "admin" || queueStatus === "approved" || queueStatus === "vip";
-    const haystack = [
-      member.email,
-      member.audience_status,
-      member.audience_segment,
-      member.source,
-      member.access_source,
-      member.access_wave,
-      member.admin_note,
-    ].join(" ").toLowerCase();
-    const searchOk = !term || haystack.includes(term);
-    return statusOk && searchOk;
-  });
-
   adminMembersList.innerHTML = "";
-  if (filtered.length === 0) {
-    adminMembersList.innerHTML = "<p class=\"muted\">Aucun profil dans cette vue.</p>";
+  if (adminMembersCache.length === 0) {
+    const empty = adminViewMode === "pending"
+      ? "Aucune demande n'attend ta décision."
+      : adminViewMode === "history"
+        ? "Aucun profil refusé ou archivé."
+        : "Aucun membre dans cette vue.";
+    adminMembersList.innerHTML = `<p class="muted">${empty}</p>`;
+    renderAdminMemberPagination();
     return;
   }
 
-  filtered.forEach((member) => {
-    adminMembersList.appendChild(createAdminMemberRow(member));
+  adminMembersCache.forEach((member) => {
+    adminMembersList.appendChild(adminViewMode === "pending" ? createDecisionRequestRow(member) : createAdminMemberRow(member));
   });
+  renderAdminMemberPagination();
+}
+
+function renderAdminMemberPagination() {
+  if (adminMembersPageInfo) {
+    adminMembersPageInfo.textContent = `Page ${adminMemberPage} sur ${adminMemberTotalPages} · ${adminMemberTotal} résultat${adminMemberTotal > 1 ? "s" : ""}`;
+  }
+  if (adminMembersPrevBtn) adminMembersPrevBtn.disabled = adminMemberPage <= 1;
+  if (adminMembersNextBtn) adminMembersNextBtn.disabled = adminMemberPage >= adminMemberTotalPages;
 }
 
 function formatInboxDate(iso) {
@@ -1811,8 +1971,11 @@ function renderAdminSignalBoard() {
     title.className = "admin-status-title";
     title.textContent = formatTrackTitle(track.title);
     const dominant = document.createElement("p");
-    dominant.className = "admin-status-meta";
+    dominant.className = "admin-signal-dominant";
     dominant.textContent = `Signal dominant : ${topTag ? `${getFeedbackTagLabel(topTag[0])} (${topTag[1]})` : "pas encore"}`;
+    const sample = document.createElement("p");
+    sample.className = "admin-signal-sample";
+    sample.textContent = `${track.messages.length} retour${track.messages.length > 1 ? "s" : ""} textuel${track.messages.length > 1 ? "s" : ""} analysé${track.messages.length > 1 ? "s" : ""}`;
     const recurringDoubt = document.createElement("p");
     recurringDoubt.className = "admin-status-meta";
     recurringDoubt.textContent = `Doute récurrent : ${doubt ? doubt.content : "aucun signal fort"}`;
@@ -1824,6 +1987,7 @@ function renderAdminSignalBoard() {
     bestFeedback.textContent = `Meilleur retour : ${best ? best.content : "aucun message"}`;
     card.appendChild(title);
     card.appendChild(dominant);
+    card.appendChild(sample);
     card.appendChild(recurringDoubt);
     card.appendChild(weakSignalText);
     card.appendChild(bestFeedback);
@@ -1950,9 +2114,9 @@ function renderAdminInbox() {
   const selectedTrack = String(adminInboxTrackFilter?.value || "");
   const selectedSender = String(adminInboxSenderFilter?.value || "");
   adminInboxList.innerHTML = "";
-  let unreadCount = 0;
   if (!adminInboxCache.length) {
     adminInboxList.innerHTML = "<p class=\"muted\">Aucun message pour le moment.</p>";
+    if (adminInboxStatusFilters) adminInboxStatusFilters.innerHTML = "";
     if (adminInboxUnread) {
       adminInboxUnread.textContent = "Nouveaux messages : 0";
     }
@@ -1969,10 +2133,6 @@ function renderAdminInbox() {
     return matchSearch && matchUnread && matchTrack && matchSender;
   });
 
-  if (filteredMessages.length === 0) {
-    adminInboxList.innerHTML = "<p class=\"muted\">Aucun message dans ce filtre.</p>";
-  }
-
   const buckets = { new: [], todo: [], done: [] };
   filteredMessages.forEach((item) => {
     if (item.admin_status === "processed") {
@@ -1984,141 +2144,134 @@ function renderAdminInbox() {
     }
   });
 
-  const columnsWrap = document.createElement("div");
-  columnsWrap.className = "admin-inbox-columns";
-  const columns = [
+  const statuses = [
     { key: "new", label: "Nouveau" },
-    { key: "todo", label: "A traiter" },
-    { key: "done", label: "Traite" },
+    { key: "todo", label: "À traiter" },
+    { key: "done", label: "Traités" },
   ];
+  if (adminInboxStatusFilters) {
+    adminInboxStatusFilters.innerHTML = "";
+    statuses.forEach(({ key, label }) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `admin-inbox-status ${adminInboxStatusFilter === key ? "is-active" : ""}`;
+      button.setAttribute("aria-pressed", adminInboxStatusFilter === key ? "true" : "false");
+      button.innerHTML = `<span>${label}</span><strong>${buckets[key].length}</strong>`;
+      button.addEventListener("click", () => {
+        adminInboxStatusFilter = key;
+        adminSelectedMessageId = null;
+        renderAdminInbox();
+      });
+      adminInboxStatusFilters.appendChild(button);
+    });
+  }
 
-  columns.forEach(({ key, label }) => {
-    const col = document.createElement("section");
-    col.className = "admin-inbox-column";
-    col.innerHTML = `
-      <header class="admin-inbox-column-head">
-        <h4>${label}</h4>
-        <span>${buckets[key].length}</span>
-      </header>
-      <div class="admin-inbox-column-list"></div>
-    `;
-    const list = col.querySelector(".admin-inbox-column-list");
+  const visibleMessages = buckets[adminInboxStatusFilter] || [];
+  if (!visibleMessages.some((item) => item.id === adminSelectedMessageId)) {
+    adminSelectedMessageId = visibleMessages[0]?.id || null;
+  }
 
-    if (buckets[key].length === 0) {
-      const empty = document.createElement("p");
-      empty.className = "muted";
-      empty.textContent = "Aucun message";
-      list.appendChild(empty);
-      columnsWrap.appendChild(col);
-      return;
-    }
+  if (!visibleMessages.length) {
+    adminInboxList.innerHTML = "<p class=\"muted admin-inbox-empty\">Aucun message dans cet état.</p>";
+  } else {
+    const workspace = document.createElement("div");
+    workspace.className = "admin-inbox-workspace";
+    const list = document.createElement("div");
+    list.className = "admin-inbox-message-list";
+    list.setAttribute("aria-label", "Liste des messages");
 
-    buckets[key].forEach((item) => {
-      const card = document.createElement("article");
-      card.className = "admin-inbox-item";
-
-      const head = document.createElement("div");
-      head.className = "admin-inbox-head";
+    visibleMessages.forEach((item) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `admin-inbox-summary ${item.id === adminSelectedMessageId ? "is-active" : ""}`;
+      button.setAttribute("aria-pressed", item.id === adminSelectedMessageId ? "true" : "false");
       const sender = document.createElement("strong");
       sender.textContent = item.sender_email || "Email inconnu";
-      head.appendChild(sender);
-
       const meta = document.createElement("span");
-      meta.className = "admin-inbox-meta";
-      meta.textContent = `${formatTrackTitle(item.track_title || "Maquette")} - ${formatInboxDate(item.created_at)}`;
-      head.appendChild(meta);
-
-      if (isInboxMessageNew(item.created_at)) {
-        unreadCount += 1;
-        const badge = document.createElement("span");
-        badge.className = "admin-inbox-badge";
-        badge.textContent = "Nouveau";
-        head.appendChild(badge);
-      }
-
-      const body = document.createElement("p");
-      body.className = "admin-inbox-body";
-      body.textContent = item.content || "";
-
-      const tags = document.createElement("p");
-      tags.className = "admin-inbox-tags";
-      tags.textContent = formatMessageTags(item.feedback_tags || []);
-
-      const state = document.createElement("p");
-      state.className = "admin-inbox-state";
-      state.textContent = formatProcessedState(item);
-
-      const noteInput = document.createElement("textarea");
-      noteInput.className = "admin-note-input";
-      noteInput.rows = 2;
-      noteInput.placeholder = "Note admin privee";
-      noteInput.value = item.admin_note || "";
-
-      const replyInput = document.createElement("textarea");
-      replyInput.className = "admin-note-input";
-      replyInput.rows = 2;
-      replyInput.placeholder = "Réponse courte au membre";
-      replyInput.value = item.admin_reply || "";
-
-      const actions = document.createElement("div");
-      actions.className = "admin-inbox-actions";
-      const quickActions = document.createElement("div");
-      quickActions.className = "admin-inbox-actions admin-inbox-actions--quick";
-      const actionBtn = document.createElement("button");
-      actionBtn.type = "button";
-      actionBtn.className = "ghost";
-      actionBtn.textContent = item.admin_status === "processed" ? "Remettre non traité" : "Marquer traité";
-      actionBtn.addEventListener("click", async () => {
-        await updateMessageStatus(item.id, item.admin_status === "processed" ? "mark_new" : "mark_processed");
+      meta.textContent = `${formatTrackTitle(item.track_title || "Maquette")} · ${formatInboxDate(item.created_at)}`;
+      const excerpt = document.createElement("span");
+      excerpt.textContent = item.content || "Message sans texte";
+      button.appendChild(sender);
+      button.appendChild(meta);
+      button.appendChild(excerpt);
+      button.addEventListener("click", () => {
+        adminSelectedMessageId = item.id;
+        renderAdminInbox();
+        if (window.matchMedia("(max-width: 720px)").matches) {
+          requestAnimationFrame(() => document.querySelector(".admin-inbox-detail")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+        }
       });
-      quickActions.appendChild(actionBtn);
-
-      const saveNoteBtn = document.createElement("button");
-      saveNoteBtn.type = "button";
-      saveNoteBtn.className = "ghost";
-      saveNoteBtn.textContent = "Enregistrer note";
-      saveNoteBtn.addEventListener("click", async () => {
-        await updateMessageStatus(item.id, "set_note", noteInput.value || "");
-      });
-      actions.appendChild(saveNoteBtn);
-
-      const saveReplyBtn = document.createElement("button");
-      saveReplyBtn.type = "button";
-      saveReplyBtn.className = "ghost";
-      saveReplyBtn.textContent = "Enregistrer réponse";
-      saveReplyBtn.addEventListener("click", async () => {
-        await updateMessageStatus(item.id, "set_reply", replyInput.value || "");
-      });
-      actions.appendChild(saveReplyBtn);
-
-      const details = document.createElement("details");
-      details.className = "admin-details";
-      const summary = document.createElement("summary");
-      summary.textContent = "Traiter";
-      details.appendChild(summary);
-      details.appendChild(noteInput);
-      details.appendChild(replyInput);
-      details.appendChild(actions);
-
-      card.appendChild(head);
-      card.appendChild(body);
-      if (tags.textContent) {
-        card.appendChild(tags);
-      }
-      card.appendChild(state);
-      card.appendChild(quickActions);
-      card.appendChild(details);
-      list.appendChild(card);
+      list.appendChild(button);
     });
 
-    columnsWrap.appendChild(col);
-  });
-
-  if (filteredMessages.length > 0) {
-    adminInboxList.appendChild(columnsWrap);
+    const item = visibleMessages.find((message) => message.id === adminSelectedMessageId) || visibleMessages[0];
+    const detail = document.createElement("article");
+    detail.className = "admin-inbox-detail";
+    detail.tabIndex = -1;
+    const head = document.createElement("div");
+    head.className = "admin-inbox-head";
+    const sender = document.createElement("strong");
+    sender.textContent = item.sender_email || "Email inconnu";
+    const meta = document.createElement("span");
+    meta.className = "admin-inbox-meta";
+    meta.textContent = `${formatTrackTitle(item.track_title || "Maquette")} · ${formatInboxDate(item.created_at)}`;
+    head.appendChild(sender);
+    head.appendChild(meta);
+    const body = document.createElement("p");
+    body.className = "admin-inbox-body admin-inbox-body--full";
+    body.textContent = item.content || "";
+    const tags = document.createElement("p");
+    tags.className = "admin-inbox-tags";
+    tags.textContent = formatMessageTags(item.feedback_tags || []);
+    const state = document.createElement("p");
+    state.className = "admin-inbox-state";
+    state.textContent = formatProcessedState(item);
+    const actionBtn = document.createElement("button");
+    actionBtn.type = "button";
+    actionBtn.className = "ghost";
+    actionBtn.textContent = item.admin_status === "processed" ? "Remettre non traité" : "Marquer traité";
+    actionBtn.addEventListener("click", async () => {
+      await updateMessageStatus(item.id, item.admin_status === "processed" ? "mark_new" : "mark_processed");
+    });
+    const noteInput = document.createElement("textarea");
+    noteInput.className = "admin-note-input";
+    noteInput.rows = 3;
+    noteInput.placeholder = "Note admin privée";
+    noteInput.value = item.admin_note || "";
+    const replyInput = document.createElement("textarea");
+    replyInput.className = "admin-note-input";
+    replyInput.rows = 3;
+    replyInput.placeholder = "Réponse courte au membre";
+    replyInput.value = item.admin_reply || "";
+    const actions = document.createElement("div");
+    actions.className = "admin-inbox-actions";
+    [["Enregistrer note", "set_note", noteInput], ["Enregistrer réponse", "set_reply", replyInput]].forEach(([label, action, input]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "ghost";
+      button.textContent = label;
+      button.addEventListener("click", async () => updateMessageStatus(item.id, action, input.value || ""));
+      actions.appendChild(button);
+    });
+    detail.appendChild(head);
+    detail.appendChild(body);
+    if (tags.textContent) detail.appendChild(tags);
+    detail.appendChild(state);
+    detail.appendChild(actionBtn);
+    const treatment = document.createElement("details");
+    treatment.className = "admin-details";
+    treatment.innerHTML = "<summary>Note et réponse</summary>";
+    treatment.appendChild(noteInput);
+    treatment.appendChild(replyInput);
+    treatment.appendChild(actions);
+    detail.appendChild(treatment);
+    workspace.appendChild(list);
+    workspace.appendChild(detail);
+    adminInboxList.appendChild(workspace);
   }
 
   if (adminInboxUnread) {
+    const unreadCount = adminInboxCache.filter((item) => isInboxMessageNew(item.created_at)).length;
     adminInboxUnread.textContent = `Nouveaux messages : ${unreadCount}`;
   }
 }
@@ -2456,6 +2609,7 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     return;
   }
   adminTrackCache = Array.isArray(tracks) ? tracks : [];
+  adminSeasonCache = Array.isArray(seasons) ? seasons : [];
   renderAdminTrackCreateForm(seasons);
   renderAdminProfilePreview();
   renderAdminAnnouncement();
@@ -2470,7 +2624,27 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
   summary.className = "admin-field-help";
   summary.textContent = `${tracks.length} morceaux | ${missingAudioCount} audio à vérifier`;
   adminTrackCockpit.appendChild(summary);
+  if (!tracks.some((track) => track.id === adminSelectedTrackId)) {
+    adminSelectedTrackId = tracks[0].id;
+  }
+  const switcher = document.createElement("nav");
+  switcher.className = "admin-track-switcher";
+  switcher.setAttribute("aria-label", "Choisir le morceau à administrer");
   tracks.forEach((track) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `admin-track-switcher__button ${track.id === adminSelectedTrackId ? "is-active" : ""}`;
+    button.setAttribute("aria-pressed", track.id === adminSelectedTrackId ? "true" : "false");
+    button.textContent = formatTrackTitle(track.title);
+    button.addEventListener("click", () => {
+      adminSelectedTrackId = track.id;
+      renderAdminTrackCockpit(adminTrackCache, adminSeasonCache);
+    });
+    switcher.appendChild(button);
+  });
+  adminTrackCockpit.appendChild(switcher);
+
+  tracks.filter((track) => track.id === adminSelectedTrackId).forEach((track) => {
     const card = document.createElement("article");
     card.className = "admin-track-item";
     const head = document.createElement("div");
@@ -2687,6 +2861,20 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     question.value = track.feedback_question || "";
     announcementText.value = track.announcement_text || "";
     save.addEventListener("click", async () => {
+      const nextSegments = segmentAccess.getSelectedValues();
+      const nextStatuses = statusAccess.getSelectedValues();
+      const currentSegments = [...(track.allowed_audience_segments || [])].sort();
+      const currentStatuses = [...(track.allowed_member_statuses || [])].sort();
+      const rightsChanged = visibility.value !== track.status
+        || JSON.stringify([...nextSegments].sort()) !== JSON.stringify(currentSegments)
+        || JSON.stringify([...nextStatuses].sort()) !== JSON.stringify(currentStatuses);
+      if (rightsChanged) {
+        const visibilityCopy = ({ active: "visible dans le Cercle", draft: "caché et en préparation", archived: "archivé" })[visibility.value] || visibility.value;
+        const segmentCopy = nextSegments.length ? nextSegments.join(", ") : "tous les profils autorisés";
+        const statusCopy = nextStatuses.length ? nextStatuses.join(", ") : "tous les statuts membres autorisés";
+        const confirmed = window.confirm(`« ${formatTrackTitle(track.title)} » deviendra ${visibilityCopy}, pour ${segmentCopy}, avec les accès ${statusCopy}. Confirmer ?`);
+        if (!confirmed) return;
+      }
       await updateTrackCockpit(track.id, {
         title: titleField.input.value,
         season_slug: seasonField.select.value,
@@ -2698,8 +2886,8 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
         feedback_question: question.value,
         announcement_enabled: announcementCheckbox.checked,
         announcement_text: announcementText.value,
-        allowed_audience_segments: segmentAccess.getSelectedValues(),
-        allowed_member_statuses: statusAccess.getSelectedValues(),
+        allowed_audience_segments: nextSegments,
+        allowed_member_statuses: nextStatuses,
       });
     });
     const settings = document.createElement("details");
@@ -2707,22 +2895,36 @@ function renderAdminTrackCockpit(tracks = [], seasons = []) {
     const settingsSummary = document.createElement("summary");
     settingsSummary.textContent = "Réglages";
     settings.appendChild(settingsSummary);
-    settings.appendChild(fields);
-    settings.appendChild(pathActions);
-    settings.appendChild(visibilityLabel);
-    settings.appendChild(visibility);
-    settings.appendChild(statusLabel);
-    settings.appendChild(status);
-    settings.appendChild(accessTitle);
-    settings.appendChild(accessWrap);
-    settings.appendChild(accessHint);
-    settings.appendChild(intentLabel);
-    settings.appendChild(intent);
-    settings.appendChild(questionLabel);
-    settings.appendChild(question);
-    settings.appendChild(announcementToggle);
-    settings.appendChild(announcementLabel);
-    settings.appendChild(announcementText);
+    const makeSettingsGroup = (title) => {
+      const group = document.createElement("section");
+      group.className = "admin-track-settings-group";
+      const heading = document.createElement("h4");
+      heading.textContent = title;
+      group.appendChild(heading);
+      return group;
+    };
+    const stateGroup = makeSettingsGroup("État et version");
+    stateGroup.appendChild(fields);
+    stateGroup.appendChild(pathActions);
+    stateGroup.appendChild(visibilityLabel);
+    stateGroup.appendChild(visibility);
+    stateGroup.appendChild(statusLabel);
+    stateGroup.appendChild(status);
+    const accessGroup = makeSettingsGroup("Accès");
+    accessGroup.appendChild(accessTitle);
+    accessGroup.appendChild(accessWrap);
+    accessGroup.appendChild(accessHint);
+    const questionGroup = makeSettingsGroup("Question au Cercle");
+    questionGroup.appendChild(intentLabel);
+    questionGroup.appendChild(intent);
+    questionGroup.appendChild(questionLabel);
+    questionGroup.appendChild(question);
+    questionGroup.appendChild(announcementToggle);
+    questionGroup.appendChild(announcementLabel);
+    questionGroup.appendChild(announcementText);
+    settings.appendChild(stateGroup);
+    settings.appendChild(accessGroup);
+    settings.appendChild(questionGroup);
     settings.appendChild(save);
     card.appendChild(head);
     card.appendChild(decisionBox);
@@ -2883,7 +3085,7 @@ function renderAdminStatus(data) {
   const pending = Number(data?.pendingMessages || 0);
   const today = data?.today || {};
   const health = data?.health || {};
-  const functions = Array.isArray(data?.functions) ? data.functions.slice(0, 6) : [];
+  const functions = Array.isArray(data?.functions) ? data.functions : [];
   adminTodayState.pendingMessages = pending;
   adminTodayState.playsToday = Number(today.playsToday || 0);
   adminTodayState.activeMembers7d = Number(today.activeMembers7d || 0);
@@ -2894,14 +3096,12 @@ function renderAdminStatus(data) {
 
   adminStatusPanel.innerHTML = "";
   const top = document.createElement("article");
-  top.className = "admin-status-item";
+  const systemIssueCount = Number(uptime.errors24h || 0) + Number(health.brokenAudioCount || 0) + Number(magic.error || 0);
+  top.className = `admin-system-summary ${systemIssueCount > 0 ? "has-issues" : "is-operational"}`;
   [
-    ["admin-status-title", "Synthese"],
-    ["admin-status-meta", `Echecs fonctions 24h : ${uptime.errors24h || 0}/${uptime.total24h || 0} (${Math.round((uptime.failureRate24h || 0) * 100)}%)`],
-    ["admin-status-meta", `Liens magiques (7 jours) : ${magic.sent || 0} envoyés, ${magic.error || 0} en erreur`],
-    ["admin-status-meta", `Messages non traités : ${pending}`],
-    ["admin-status-meta", `Demandes en attente : ${health.pendingMembers || 0}`],
-    ["admin-status-meta", `Audios actifs à corriger : ${health.brokenAudioCount || 0}/${health.tracksChecked || 0}`],
+    ["admin-system-summary__eyebrow", systemIssueCount > 0 ? "Attention nécessaire" : "Contrôle terminé"],
+    ["admin-system-summary__title", systemIssueCount > 0 ? `${systemIssueCount} point${systemIssueCount > 1 ? "s" : ""} à vérifier` : "Système opérationnel"],
+    ["admin-system-summary__meta", `Dernier contrôle : ${new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(new Date())}`],
   ].forEach(([className, text]) => {
     const line = document.createElement("p");
     line.className = className;
@@ -2909,6 +3109,21 @@ function renderAdminStatus(data) {
     top.appendChild(line);
   });
   adminStatusPanel.appendChild(top);
+
+  const indicators = document.createElement("div");
+  indicators.className = "admin-system-indicators";
+  [
+    ["Fonctions en erreur (24h)", uptime.errors24h || 0],
+    ["Liens en erreur (7j)", magic.error || 0],
+    ["Audios à corriger", health.brokenAudioCount || 0],
+    ["Demandes en attente", health.pendingMembers || 0],
+  ].forEach(([label, value]) => {
+    const item = document.createElement("article");
+    item.className = Number(value) > 0 ? "has-issues" : "is-clear";
+    item.innerHTML = `<span>${label}</span><strong>${Number(value)}</strong>`;
+    indicators.appendChild(item);
+  });
+  adminStatusPanel.appendChild(indicators);
 
   (health.brokenAudio || []).forEach((track) => {
     const card = document.createElement("article");
@@ -2924,9 +3139,14 @@ function renderAdminStatus(data) {
     adminStatusPanel.appendChild(card);
   });
 
+  const technical = document.createElement("details");
+  technical.className = "admin-status-technical";
+  technical.innerHTML = `<summary>Détail des fonctions (${functions.length})</summary>`;
+  const functionList = document.createElement("div");
+  functionList.className = "admin-status-functions";
   functions.forEach((fn) => {
     const card = document.createElement("article");
-    card.className = "admin-status-item";
+    card.className = `admin-status-item ${Number(fn.error || 0) > 0 ? "has-issues" : "is-clear"}`;
     const title = document.createElement("p");
     title.className = "admin-status-title";
     title.textContent = fn.function_name || "Function";
@@ -2935,8 +3155,10 @@ function renderAdminStatus(data) {
     meta.textContent = `OK: ${fn.ok} | Erreurs: ${fn.error} | Taux echec: ${Math.round((fn.error_rate || 0) * 100)}%`;
     card.appendChild(title);
     card.appendChild(meta);
-    adminStatusPanel.appendChild(card);
+    functionList.appendChild(card);
   });
+  technical.appendChild(functionList);
+  adminStatusPanel.appendChild(technical);
 }
 
 async function loadAdminStatus() {
@@ -3061,16 +3283,10 @@ function startAdminLiveRefresh() {
   }, 5000);
 }
 
-function renderAdminAuditLog(logs = []) {
+function renderAdminAuditLog(logs = null) {
   if (!adminAuditLog) {
     return;
   }
-  if (!logs.length) {
-    adminAuditLog.innerHTML = "<p class=\"muted\">Aucune action récente.</p>";
-    return;
-  }
-
-  adminAuditLog.innerHTML = "";
   const actionLabel = (action) => ({
     member_approved: "Membre validé",
     member_revoked: "Accès retiré",
@@ -3081,15 +3297,58 @@ function renderAdminAuditLog(logs = []) {
     member_invited: "Invitation envoyée",
     member_invite_link_created: "Lien d'invitation créé",
     member_approve: "Membre validé",
+    member_approve_and_send_access_email: "Membre validé et accès envoyé",
     member_revoke: "Accès retiré",
     member_vip: "Prioritaire",
     member_refuse: "Demande refusée",
     member_archive: "Profil archivé",
     member_set_meta: "Fiche membre mise à jour",
     member_access_email_sent: "Email d'accès envoyé",
+    invitation_key_created: "Clé MOR créée",
+    invitation_key_revoked: "Clé MOR révoquée",
   }[action] || action);
 
-  logs.slice(0, 25).forEach((row) => {
+  if (Array.isArray(logs)) {
+    adminAuditCache = logs;
+    adminAuditVisibleCount = 25;
+  }
+  if (!adminAuditCache.length) {
+    adminAuditLog.innerHTML = "<p class=\"muted\">Aucune action récente.</p>";
+    if (adminAuditMoreBtn) hide(adminAuditMoreBtn);
+    return;
+  }
+
+  if (adminAuditTypeFilter) {
+    const selectedType = adminAuditTypeFilter.value;
+    const actions = [...new Set(adminAuditCache.map((row) => row.action).filter(Boolean))].sort();
+    adminAuditTypeFilter.innerHTML = "<option value=\"\">Tous les types</option>";
+    actions.forEach((action) => {
+      const option = document.createElement("option");
+      option.value = action;
+      option.textContent = actionLabel(action);
+      adminAuditTypeFilter.appendChild(option);
+    });
+    adminAuditTypeFilter.value = selectedType;
+  }
+
+  const term = String(adminAuditSearch?.value || "").trim().toLowerCase();
+  const type = String(adminAuditTypeFilter?.value || "");
+  const date = String(adminAuditDateFilter?.value || "");
+  const filteredLogs = adminAuditCache.filter((row) => {
+    const haystack = `${actionLabel(row.action)} ${row.admin_email || ""} ${row.target_type || ""} ${row.target_id || ""} ${row.details?.target_email || ""}`.toLowerCase();
+    return (!term || haystack.includes(term))
+      && (!type || row.action === type)
+      && (!date || String(row.created_at || "").slice(0, 10) === date);
+  });
+
+  adminAuditLog.innerHTML = "";
+  if (!filteredLogs.length) {
+    adminAuditLog.innerHTML = "<p class=\"muted\">Aucune action dans ce filtre.</p>";
+    if (adminAuditMoreBtn) hide(adminAuditMoreBtn);
+    return;
+  }
+
+  filteredLogs.slice(0, adminAuditVisibleCount).forEach((row) => {
     const card = document.createElement("article");
     card.className = "admin-audit-item";
     const title = document.createElement("p");
@@ -3122,6 +3381,9 @@ function renderAdminAuditLog(logs = []) {
     }
     adminAuditLog.appendChild(card);
   });
+  if (adminAuditMoreBtn) {
+    adminAuditMoreBtn.classList.toggle("hidden", filteredLogs.length <= adminAuditVisibleCount);
+  }
 }
 
 async function loadAdminAuditLog() {
@@ -3208,7 +3470,13 @@ async function updateMemberStatus(userId, action) {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       if (adminInviteStatusText) {
-        adminInviteStatusText.textContent = `Action impossible (${data.error || res.status}).`;
+        const errors = {
+          access_not_open: "Renvoi impossible : ce profil n'est pas encore autorisé.",
+          access_email_rate_limited: "Un accès vient déjà d'être envoyé. Réessaie dans une minute.",
+          missing_resend_key: "Clé Resend manquante côté Netlify.",
+          access_link_failed: "Le nouveau lien d'accès n'a pas pu être généré.",
+        };
+        adminInviteStatusText.textContent = errors[data.error] || `Action impossible (${data.error || res.status}).`;
       }
       return;
     }
@@ -3217,12 +3485,17 @@ async function updateMemberStatus(userId, action) {
         ? "Accès validé, mais email non envoyé."
         : "Accès validé et email envoyé.";
     }
+    if (adminInviteStatusText && action === "send_access_email") {
+      adminInviteStatusText.textContent = "Nouvel accès envoyé. Le statut du membre est inchangé.";
+    }
     await loadAdminMembers();
     await loadCircleCount();
     await loadAdminAuditLog();
     await loadAdminStatus();
   } catch (_) {
-    // no-op
+    if (adminInviteStatusText) {
+      adminInviteStatusText.textContent = "Erreur réseau : l'action n'a pas pu être confirmée.";
+    }
   }
 }
 
@@ -3266,11 +3539,14 @@ async function createAtelierKey() {
         audience_segment: adminKeySegment?.value || "public",
         member_status: adminKeyStatus?.value || "member",
         max_uses: adminKeyMaxUses?.value || 1,
+        expires_at: adminKeyExpiresAt?.value ? new Date(adminKeyExpiresAt.value).toISOString() : null,
       }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.ok || !data.url) {
-      adminKeyStatusText.textContent = `Cle impossible (${data.error || res.status}).`;
+      adminKeyStatusText.textContent = data.error === "invalid_expiration"
+        ? "Expiration invalide : choisis une date future."
+        : `Cle impossible (${data.error || res.status}).`;
       return;
     }
     try {
@@ -3280,8 +3556,101 @@ async function createAtelierKey() {
       adminKeyStatusText.textContent = `Cle creee : ${data.key} - ${data.url}`;
     }
     if (adminKeyLabel) adminKeyLabel.value = "";
+    if (adminKeyExpiresAt) adminKeyExpiresAt.value = "";
+    if (adminKeyMaxUses) adminKeyMaxUses.value = "1";
+    await loadAdminKeys();
   } catch (_) {
     adminKeyStatusText.textContent = "Erreur reseau.";
+  }
+}
+
+function getAdminKeyStateLabel(state) {
+  return ({
+    active: "active",
+    consumed: "consommée",
+    expired: "expirée",
+    revoked: "révoquée",
+  })[state] || state || "inconnue";
+}
+
+function renderAdminKeys(keys = []) {
+  if (!adminKeyList) return;
+  adminKeyList.innerHTML = "";
+  if (!keys.length) {
+    adminKeyList.innerHTML = "<p class=\"muted\">Aucune clé MOR enregistrée.</p>";
+    return;
+  }
+  keys.forEach((key) => {
+    const row = document.createElement("article");
+    row.className = "admin-member-item";
+    const head = document.createElement("div");
+    head.className = "admin-member-head";
+    const title = document.createElement("p");
+    title.className = "admin-member-email";
+    title.textContent = key.label || "Clé MOR";
+    const badge = document.createElement("span");
+    badge.className = `admin-member-badge is-${key.state === "active" ? "approved" : "archived"}`;
+    badge.textContent = getAdminKeyStateLabel(key.state);
+    head.appendChild(title);
+    head.appendChild(badge);
+
+    const usage = document.createElement("p");
+    usage.className = "admin-key-state";
+    const created = key.created_at ? formatInboxDate(key.created_at) : "inconnue";
+    const expires = key.expires_at ? formatInboxDate(key.expires_at) : "sans expiration";
+    usage.textContent = `Créée : ${created} · Expiration : ${expires} · Usages : ${Number(key.uses_count || 0)}/${Number(key.max_uses || 1)} · Profil : ${normalizeAudienceSegment(key.audience_segment)}`;
+    row.appendChild(head);
+    row.appendChild(usage);
+
+    if (key.usable) {
+      const revoke = document.createElement("button");
+      revoke.type = "button";
+      revoke.className = "ghost";
+      revoke.textContent = "Révoquer";
+      revoke.addEventListener("click", async () => {
+        if (!window.confirm(`Révoquer la clé « ${key.label || "Clé MOR"} » ? Elle ne pourra plus être utilisée.`)) return;
+        revoke.disabled = true;
+        try {
+          const res = await fetch("/.netlify/functions/admin-create-invite-key", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ action: "revoke", keyId: key.id }),
+          });
+          const data = await res.json().catch(() => ({}));
+          adminKeyStatusText.textContent = res.ok ? "Clé révoquée." : `Révocation impossible (${data.error || res.status}).`;
+          await loadAdminKeys();
+          await loadAdminAuditLog();
+        } catch (_) {
+          adminKeyStatusText.textContent = "Erreur réseau pendant la révocation.";
+        } finally {
+          revoke.disabled = false;
+        }
+      });
+      row.appendChild(revoke);
+    }
+    adminKeyList.appendChild(row);
+  });
+}
+
+async function loadAdminKeys() {
+  if (!canManageMembers() || !session?.access_token || !adminKeyList || !adminUnlocked) return;
+  adminKeyList.innerHTML = "<p class=\"muted\">Chargement des clés...</p>";
+  try {
+    const res = await fetch("/.netlify/functions/admin-create-invite-key", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      adminKeyList.innerHTML = `<p class="muted">Impossible de charger les clés (${data.error || res.status}).</p>`;
+      return;
+    }
+    renderAdminKeys(data.keys || []);
+  } catch (_) {
+    adminKeyList.innerHTML = "<p class=\"muted\">Erreur réseau.</p>";
   }
 }
 async function sendAdminInvite(delivery = "email") {
@@ -3585,17 +3954,6 @@ async function hydrateSessionFromUrl() {
   }
 }
 
-async function ensureAtelierAccess() {
-  const sessionResult = await supabase.auth.getSession();
-  if (sessionResult.data.session) {
-    setGateStatus("Tu fais partie du cercle.");
-    return true;
-  }
-
-  setGateStatus("Atelier privé.");
-  return true;
-}
-
 async function loadSessionAndProfile() {
   const sessionResult = await supabase.auth.getSession();
   session = sessionResult.data.session || null;
@@ -3614,13 +3972,41 @@ async function loadSessionAndProfile() {
     if (adminPanel) {
       hide(adminPanel);
     }
-    authStatus.textContent = "Choisis ton entrée, puis garde cette page ouverte si tu attends un code.";
+    setGateStatus(IS_ADMIN_ROUTE ? "Console privée." : "Atelier privé.");
+    authStatus.textContent = IS_ADMIN_ROUTE
+      ? "Connecte-toi avec ton compte MORJANE existant."
+      : "Choisis la situation qui te correspond.";
     return;
   }
 
   profile = await ensureAtelierProfile();
 
-  if (!profile || !isMember(profile.member_status)) {
+  if (redirectToRememberedAdminRoute()) {
+    return;
+  }
+
+  if (IS_ADMIN_ROUTE) {
+    hide(authView);
+    hide(trackView);
+    if (!profile || profile.role !== "admin") {
+      document.body.classList.remove("atelier-member-ready");
+      hide(adminPanel);
+      show(memberView);
+      memberView.querySelector(".section-kicker").textContent = "Console privée";
+      memberView.querySelector("h2").textContent = "Accès administrateur requis";
+      memberMeta.textContent = "Ce compte ne possède pas le rôle administrateur de l’Atelier.";
+      setGateStatus("Accès refusé.");
+      return;
+    }
+
+    hide(memberView);
+    document.body.classList.add("atelier-member-ready");
+    setGateStatus("Console MORJANE.");
+    await loadAdminConsole({ dedicated: true });
+    return;
+  }
+
+  if (!profile || (!isMember(profile.member_status) && profile.role !== "admin")) {
     document.body.classList.remove("atelier-member-ready");
     hide(authView);
     show(memberView);
@@ -3643,6 +4029,7 @@ async function loadSessionAndProfile() {
     return;
   }
 
+  setGateStatus("Tu fais partie du cercle.");
   document.body.classList.add("atelier-member-ready");
   await loadTracks({ preserveTrackView: true });
 }
@@ -3703,30 +4090,128 @@ async function loadTracks(options = {}) {
   }
 
   if (canManageMembers()) {
-    if (adminPanel && !shouldPreserveTrackView) {
-      setAdminPanelCollapsed(true);
-      show(adminPanel);
-    }
-    renderAdminTodayCards();
-    loadInboxLastSeen();
-    adminUnlocked = await checkAdminGate();
-    renderAdminLockState();
-    if (adminUnlocked) {
-      await loadAdminMembers();
-      await loadAdminWeeklyStats();
-      await loadAdminInbox();
-      await loadAdminVotesSummary();
-      await loadAdminTrackCockpit();
-      await loadAdminStatus();
-      await loadAdminAuditLog();
-      await loadAdminLiveListeners();
-      startAdminLiveRefresh();
-    } else {
-      stopAdminLiveRefresh();
-    }
+    await loadAdminConsole({ preservePanelState: shouldPreserveTrackView });
   } else if (adminPanel) {
     stopAdminLiveRefresh();
     hide(adminPanel);
+  }
+}
+
+async function privateAccessRequest(method = "GET", body = null) {
+  if (!session?.access_token || !adminUnlocked) throw new Error("admin_gate_required");
+  const response = await fetch("/api/admin-private-access", { method, headers: { Authorization: `Bearer ${session.access_token}`, ...(body ? { "Content-Type": "application/json" } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "private_access_failed");
+  return data;
+}
+
+function privateAccessDate(value) {
+  if (!value) return "sans expiration";
+  return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+}
+
+function privateAccessButton(label, action) {
+  const button = document.createElement("button"); button.type = "button"; button.className = "ghost"; button.textContent = label; button.addEventListener("click", action); return button;
+}
+
+function renderPrivateAccessAdmin(data) {
+  const credentials = new Map((data.credentials || []).map((item) => [item.scope, item]));
+  document.querySelectorAll("[data-private-password-scope]").forEach((form) => {
+    const credential = credentials.get(form.dataset.privatePasswordScope);
+    const status = form.querySelector("[data-private-status]");
+    status.textContent = !credential ? "Non configuré — fallback Netlify transitoire" : credential.enabled ? "Configuré" : "Désactivé";
+  });
+  if (privateInvitationsList) {
+    privateInvitationsList.replaceChildren();
+    for (const invitation of data.invitations || []) {
+      const expired = invitation.expires_at && Date.parse(invitation.expires_at) <= Date.now();
+      const statusLabel = invitation.status === "revoked" ? "révoquée" : expired ? "expirée" : invitation.status === "activated" ? "activée" : "envoyée";
+      const item = document.createElement("article"); item.className = "private-access-item";
+      const title = document.createElement("p"); title.className = "private-access-item__title"; title.textContent = invitation.email;
+      const meta = document.createElement("p"); meta.className = "private-access-item__meta"; meta.textContent = `${(invitation.scopes || []).map(v => v === "set" ? "SET" : "ACTE I").join(" + ")} · ${statusLabel} · envoyée ${privateAccessDate(invitation.sent_at)} · ${privateAccessDate(invitation.expires_at)}`;
+      const actions = document.createElement("div"); actions.className = "private-access-item__actions";
+      if (invitation.status !== "activated") actions.append(privateAccessButton("Renvoyer", () => runPrivateAccessAction({ action: "resend", id: invitation.id })));
+      if (invitation.status !== "revoked") actions.append(privateAccessButton("Révoquer", () => { if (window.confirm("Révoquer cette invitation et les accès associés ?")) runPrivateAccessAction({ action: "revoke_invitation", id: invitation.id }); }));
+      if (invitation.status !== "revoked") {
+        const expiryInput = document.createElement("input"); expiryInput.type = "datetime-local"; expiryInput.setAttribute("aria-label", `Nouvelle expiration pour ${invitation.email}`);
+        if (invitation.expires_at) { const date = new Date(invitation.expires_at); expiryInput.value = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }
+        actions.append(expiryInput, privateAccessButton("Prolonger", () => runPrivateAccessAction({ action: "extend", id: invitation.id, expires_at: expiryInput.value || null })));
+      }
+      item.append(title, meta, actions); privateInvitationsList.append(item);
+    }
+    if (!privateInvitationsList.children.length) privateInvitationsList.innerHTML = '<p class="muted">Aucune invitation.</p>';
+  }
+  if (privateGrantsList) {
+    privateGrantsList.replaceChildren();
+    const groups = new Map();
+    for (const grant of data.grants || []) { const key = grant.email; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(grant); }
+    for (const [email, grants] of groups) {
+      const item = document.createElement("article"); item.className = "private-access-item";
+      const title = document.createElement("p"); title.className = "private-access-item__title"; title.textContent = `Professionnel · ${email}`;
+      const meta = document.createElement("p"); meta.className = "private-access-item__meta"; meta.textContent = grants.map(g => `${g.scope === "set" ? "SET" : "ACTE I"} · ${privateAccessDate(g.expires_at)} · dernière activation ${privateAccessDate(g.last_session_at || g.activated_at)}`).join(" | ");
+      const actions = document.createElement("div"); actions.className = "private-access-item__actions";
+      for (const grant of grants) actions.append(privateAccessButton(`Révoquer ${grant.scope === "set" ? "SET" : "ACTE I"}`, () => { if (window.confirm("Révoquer immédiatement cet accès ?")) runPrivateAccessAction({ action: "revoke_grant", id: grant.id }); }));
+      item.append(title, meta, actions); privateGrantsList.append(item);
+    }
+    if (!privateGrantsList.children.length) privateGrantsList.innerHTML = '<p class="muted">Aucun accès nominatif actif.</p>';
+  }
+}
+
+async function runPrivateAccessAction(payload) {
+  if (privateAccessAdminStatus) privateAccessAdminStatus.textContent = "Traitement…";
+  try { const data = await privateAccessRequest("POST", payload); renderPrivateAccessAdmin(data); if (privateAccessAdminStatus) privateAccessAdminStatus.textContent = "Action enregistrée."; return true; }
+  catch (error) { if (privateAccessAdminStatus) privateAccessAdminStatus.textContent = error.message === "rate_limited" ? "Action temporairement limitée. Réessaie plus tard." : "Action impossible pour le moment."; return false; }
+}
+
+async function loadPrivateAccessAdmin() {
+  if (!privateInvitationsList || !adminUnlocked) return;
+  try { renderPrivateAccessAdmin(await privateAccessRequest()); } catch { privateInvitationsList.innerHTML = '<p class="muted">Accès privés indisponibles.</p>'; }
+}
+
+document.querySelectorAll("[data-private-password-scope]").forEach((form) => form.addEventListener("submit", async (event) => {
+  event.preventDefault(); const values = new FormData(form);
+  if (await runPrivateAccessAction({ action: "set_password", scope: form.dataset.privatePasswordScope, password: values.get("password"), confirmation: values.get("confirmation") })) form.reset();
+}));
+document.querySelectorAll("[data-private-revoke-shared]").forEach((button) => button.addEventListener("click", () => { if (window.confirm("Révoquer toutes les sessions partagées de cet espace ?")) runPrivateAccessAction({ action: "revoke_shared", scope: button.dataset.privateRevokeShared }); }));
+if (privateProfessionalInviteForm) privateProfessionalInviteForm.addEventListener("submit", async (event) => {
+  event.preventDefault(); const values = new FormData(privateProfessionalInviteForm); const scopes = values.getAll("scopes");
+  if (!scopes.length) { if (privateAccessAdminStatus) privateAccessAdminStatus.textContent = "Choisis au moins un espace."; return; }
+  if (await runPrivateAccessAction({ action: "invite", email: values.get("email"), scopes, expires_at: values.get("expires_at") || null, message: values.get("message") || "" })) privateProfessionalInviteForm.reset();
+});
+
+async function loadAdminData() {
+  await loadAdminMembers();
+  await loadAdminKeys();
+  await loadAdminWeeklyStats();
+  await loadAdminInbox();
+  await loadAdminVotesSummary();
+  await loadAdminTrackCockpit();
+  await loadAdminStatus();
+  await loadPrivateAccessAdmin();
+  await loadAdminAuditLog();
+  await loadAdminLiveListeners();
+  startAdminLiveRefresh();
+}
+
+async function loadAdminConsole({ dedicated = false, preservePanelState = false } = {}) {
+  if (!canManageMembers() || !adminPanel) {
+    return;
+  }
+  const isFirstAdminPanelReveal = adminPanel.classList.contains("hidden");
+  show(adminPanel);
+  if (dedicated) {
+    setAdminPanelCollapsed(false);
+  } else if (!preservePanelState && isFirstAdminPanelReveal) {
+    setAdminPanelCollapsed(true);
+  }
+  renderAdminTodayCards();
+  loadInboxLastSeen();
+  adminUnlocked = await checkAdminGate();
+  renderAdminLockState();
+  if (adminUnlocked) {
+    await loadAdminData();
+  } else {
+    stopAdminLiveRefresh();
   }
 }
 
@@ -4200,10 +4685,11 @@ async function validateAtelierKey() {
     }
     atelierKeyClaimToken = data.claimToken;
     atelierKeyReady = true;
+    removeKeyFromCurrentUrl();
     if (atelierKeyStatus) {
       atelierKeyStatus.textContent = "Cle reconnue. Entre ton email pour recevoir ton lien personnel.";
     }
-    setAuthEntryMode("key", { focusEmail: true });
+    setAuthEntryMode("invitation", { focusEmail: true });
   } catch (_) {
     if (atelierKeyStatus) atelierKeyStatus.textContent = "Connexion instable. Reessaie dans un instant.";
   }
@@ -4339,7 +4825,13 @@ magicLinkForm.addEventListener("submit", async (event) => {
     authStatus.textContent = "Email requis.";
     return;
   }
+  if (!IS_ADMIN_ROUTE && !adultConfirmation?.checked) {
+    authStatus.textContent = "L’Atelier est réservé aux personnes de 18 ans ou plus.";
+    adultConfirmation?.focus();
+    return;
+  }
   const entryContext = getCurrentEntryContext();
+  rememberAdminReturn();
 
   let response = null;
   let data = {};
@@ -4351,7 +4843,9 @@ magicLinkForm.addEventListener("submit", async (event) => {
         email,
         entry: entryContext,
         redirectTo: getAtelierEmailRedirectUrl(),
-        keyToken: authEntryMode === "key" ? atelierKeyClaimToken : "",
+        mode: authEntryMode,
+        keyToken: authEntryMode === "invitation" ? atelierKeyClaimToken : "",
+        adultConfirmed: IS_ADMIN_ROUTE ? true : Boolean(adultConfirmation?.checked),
       }),
     });
     data = await response.json().catch(() => ({}));
@@ -4373,15 +4867,17 @@ magicLinkForm.addEventListener("submit", async (event) => {
   }
 
   authStatus.textContent = getAuthModeCopy(authEntryMode).status;
-  revealOtpCodeForm({ focus: true, showMobileHelp: true });
+  if (authEntryMode !== "request") {
+    show(showOtpCodeBtn);
+  }
   startMagicLinkCooldown(60);
 });
 
 authModeButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const mode = button.dataset.authMode;
-    setAuthEntryMode(mode, { focusEmail: mode !== "key" });
-    if (mode === "key") {
+    setAuthEntryMode(mode, { focusEmail: mode !== "invitation" });
+    if (mode === "invitation") {
       atelierKeyInput?.focus();
     }
   });
@@ -4396,7 +4892,6 @@ if (atelierKeyForm) {
 
 if (showOtpCodeBtn) {
   showOtpCodeBtn.addEventListener("click", () => {
-    setAuthEntryMode("access");
     revealOtpCodeForm({ focus: true, showMobileHelp: true });
   });
 }
@@ -4427,11 +4922,26 @@ if (adminPanelToggle && adminPanel) {
   });
 }
 
-logoutBtn.addEventListener("click", async () => {
+async function logoutAtelier() {
   await sendPresenceHeartbeat(false);
   stopPresenceHeartbeat();
   stopAdminLiveRefresh();
+  await fetch("/api/atelier-logout", {
+    method: "POST",
+    credentials: "same-origin",
+  }).catch(() => null);
   await supabase.auth.signOut();
+  try {
+    localStorage.removeItem(ADMIN_DENSITY_STORAGE_KEY);
+    localStorage.removeItem(ATELIER_LAST_VISIT_STORAGE_KEY);
+    localStorage.removeItem(ATELIER_SEEN_MOVEMENTS_STORAGE_KEY);
+    localStorage.removeItem(ATELIER_ENTRY_CONTEXT_STORAGE_KEY);
+    Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
+      .filter((key) => key && key.startsWith("atelier_inbox_last_seen_"))
+      .forEach((key) => localStorage.removeItem(key));
+  } catch (_) {
+    // Storage can be unavailable in hardened/private browser modes.
+  }
   session = null;
   profile = null;
   selectedTrack = null;
@@ -4441,7 +4951,12 @@ logoutBtn.addEventListener("click", async () => {
   player.removeAttribute("src");
   player.load();
   await loadSessionAndProfile();
-});
+}
+
+logoutBtn.addEventListener("click", logoutAtelier);
+if (adminLogoutBtn) {
+  adminLogoutBtn.addEventListener("click", logoutAtelier);
+}
 
 backBtn.addEventListener("click", () => {
   sendPresenceHeartbeat(false);
@@ -4454,7 +4969,6 @@ backBtn.addEventListener("click", () => {
   hide(trackView);
   show(memberView);
   if (canManageMembers() && adminPanel) {
-    setAdminPanelCollapsed(true);
     show(adminPanel);
   }
 });
@@ -4503,24 +5017,63 @@ if (player) {
   });
 }
 
-if (tabPendingBtn && tabMembersBtn) {
+if (tabPendingBtn && tabMembersBtn && tabHistoryBtn) {
   tabPendingBtn.addEventListener("click", () => {
     adminViewMode = "pending";
+    adminMemberPage = 1;
     tabPendingBtn.classList.add("is-active");
     tabMembersBtn.classList.remove("is-active");
-    renderAdminMembers();
+    tabHistoryBtn.classList.remove("is-active");
+    loadAdminMembers();
   });
   tabMembersBtn.addEventListener("click", () => {
     adminViewMode = "members";
+    adminMemberPage = 1;
     tabMembersBtn.classList.add("is-active");
     tabPendingBtn.classList.remove("is-active");
-    renderAdminMembers();
+    tabHistoryBtn.classList.remove("is-active");
+    loadAdminMembers();
+  });
+  tabHistoryBtn.addEventListener("click", () => {
+    adminViewMode = "history";
+    adminMemberPage = 1;
+    tabHistoryBtn.classList.add("is-active");
+    tabPendingBtn.classList.remove("is-active");
+    tabMembersBtn.classList.remove("is-active");
+    loadAdminMembers();
   });
 }
 
 if (adminSearchInput) {
   adminSearchInput.addEventListener("input", () => {
-    renderAdminMembers();
+    clearTimeout(adminMemberSearchTimer);
+    adminMemberSearchTimer = setTimeout(() => {
+      adminMemberPage = 1;
+      loadAdminMembers();
+    }, 300);
+  });
+}
+
+if (adminMemberSegmentFilter) {
+  adminMemberSegmentFilter.addEventListener("change", () => {
+    adminMemberPage = 1;
+    loadAdminMembers();
+  });
+}
+
+if (adminMembersPrevBtn) {
+  adminMembersPrevBtn.addEventListener("click", () => {
+    if (adminMemberPage <= 1) return;
+    adminMemberPage -= 1;
+    loadAdminMembers();
+  });
+}
+
+if (adminMembersNextBtn) {
+  adminMembersNextBtn.addEventListener("click", () => {
+    if (adminMemberPage >= adminMemberTotalPages) return;
+    adminMemberPage += 1;
+    loadAdminMembers();
   });
 }
 
@@ -4542,6 +5095,10 @@ if (adminKeyForm) {
     event.preventDefault();
     await createAtelierKey();
   });
+}
+
+if (adminRefreshKeysBtn) {
+  adminRefreshKeysBtn.addEventListener("click", loadAdminKeys);
 }
 
 if (adminTrackCreateForm) {
@@ -4672,6 +5229,31 @@ if (toggleUnreadOnlyBtn) {
   });
 }
 
+if (adminTodayCards) {
+  adminTodayCards.addEventListener("click", (event) => {
+    const target = event.target.closest("[data-admin-jump]");
+    if (!target) return;
+    const section = target.dataset.adminJump || "requests";
+    showAdminSection(section);
+    document.querySelector(`[data-admin-panel-section="${section}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+[adminAuditSearch, adminAuditTypeFilter, adminAuditDateFilter].forEach((control) => {
+  if (!control) return;
+  control.addEventListener(control.tagName === "INPUT" && control.type === "search" ? "input" : "change", () => {
+    adminAuditVisibleCount = 25;
+    renderAdminAuditLog();
+  });
+});
+
+if (adminAuditMoreBtn) {
+  adminAuditMoreBtn.addEventListener("click", () => {
+    adminAuditVisibleCount += 25;
+    renderAdminAuditLog();
+  });
+}
+
 document.querySelectorAll("[data-admin-section]").forEach((button) => {
   button.addEventListener("click", () => {
     showAdminSection(button.dataset.adminSection || "requests");
@@ -4705,15 +5287,7 @@ if (adminUnlockForm) {
     if (adminUnlockStatus) adminUnlockStatus.textContent = "Admin déverrouillé.";
     if (adminPinInput) adminPinInput.value = "";
     renderAdminLockState();
-    await loadAdminMembers();
-    await loadAdminWeeklyStats();
-    await loadAdminInbox();
-    await loadAdminVotesSummary();
-    await loadAdminTrackCockpit();
-    await loadAdminStatus();
-    await loadAdminAuditLog();
-    await loadAdminLiveListeners();
-    startAdminLiveRefresh();
+    await loadAdminData();
   });
 }
 
@@ -4729,17 +5303,25 @@ if (traceRevealBtn && messageForm) {
   });
 }
 
-document.querySelectorAll("[data-support-context]").forEach((link) => {
-  link.addEventListener("click", () => {
-    if (typeof window.gtag === "function") {
-      window.gtag("event", "support_click", {
-        context: link.dataset.supportContext || "unknown",
-      });
-    }
-  });
-});
+function configureAdminRoutePresentation() {
+  if (!IS_ADMIN_ROUTE) {
+    return;
+  }
+  document.title = "Console privée — MORJANE";
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) {
+    canonical.href = "https://morjane.re/atelier/admin/";
+  }
+  const pageTitle = document.querySelector(".atelier-header h1");
+  const authTitle = authView?.querySelector("h2");
+  const authIntro = authView?.querySelector(".auth-intro");
+  if (pageTitle) pageTitle.textContent = "Console MORJANE";
+  if (authTitle) authTitle.textContent = "Connexion administrateur";
+  if (authIntro) authIntro.textContent = "Connecte-toi avec ton compte Supabase existant, puis saisis ton code admin personnel.";
+}
 
 async function boot() {
+  configureAdminRoutePresentation();
   initAdminDensityMode();
   initScrollReveals();
   getCurrentEntryContext();
@@ -4754,11 +5336,6 @@ async function boot() {
   const { supabaseUrl, supabaseAnonKey } = await fetchPublicConfig();
   supabase = createClient(supabaseUrl, supabaseAnonKey);
   await hydrateSessionFromUrl();
-
-  const canEnter = await ensureAtelierAccess();
-  if (!canEnter) {
-    return;
-  }
 
   await loadSessionAndProfile();
   supabase.auth.onAuthStateChange(async () => {

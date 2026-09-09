@@ -21,10 +21,8 @@
   <meta name="twitter:title" content="L'Atelier - Morjane">
   <meta name="twitter:description" content="Cercle privé: versions ouvertes, écoute anticipée et retours confidentiels.">
   <meta name="twitter:image" content="https://morjane.re/assets/images/atelier/atelier-bg-fissure.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@300;400;500&family=Cormorant+Garamond:ital@1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="/assets/fonts/fonts.css">
+  <link rel="stylesheet" href="/atelier/styles.css">
 </head>
 <body>
   <main class="atelier-wrap atelier-shell">
@@ -54,31 +52,39 @@
     <section id="authView" class="panel auth-panel hidden ritual-reveal" data-ritual>
       <p class="section-kicker">Entrée privée</p>
       <h2>Entrer dans l'Atelier</h2>
-      <p class="auth-intro">L'Atelier est prive. Tu peux entrer avec une cle, ou recevoir un lien par mail si ton acces existe deja.</p>
+      <p class="auth-intro">L'Atelier est privé. Choisis simplement la situation qui te correspond.</p>
       <div class="auth-choice" role="group" aria-label="Choisir un mode d'entrée">
-        <button type="button" class="auth-choice__card is-active" data-auth-mode="key" aria-pressed="true">
-          <span>Entrer avec une cle</span>
-          <small>Pour une invitation recue en vrai, en QR ou en message.</small>
+        <button type="button" class="auth-choice__card" data-auth-mode="invitation" aria-pressed="false">
+          <span>J'ai une invitation</span>
+          <small>Utilise la clé MOR transmise par Morjane.</small>
         </button>
-        <button type="button" class="auth-choice__card" data-auth-mode="access" aria-pressed="false">
-          <span>Recevoir un lien par mail</span>
-          <small>Deja membre, demande classique ou retour dans le cercle.</small>
+        <button type="button" class="auth-choice__card is-active" data-auth-mode="request" aria-pressed="true">
+          <span>Demander à rejoindre le Cercle</span>
+          <small>Ta demande sera examinée avant tout accès.</small>
+        </button>
+        <button type="button" class="auth-choice__card auth-choice__card--secondary" data-auth-mode="recovery" aria-pressed="false">
+          <span>Déjà membre ? Retrouver mon accès</span>
+          <small>Reçois un nouveau lien sur ton appareil.</small>
         </button>
       </div>
-      <form id="atelierKeyForm" class="atelier-key-form stack">
+      <form id="atelierKeyForm" class="atelier-key-form stack hidden">
         <label class="sr-only" for="atelierKeyInput">Cle Atelier</label>
         <input id="atelierKeyInput" type="text" inputmode="text" autocomplete="one-time-code" placeholder="MOR-XXXX-XXXX-XXXX">
         <button id="atelierKeySubmitBtn" type="submit">Valider la cle</button>
       </form>
       <p id="atelierKeyStatus" class="auth-key-status muted"></p>
       <p id="authDoorNote" class="auth-door-note muted hidden"></p>
-      <p id="authModeHint" class="auth-mode-hint muted">Entre ta cle. Si elle est reconnue, tu pourras rattacher ton email au cercle.</p>
-      <form id="magicLinkForm" class="stack hidden">
+      <p id="authModeHint" class="auth-mode-hint muted">Laisse ton email. Ta demande restera en attente jusqu'à la décision de Morjane.</p>
+      <form id="magicLinkForm" class="stack">
         <label id="authEmailLabel" class="sr-only" for="emailInput">Email</label>
         <input id="emailInput" type="email" placeholder="vous@email.com" autocomplete="email" required>
-        <button type="submit">Recevoir un lien par mail</button>
+        <label class="atelier-age-confirmation" for="adultConfirmation">
+          <input id="adultConfirmation" type="checkbox" required>
+          <span>Je confirme avoir 18 ans ou plus.</span>
+        </label>
+        <button type="submit">Envoyer ma demande</button>
       </form>
-      <button id="showOtpCodeBtn" type="button" class="auth-code-toggle">J'ai un code</button>
+      <button id="showOtpCodeBtn" type="button" class="auth-code-toggle hidden">Le lien ne fonctionne pas ? J'ai un code</button>
       <p id="authMobileHelp" class="auth-mobile-help muted hidden">Garde cette page ouverte. Si le mail s'ouvre dans une autre fenêtre, reviens ici et copie le code reçu.</p>
       <form id="otpCodeForm" class="otp-code-form hidden" aria-label="Connexion avec le code reçu par email">
         <label for="otpCodeInput">Code reçu par email</label>
@@ -90,7 +96,8 @@
       </form>
       <p id="authStatus" class="muted"></p>
       <p class="auth-help muted">Sur téléphone : garde cette page ouverte, ouvre le mail, puis reviens ici si tu dois coller le code.</p>
-      <p class="auth-help muted">Rien reçu ? Écris à <a href="mailto:booking@morjane.re">booking@morjane.re</a>.</p>
+      <p class="auth-help muted">Rien reçu ? Écris à <a href="mailto:morjane.muzik@gmail.com">morjane.muzik@gmail.com</a>.</p>
+      <p class="auth-help muted">L’accès et les retours sont traités selon notre <a href="/confidentialite">politique de confidentialité</a>.</p>
     </section>
     <section id="memberView" class="panel hidden ritual-reveal" data-ritual>
       <div class="member-top">
@@ -117,7 +124,10 @@
           <p class="section-kicker">Console privée</p>
           <h3>Administration du cercle</h3>
         </div>
-        <button id="adminPanelToggle" type="button" class="ghost admin-panel-toggle" aria-expanded="false">Ouvrir la console</button>
+        <div class="admin-panel__actions">
+          <button id="adminPanelToggle" type="button" class="ghost admin-panel-toggle" aria-expanded="false">Ouvrir la console</button>
+          <button id="adminLogoutBtn" type="button" class="ghost admin-route-only">Se déconnecter</button>
+        </div>
       </div>
       <form id="adminUnlockForm" class="stack">
         <label for="adminPinInput">Code admin personnel</label>
@@ -147,18 +157,20 @@
         </article>
       </div>
 
-      <div class="admin-tools">
-        <button type="button" id="copyAtelierLinkBtn" class="ghost">Copier le lien Atelier</button>
-        <button type="button" id="copyMorjanePhoneLinkBtn" class="ghost">Lien Morjane téléphone</button>
-        <button type="button" id="adminDensityToggle" class="ghost" aria-pressed="false">Mode compact : off</button>
-        <input id="adminSearchInput" type="search" placeholder="Rechercher un email">
-      </div>
+      <details class="admin-utility-drawer">
+        <summary>Outils de la console</summary>
+        <div class="admin-tools">
+          <button type="button" id="copyAtelierLinkBtn" class="ghost">Copier le lien Atelier</button>
+          <button type="button" id="copyMorjanePhoneLinkBtn" class="ghost">Lien Morjane téléphone</button>
+          <button type="button" id="adminDensityToggle" class="ghost" aria-pressed="false">Mode compact : off</button>
+        </div>
       <details class="admin-entry-doors">
         <summary>Liens et QR</summary>
         <p class="muted">Ces liens ne donnent pas accès aux chansons. Ils qualifient seulement l'entrée avant validation.</p>
         <div id="adminEntryLinks" class="admin-entry-links"></div>
         <form id="adminKeyForm" class="admin-key-form">
           <h3>Creer une cle</h3>
+          <p class="muted">Clé MOR : tu transmets une clé ou un lien ; la personne rattache ensuite elle-même son email.</p>
           <div class="admin-invite-grid">
             <input id="adminKeyLabel" type="text" placeholder="Nom de la cle">
             <select id="adminKeySegment" aria-label="Profil de cle">
@@ -172,10 +184,19 @@
               <option value="priority">Prioritaire</option>
             </select>
             <input id="adminKeyMaxUses" type="number" min="1" max="50" value="1" aria-label="Nombre d'utilisations">
+            <input id="adminKeyExpiresAt" type="datetime-local" aria-label="Expiration facultative de la clé">
             <button type="submit" class="ghost">Creer + copier</button>
           </div>
           <p id="adminKeyStatusText" class="muted"></p>
         </form>
+        <div class="admin-key-management">
+          <div class="admin-member-head">
+            <h3>Clés MOR</h3>
+            <button type="button" id="adminRefreshKeysBtn" class="ghost">Actualiser</button>
+          </div>
+          <div id="adminKeyList" class="admin-members-list"><p class="muted">Chargement des clés...</p></div>
+        </div>
+      </details>
       </details>
       <nav class="admin-main-tabs" aria-label="Navigation admin">
         <button type="button" class="admin-main-tab is-active" data-admin-section="requests">Demandes</button>
@@ -185,13 +206,33 @@
         <button type="button" class="admin-main-tab" data-admin-section="decisions">Decisions</button>
         <button type="button" class="admin-main-tab" data-admin-section="system">Systeme</button>
       </nav>
-      <div class="admin-tabs">
-        <button type="button" id="tabPendingBtn" class="admin-tab is-active">File d'attente</button>
-        <button type="button" id="tabMembersBtn" class="admin-tab">Cercle actif</button>
-      </div>
       <section class="admin-section" data-admin-panel-section="requests">
+      <div class="admin-section-heading">
+        <div>
+          <p class="section-kicker">Accès au Cercle</p>
+          <h3>Demandes et membres</h3>
+        </div>
+      </div>
+      <div class="admin-tabs" aria-label="Vues des demandes et membres">
+        <button type="button" id="tabPendingBtn" class="admin-tab is-active">À décider</button>
+        <button type="button" id="tabMembersBtn" class="admin-tab">Cercle actif</button>
+        <button type="button" id="tabHistoryBtn" class="admin-tab">Refusés / archivés</button>
+      </div>
+      <div class="admin-tools admin-member-filters">
+        <input id="adminSearchInput" type="search" placeholder="Rechercher un email">
+        <select id="adminMemberSegmentFilter" aria-label="Filtrer les membres par segment">
+          <option value="">Tous les profils</option>
+          <option value="public">Public</option>
+          <option value="proche">Proche</option>
+          <option value="artiste">Artiste</option>
+          <option value="pro">Pro</option>
+        </select>
+      </div>
+      <details class="admin-context-tools">
+      <summary>Inviter quelqu'un</summary>
       <form id="adminInviteForm" class="admin-invite-form">
         <h3>Inviter quelqu'un</h3>
+        <p class="muted">Invitation nominative : tu connais déjà son email ; la personne reçoit directement un accès préapprouvé.</p>
         <div class="admin-invite-grid">
           <input id="adminInviteEmail" type="email" placeholder="email@exemple.com" autocomplete="email">
           <select id="adminInviteSegment" aria-label="Profil d'écoute">
@@ -210,12 +251,23 @@
         <textarea id="adminInviteNote" rows="2" placeholder="Note interne facultative"></textarea>
         <p id="adminInviteStatusText" class="muted"></p>
       </form>
+      </details>
       <div id="adminMembersSummary" class="admin-member-summary"></div>
       <div id="adminMembersList" class="admin-members-list"></div>
+      <nav class="admin-pagination" aria-label="Pagination des profils">
+        <button type="button" id="adminMembersPrevBtn" class="ghost">Précédent</button>
+        <span id="adminMembersPageInfo" class="muted">Page 1</span>
+        <button type="button" id="adminMembersNextBtn" class="ghost">Suivant</button>
+      </nav>
       </section>
 
       <section class="admin-section hidden" data-admin-panel-section="members">
-      <h3>Membres et live</h3>
+      <div class="admin-section-heading">
+        <div>
+          <p class="section-kicker">Activité du Cercle</p>
+          <h3>Membres et live</h3>
+        </div>
+      </div>
       <div id="adminWeeklyStats" class="admin-weekly-stats">
         <p class="muted">Chargement des indicateurs...</p>
       </div>
@@ -227,7 +279,12 @@
 
       </section>
       <section class="admin-section hidden" data-admin-panel-section="messages">
-      <h3>Messages reçus</h3>
+      <div class="admin-section-heading">
+        <div>
+          <p class="section-kicker">Retours du Cercle</p>
+          <h3>Messages reçus</h3>
+        </div>
+      </div>
       <div class="admin-tools">
         <button type="button" id="refreshInboxBtn" class="ghost">Actualiser les messages</button>
         <button type="button" id="markInboxReadBtn" class="ghost">Tout marquer lu</button>
@@ -246,14 +303,26 @@
         </select>
       </div>
       <p id="adminInboxUnread" class="muted"></p>
+      <div id="adminInboxStatusFilters" class="admin-inbox-status-filters" aria-label="Filtrer les messages par statut"></div>
       <div id="adminInboxList" class="admin-inbox-list"></div>
 
       </section>
       <section class="admin-section hidden" data-admin-panel-section="tracks">
+      <div class="admin-section-heading">
+        <div>
+          <p class="section-kicker">Cockpit artistique</p>
+          <h3>Morceaux</h3>
+        </div>
+      </div>
+      <div id="adminTrackCockpit" class="admin-track-cockpit">
+        <p class="muted">Chargement des accès...</p>
+      </div>
       <h3>Votes agrégés</h3>
       <div id="adminVotesSummary" class="admin-votes-summary">
         <p class="muted">Chargement des votes...</p>
       </div>
+      <details class="admin-track-utilities">
+      <summary>Prévisualisation, annonces et ajout</summary>
       <h3>Accès par morceau</h3>
       <div class="admin-preview-box">
         <div>
@@ -297,26 +366,54 @@
         </div>
         <p id="adminTrackCreateStatus" class="muted"></p>
       </form>
-      <div id="adminTrackCockpit" class="admin-track-cockpit">
-        <p class="muted">Chargement des accès...</p>
-      </div>
+      </details>
 
       </section>
       <section class="admin-section hidden" data-admin-panel-section="decisions">
-      <h3>Top signaux</h3>
-      <button type="button" id="exportSignalCsvBtn" class="ghost">Exporter les signaux CSV</button>
+      <div class="admin-section-heading admin-section-heading--split">
+        <div>
+          <p class="section-kicker">Observatoire du Cercle</p>
+          <h3>Décisions / Signaux</h3>
+          <p class="muted">Ce que les retours répétés font émerger pour chaque morceau.</p>
+        </div>
+        <button type="button" id="exportSignalCsvBtn" class="ghost">Exporter les signaux CSV</button>
+      </div>
       <div id="adminSignalBoard" class="admin-signal-board"><p class="muted">Chargement des signaux...</p></div>
       </section>
       <section class="admin-section hidden" data-admin-panel-section="system">
-      <h3>Systeme</h3>
+      <div class="admin-section-heading">
+        <div>
+          <p class="section-kicker">État technique</p>
+          <h3>Système</h3>
+        </div>
+      </div>
+      <section class="private-access-admin" aria-labelledby="privateAccessAdminTitle">
+        <div class="admin-section-heading"><div><p class="section-kicker">Accès privés</p><h3 id="privateAccessAdminTitle">SET &amp; ACTE I</h3><p class="muted">Accès partagé ou invitation professionnelle nominative. Aucun accès Atelier n'est accordé ici.</p></div></div>
+        <div class="private-access-shared-grid">
+          <form class="private-access-shared" data-private-password-scope="set"><h4>SET</h4><p class="muted" data-private-status>Chargement…</p><label>Nouveau mot de passe<input name="password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required></label><label>Confirmation<input name="confirmation" type="password" minlength="12" maxlength="128" autocomplete="new-password" required></label><div class="private-access-actions"><button type="submit">Changer le mot de passe</button><button type="button" class="ghost" data-private-revoke-shared="set">Révoquer toutes les sessions</button></div></form>
+          <form class="private-access-shared" data-private-password-scope="acte1"><h4>ACTE I</h4><p class="muted" data-private-status>Chargement…</p><label>Nouveau mot de passe<input name="password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required></label><label>Confirmation<input name="confirmation" type="password" minlength="12" maxlength="128" autocomplete="new-password" required></label><div class="private-access-actions"><button type="submit">Changer le mot de passe</button><button type="button" class="ghost" data-private-revoke-shared="acte1">Révoquer toutes les sessions</button></div></form>
+        </div>
+        <form id="privateProfessionalInviteForm" class="private-professional-invite"><h4>Inviter un professionnel</h4><div class="private-professional-grid"><label>E-mail<input name="email" type="email" autocomplete="email" required></label><fieldset><legend>Accès</legend><label><input name="scopes" type="checkbox" value="set"> SET</label><label><input name="scopes" type="checkbox" value="acte1"> ACTE I</label></fieldset><label>Expiration facultative<input name="expires_at" type="datetime-local"></label></div><label>Message personnel facultatif<textarea name="message" maxlength="500" rows="3" placeholder="Texte court ajouté à l'e-mail, sans mise en forme HTML."></textarea></label><button type="submit">Envoyer l'invitation</button><p id="privateAccessAdminStatus" class="muted" role="status" aria-live="polite"></p></form>
+        <div class="private-access-lists"><section><h4>Invitations</h4><div id="privateInvitationsList" class="private-access-list"><p class="muted">Chargement…</p></div></section><section><h4>Accès actifs</h4><div id="privateGrantsList" class="private-access-list"><p class="muted">Chargement…</p></div></section></div>
+      </section>
       <div id="adminStatusPanel" class="admin-status-panel">
         <p class="muted">Chargement du statut...</p>
       </div>
 
-      <h3>Journal admin</h3>
-      <div id="adminAuditLog" class="admin-audit-log">
-        <p class="muted">Chargement du journal...</p>
-      </div>
+      <details class="admin-system-details">
+        <summary>Journal admin et diagnostic</summary>
+        <div class="admin-tools admin-audit-filters">
+          <input id="adminAuditSearch" type="search" placeholder="Rechercher dans le journal">
+          <select id="adminAuditTypeFilter" aria-label="Filtrer le journal par type">
+            <option value="">Tous les types</option>
+          </select>
+          <input id="adminAuditDateFilter" type="date" aria-label="Filtrer le journal par date">
+        </div>
+        <div id="adminAuditLog" class="admin-audit-log">
+          <p class="muted">Chargement du journal...</p>
+        </div>
+        <button type="button" id="adminAuditMoreBtn" class="ghost hidden">Afficher davantage</button>
+      </details>
       </section>
       </div>
     </section>
@@ -399,10 +496,11 @@
       </div>
       <p class="atelier-copyright">© Morjane</p>
       <p class="atelier-credit">Créé avec <a href="https://horscadrestudio.re" target="_blank" rel="noopener noreferrer">Hors Cadre Studio</a></p>
-      <p class="atelier-credit"><a href="/">Site principal</a> · <a href="/confidentialite.html">Confidentialité</a> · <a href="/cookies.html">Cookies</a></p>
+      <p class="atelier-credit"><a href="/">Site principal</a> · <a href="/mentions-legales/">Mentions légales</a> · <a href="/confidentialite">Confidentialité</a> · <a href="/cookies">Cookies</a></p>
     </footer>
   </main>
 
-  <script type="module" src="./app.js"></script>
+  <script src="/assets/vendor/supabase-js-2.98.0.js"></script>
+  <script type="module" src="/atelier/app.js"></script>
 </body>
 </html>

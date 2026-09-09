@@ -90,6 +90,7 @@ exports.handler = async (event) => {
   const update = {
     id: user.id,
     email: current.email || user.email || null,
+    last_activity_at: new Date().toISOString(),
   };
 
   if (!hasKnownOrigin && !current.source) {

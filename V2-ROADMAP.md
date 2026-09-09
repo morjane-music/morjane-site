@@ -18,7 +18,7 @@ Why this choice:
 
 ## 3) Information architecture
 - `/` Home (story + latest track + social proof).
-- `/epk` Pro page for bookers/media.
+- `/epk` page HTML publique pour les professionnels et médias, complétée par `/assets/epk/Morjane-EPK.pdf`.
 - `/music` Releases + streaming links.
 - `/live` Videos + dates/events.
 - `/contact` Booking form + direct email.

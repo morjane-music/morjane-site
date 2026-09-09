@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accès au set — MORJANE</title>
+  <meta name="description" content="Accès réservé au set professionnel de MORJANE.">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#080807">
+  <link rel="canonical" href="https://morjane.re/set-access">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/assets/fonts/fonts.css">
+  <link rel="stylesheet" href="/content.css">
+</head>
+<body class="content-page access-page">
+  <header class="content-header content-shell"><a class="content-brand" href="/">MORJANE</a></header>
+  <main class="content-main content-shell access-main">
+    <section class="content-card access-card" aria-labelledby="access-title">
+      <p class="content-kicker">Espace professionnel</p>
+      <h1 id="access-title">Accéder au set</h1>
+      <p>Cette page est réservée aux personnes disposant du mot de passe transmis par MORJANE.</p>
+      <p class="access-message" id="access-message" role="status" aria-live="polite"></p>
+      <form class="access-form" action="/api/set-auth" method="post">
+        <label for="set-password">Mot de passe</label>
+        <input id="set-password" name="password" type="password" autocomplete="current-password" maxlength="512" required>
+        <button type="submit">Entrer</button>
+      </form>
+      <form class="access-form professional-access-form" data-private-access-scope="set">
+        <p class="content-kicker">Accès professionnel nominatif</p>
+        <label for="set-professional-email">E-mail invité</label>
+        <input id="set-professional-email" name="email" type="email" autocomplete="email" required>
+        <button type="submit">Recevoir mon lien personnel</button>
+        <p class="professional-access-status" role="status" aria-live="polite"></p>
+      </form>
+      <p class="access-back"><a href="/">← Retour au site officiel</a></p>
+    </section>
+  </main>
+  <script src="/set-access.js" defer></script>
+</body>
+</html>

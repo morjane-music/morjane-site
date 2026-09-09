@@ -12,6 +12,14 @@ function normalizeAudienceSegment(value) {
   return LEGACY_SEGMENTS[raw] || raw || "public";
 }
 
+function normalizeAccessMode(value) {
+  return ["request", "recovery", "invitation"].includes(value) ? value : "request";
+}
+
+function canRecoverProfile(profile) {
+  return Boolean(profile && (profile.role === "admin" || OPEN_MEMBER_STATUSES.has(String(profile.member_status || ""))));
+}
+
 function normalizeList(value) {
   return Array.isArray(value) ? value.map((item) => String(item || "").trim()).filter(Boolean) : [];
 }
@@ -50,6 +58,9 @@ function canAccessTrack(profile, track) {
   if (role !== "admin" && !OPEN_MEMBER_STATUSES.has(status)) {
     return false;
   }
+  if (role === "admin") {
+    return true;
+  }
   const allowedStatuses = normalizeList(track.allowed_member_statuses);
   if (allowedStatuses.length && !allowedStatuses.includes(status)) {
     return false;
@@ -66,8 +77,10 @@ function canAccessTrack(profile, track) {
 
 module.exports = {
   OPEN_MEMBER_STATUSES,
+  canRecoverProfile,
   canAccessReservedSeason,
   canAccessTrack,
+  normalizeAccessMode,
   normalizeAudienceSegment,
   normalizeSeasonSlug,
 };

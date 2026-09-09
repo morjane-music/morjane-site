@@ -1168,3 +1168,984 @@
     font-size: 12px;
   }
 }
+
+/* Compléments éditoriaux — mêmes tokens et proportions que l’EPK d’origine. */
+.epk-page .epk-press-list,
+.epk-page .epk-official-links {
+  max-width: 980px;
+  margin-right: auto;
+  margin-left: auto;
+  text-align: center;
+}
+
+.epk-page .epk-source-list {
+  max-width: 760px;
+  margin: 48px auto 32px;
+  border-top: 1px solid rgba(201,152,82,0.18);
+}
+
+.epk-page .epk-source-list a {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(0, 1.3fr);
+  gap: 24px;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(201,152,82,0.18);
+  text-align: left;
+}
+
+.epk-page .epk-source-list span {
+  color: rgba(194,182,166,0.68);
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.epk-page .epk-source-list strong {
+  color: rgba(236,224,200,0.9);
+  font-family: Montserrat, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.epk-page .epk-all-press,
+.epk-page .epk-official-links a {
+  display: inline-flex;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(201,152,82,0.34);
+  font-family: Montserrat, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.epk-page .epk-official-links > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px 28px;
+  margin-top: 40px;
+}
+
+.epk-page a:focus-visible,
+.epk-page button:focus-visible {
+  outline: 2px solid rgba(232,223,211,0.95);
+  outline-offset: 5px;
+}
+
+@media (max-width: 768px) {
+  .epk-page .epk-source-list a {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    text-align: center;
+  }
+}
+
+/* Densité et lisibilité professionnelle, sans modifier la composition d’origine. */
+.epk-page .epk-intro {
+  min-height: 62vh;
+}
+
+.epk-page .epk-bio {
+  min-height: auto;
+  padding-top: 88px;
+  padding-bottom: 88px;
+}
+
+.epk-page .epk-infos {
+  padding: 96px 40px;
+  gap: 36px;
+}
+
+.epk-page .epk-music {
+  padding-top: 104px;
+  padding-bottom: 104px;
+}
+
+.epk-page .epk-section-title {
+  font-size: clamp(28px, 4vw, 38px);
+  line-height: 1.12;
+}
+
+.epk-page .epk-track-item {
+  min-height: 204px;
+}
+
+.epk-page .epk-track-item span,
+.epk-page .epk-track-links a,
+.epk-page .epk-official-links a {
+  font-size: 11px;
+}
+
+.epk-page .epk-track-item p,
+.epk-page .epk-source-list span {
+  font-size: 14px;
+}
+
+.epk-page .epk-source-list strong {
+  font-size: 16px;
+}
+
+.epk-page .epk-contact {
+  padding-top: 88px;
+  padding-bottom: 64px;
+}
+
+.epk-page .epk-contact p {
+  font-family: Montserrat, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.epk-page .epk-contact a {
+  font-size: clamp(17px, 2vw, 22px);
+  letter-spacing: 0.1em;
+}
+
+@media (min-width: 1024px) {
+  .epk-page .epk-intro {
+    padding-top: 120px;
+    padding-bottom: 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .epk-page .epk-intro {
+    min-height: auto;
+    padding: 80px 20px;
+  }
+
+  .epk-page .epk-bio {
+    padding-top: 64px;
+    padding-bottom: 64px;
+  }
+
+  .epk-page .epk-bio p {
+    padding: 48px 20px;
+  }
+
+  .epk-page .epk-infos {
+    padding: 72px 24px;
+    gap: 32px;
+  }
+
+  .epk-page .epk-music {
+    padding: 80px 24px;
+  }
+
+  .epk-page .epk-contact a {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* =====================================================
+   EPK 2026 — HIÉRARCHIE PROFESSIONNELLE
+   Recomposition locale : aucun nouveau design system.
+===================================================== */
+
+.epk-page {
+  --epk-ink: rgba(236, 224, 200, 0.96);
+  --epk-copy: rgba(232, 223, 211, 0.78);
+  --epk-muted: rgba(194, 182, 166, 0.58);
+  --epk-gold: rgba(201, 152, 82, 0.86);
+  --epk-line: rgba(201, 152, 82, 0.17);
+}
+
+.epk-page .epk-section,
+.epk-page .epk-intro,
+.epk-page .epk-download--primary {
+  width: min(100% - 64px, 1180px);
+  max-width: 1180px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.epk-page .epk-label,
+.epk-page .epk-key,
+.epk-page .epk-path-rank {
+  display: block;
+  color: var(--epk-gold);
+  font-family: "Montserrat", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.epk-page .epk-section-title {
+  margin: 12px 0 0;
+  color: var(--epk-ink);
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(38px, 5.4vw, 70px);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+}
+
+.epk-page .epk-chapter-head {
+  width: min(100%, 520px);
+  text-align: left;
+}
+
+/* Identité — immédiatement lisible après la photographie. */
+.epk-page .epk-intro {
+  min-height: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(340px, 0.78fr);
+  grid-template-areas:
+    "label label"
+    "name identity"
+    "description description";
+  align-items: end;
+  gap: 22px clamp(48px, 8vw, 112px);
+  padding: clamp(84px, 10vw, 144px) 0 52px;
+  text-align: left;
+}
+
+.epk-page .epk-intro-label {
+  grid-area: label;
+  margin: 0;
+}
+
+.epk-page .epk-name {
+  grid-area: name;
+  margin: 0;
+  color: var(--epk-ink);
+  font-size: clamp(62px, 8.2vw, 126px);
+  line-height: 0.82;
+  letter-spacing: 0.035em;
+}
+
+.epk-page .epk-identity {
+  grid-area: identity;
+  align-self: end;
+  gap: 10px;
+  max-width: none;
+  padding: 0 0 5px;
+}
+
+.epk-page .epk-identity::before,
+.epk-page .epk-identity::after {
+  content: none;
+}
+
+.epk-page .epk-line,
+.epk-page .epk-line:first-child,
+.epk-page .epk-line:last-child {
+  color: var(--epk-copy);
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(10px, 1vw, 13px);
+  font-weight: 600;
+  line-height: 1.55;
+  letter-spacing: 0.18em;
+}
+
+.epk-page .epk-line:first-child {
+  color: var(--epk-gold);
+  opacity: 0.72;
+}
+
+.epk-page .epk-description {
+  grid-area: description;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(24px, 4vw, 56px);
+  max-width: none;
+  margin-top: 30px;
+  padding: 32px 0 0;
+  border-top: 1px solid var(--epk-line);
+  color: var(--epk-copy);
+  font-family: "Inter", sans-serif;
+  font-size: clamp(15px, 1.35vw, 18px);
+  font-style: normal;
+  line-height: 1.65;
+}
+
+.epk-page .epk-description p:last-child {
+  color: var(--epk-ink);
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(22px, 2.2vw, 29px);
+  font-style: italic;
+  line-height: 1.32;
+}
+
+.epk-page .epk-download--primary {
+  margin-top: 0;
+  margin-bottom: 38px;
+  text-align: left;
+}
+
+.epk-page .epk-download--primary a {
+  padding: 11px 0 7px;
+  border: 0;
+  border-bottom: 1px solid rgba(201, 152, 82, 0.4);
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  box-shadow: none;
+  text-transform: uppercase;
+}
+
+.epk-page .epk-download--primary a:hover {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Bio + informations : deux chapitres compacts et scannables. */
+.epk-page .epk-bio {
+  min-height: auto;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.65fr) minmax(0, 1.35fr);
+  align-items: start;
+  gap: clamp(48px, 9vw, 128px);
+  padding: clamp(92px, 10vw, 136px) 0 64px;
+}
+
+.epk-page .epk-bio p.epk-bio-copy {
+  max-width: 720px;
+  margin: 0;
+  padding: 0;
+  color: var(--epk-copy);
+  font-family: "Inter", sans-serif;
+  font-size: clamp(17px, 1.65vw, 21px);
+  line-height: 1.78;
+  text-align: left;
+}
+
+.epk-page .epk-bio p.epk-bio-copy::before,
+.epk-page .epk-bio p.epk-bio-copy::after {
+  content: none;
+}
+
+.epk-page section.epk-infos {
+  padding: 46px 0 104px;
+  text-align: left;
+}
+
+.epk-page section.epk-infos > .epk-infos {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: start;
+  gap: 24px;
+  padding: 30px 0 0;
+  border-top: 1px solid var(--epk-line);
+  text-align: left;
+}
+
+.epk-page .epk-info-item {
+  gap: 10px;
+}
+
+.epk-page .epk-value {
+  color: var(--epk-copy);
+  font-family: "Inter", sans-serif;
+  font-size: 15px;
+  font-style: normal;
+  line-height: 1.5;
+}
+
+/* Parcours : hiérarchie factuelle, sans timeline ni cartes. */
+.epk-page .epk-path {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.72fr) minmax(0, 1.28fr);
+  gap: clamp(54px, 9vw, 130px);
+  padding: 88px 0 118px;
+}
+
+.epk-page .epk-path-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 54px;
+  align-items: start;
+}
+
+.epk-page .epk-path-item {
+  padding: 23px 0 27px;
+  border-bottom: 1px solid var(--epk-line);
+}
+
+.epk-page .epk-path-item--primary {
+  grid-column: 1 / -1;
+  padding-top: 0;
+}
+
+.epk-page .epk-path-item h3 {
+  margin: 8px 0 7px;
+  color: var(--epk-ink);
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(17px, 2vw, 27px);
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.epk-page .epk-path-item--primary h3 {
+  font-size: clamp(31px, 4vw, 52px);
+}
+
+.epk-page .epk-path-item--minor h3 {
+  color: rgba(236, 224, 200, 0.76);
+  font-size: clamp(15px, 1.5vw, 19px);
+}
+
+.epk-page .epk-path-item p {
+  margin: 0;
+  color: var(--epk-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* Photos presse : l’asset reste au centre, les outils deviennent lisibles. */
+.epk-page .epk-photos {
+  max-width: 1280px;
+  padding: 96px 0 86px;
+}
+
+.epk-page .epk-photos-head {
+  margin: 0 0 42px;
+}
+
+.epk-page .epk-photos-label {
+  margin: 18px 0 0;
+  color: var(--epk-muted);
+  font-size: 13px;
+  line-height: 1.6;
+  letter-spacing: 0.05em;
+  text-align: left;
+}
+
+.epk-page .epk-carousel-track {
+  gap: 24px;
+  padding: 0 52px;
+}
+
+.epk-page .epk-photo-open {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.epk-page .epk-photo img {
+  width: auto;
+  height: clamp(390px, 39vw, 530px);
+  background: transparent;
+  object-fit: contain;
+  transition: filter 0.38s ease, transform 0.38s ease;
+}
+
+.epk-page .epk-photo-open:hover img,
+.epk-page .epk-photo-open:focus-visible img {
+  filter: brightness(1.035) contrast(1.015);
+  transform: translateY(-2px);
+}
+
+.epk-page .epk-badge,
+.epk-page .epk-download-photo {
+  border-color: rgba(201, 152, 82, 0.3);
+  background: rgba(11, 11, 11, 0.76);
+}
+
+.epk-page .epk-download-photo {
+  min-width: 42px;
+  min-height: 34px;
+  text-align: center;
+}
+
+/* Live : preuve centrale, pas simple embed isolé. */
+.epk-page .epk-video {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.46fr) minmax(0, 1.54fr);
+  align-items: end;
+  gap: clamp(44px, 7vw, 92px);
+  margin: 0 auto;
+  padding: 112px 0 118px;
+  text-align: left;
+}
+
+.epk-page .epk-video-head {
+  padding-bottom: 8px;
+}
+
+.epk-page .epk-video-container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.34);
+}
+
+/* Musique : index typographique, sans cartes. */
+.epk-page .epk-music {
+  max-width: 1180px;
+  display: grid;
+  grid-template-columns: minmax(250px, 0.72fr) minmax(0, 1.28fr);
+  gap: clamp(54px, 9vw, 132px);
+  padding: 112px 0;
+  text-align: left;
+}
+
+.epk-page .epk-music-head {
+  max-width: 410px;
+  margin: 0;
+  text-align: left;
+}
+
+.epk-page .epk-music-head p {
+  margin: 26px 0 0;
+  color: var(--epk-copy);
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.epk-page .epk-track-list {
+  display: block;
+}
+
+.epk-page .epk-track-item {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "type links"
+    "title links"
+    "copy links";
+  column-gap: 28px;
+  padding: 28px 0 30px;
+  border: 0;
+  border-bottom: 1px solid var(--epk-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.epk-page .epk-track-item:first-child {
+  padding-top: 0;
+}
+
+.epk-page .epk-track-item > span {
+  grid-area: type;
+}
+
+.epk-page .epk-track-item h3 {
+  grid-area: title;
+  margin: 10px 0 7px;
+  font-size: clamp(25px, 3vw, 38px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.epk-page .epk-track-item > p {
+  grid-area: copy;
+  max-width: 440px;
+  color: var(--epk-muted);
+  font-size: 14px;
+}
+
+.epk-page .epk-track-links {
+  grid-area: links;
+  align-self: center;
+  justify-content: flex-end;
+  max-width: 190px;
+  margin: 0;
+}
+
+.epk-page .epk-track-links a {
+  min-height: 36px;
+}
+
+/* Presse et plateformes : synthèse professionnelle. */
+.epk-page .epk-press-list,
+.epk-page .epk-official-links {
+  max-width: 1180px;
+  padding: 104px 0;
+  text-align: left;
+}
+
+.epk-page .epk-source-list {
+  max-width: none;
+  margin: 48px 0 34px;
+  border-top: 1px solid var(--epk-line);
+}
+
+.epk-page .epk-source-list a {
+  grid-template-columns: minmax(230px, 0.62fr) minmax(0, 1.38fr) auto;
+  align-items: center;
+  gap: 38px;
+  padding: 25px 0;
+}
+
+.epk-page .epk-source-list a::after {
+  content: "↗";
+  color: var(--epk-gold);
+  font-size: 15px;
+}
+
+.epk-page .epk-source-list span {
+  font-size: 13px;
+}
+
+.epk-page .epk-source-list strong {
+  font-size: clamp(16px, 1.7vw, 20px);
+}
+
+.epk-page .epk-all-press,
+.epk-page .epk-official-links a,
+.epk-page .epk-contact-resources a {
+  min-height: 38px;
+  align-items: center;
+  padding-bottom: 3px;
+  color: var(--epk-gold);
+  border-bottom: 1px solid rgba(201, 152, 82, 0.34);
+  font-family: "Montserrat", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.epk-page .epk-official-links {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+  align-items: end;
+  gap: clamp(60px, 9vw, 132px);
+  padding-top: 88px;
+  padding-bottom: 102px;
+}
+
+.epk-page .epk-official-links > div {
+  justify-content: flex-start;
+  gap: 16px 28px;
+  margin: 0;
+}
+
+/* Contact : conclusion et accès rapides. */
+.epk-page .epk-contact {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.65fr);
+  align-items: end;
+  gap: clamp(56px, 10vw, 144px);
+  padding: 112px 0 96px;
+  border-top: 1px solid var(--epk-line);
+  text-align: left;
+}
+
+.epk-page .epk-contact p {
+  margin: 22px 0 14px;
+  color: var(--epk-muted);
+  font-size: 12px;
+}
+
+.epk-page .epk-contact a.epk-contact-mail {
+  max-width: 100%;
+  margin: 0;
+  color: var(--epk-ink);
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(36px, 5.4vw, 70px);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+
+.epk-page .epk-contact-resources {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+}
+
+.epk-page .epk-contact-resources a {
+  justify-content: flex-start;
+}
+
+/* Lightbox presse accessible et sobre. */
+.epk-page .epk-lightbox {
+  padding: 72px 28px 28px;
+}
+
+.epk-page .epk-lightbox img {
+  max-width: min(92vw, 1400px);
+  max-height: calc(100vh - 104px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.62);
+}
+
+@media (max-width: 900px) {
+  .epk-page .epk-intro,
+  .epk-page .epk-bio,
+  .epk-page .epk-path,
+  .epk-page .epk-video,
+  .epk-page .epk-music,
+  .epk-page .epk-official-links,
+  .epk-page .epk-contact {
+    grid-template-columns: 1fr;
+  }
+
+  .epk-page .epk-intro {
+    grid-template-areas:
+      "label"
+      "name"
+      "identity"
+      "description";
+  }
+
+  .epk-page section.epk-infos > .epk-infos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .epk-page .epk-description {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .epk-page .epk-video {
+    align-items: start;
+  }
+
+  .epk-page .epk-track-links {
+    max-width: 170px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1180px) {
+  .epk-page .epk-nav {
+    right: 24px;
+    gap: 15px;
+  }
+
+  .epk-page .epk-nav a {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+  }
+
+  .epk-page .epk-nav .epk-mail {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .epk-page .epk-section,
+  .epk-page .epk-intro,
+  .epk-page .epk-download--primary {
+    width: min(100% - 40px, 1180px);
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .epk-page main {
+    text-align: left;
+  }
+
+  .epk-page .epk-intro {
+    gap: 18px;
+    padding-top: 68px;
+    padding-bottom: 34px;
+  }
+
+  .epk-page .epk-name {
+    font-size: clamp(50px, 17vw, 72px);
+    letter-spacing: 0.015em;
+  }
+
+  .epk-page .epk-description {
+    margin-top: 20px;
+    padding-top: 24px;
+    font-size: 16px;
+  }
+
+  .epk-page .epk-description p:last-child {
+    font-size: 23px;
+  }
+
+  .epk-page .epk-download--primary {
+    margin-bottom: 12px;
+  }
+
+  .epk-page .epk-bio,
+  .epk-page .epk-path,
+  .epk-page .epk-video,
+  .epk-page .epk-music,
+  .epk-page .epk-press-list,
+  .epk-page .epk-official-links,
+  .epk-page .epk-contact {
+    gap: 40px;
+    padding-top: 76px;
+    padding-bottom: 76px;
+  }
+
+  .epk-page .epk-bio p.epk-bio-copy {
+    padding: 0;
+    font-size: 17px;
+    line-height: 1.72;
+  }
+
+  .epk-page section.epk-infos {
+    padding-top: 22px;
+    padding-bottom: 70px;
+  }
+
+  .epk-page section.epk-infos > .epk-infos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px 20px;
+    padding: 28px 0 0;
+  }
+
+  .epk-page .epk-path-list {
+    grid-template-columns: 1fr;
+  }
+
+  .epk-page .epk-path-item--primary {
+    grid-column: auto;
+  }
+
+  .epk-page .epk-path-item h3 {
+    font-size: 20px;
+  }
+
+  .epk-page .epk-path-item--primary h3 {
+    font-size: 34px;
+  }
+
+  .epk-page .epk-photos {
+    width: 100%;
+    padding-top: 72px;
+    padding-bottom: 70px;
+  }
+
+  .epk-page .epk-photos-head {
+    width: calc(100% - 40px);
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .epk-page .epk-carousel-track {
+    gap: 14px;
+    padding: 0 20px;
+  }
+
+  .epk-page .epk-photo img {
+    width: auto;
+    max-width: calc(100vw - 40px);
+    height: min(62vh, 480px);
+  }
+
+  .epk-page .epk-photo {
+    margin-bottom: 0;
+  }
+
+  .epk-page .epk-carousel-btn {
+    display: none;
+  }
+
+  .epk-page .epk-video-container {
+    padding-bottom: 56.25%;
+  }
+
+  .epk-page .epk-track-item {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "type"
+      "title"
+      "copy"
+      "links";
+    padding: 27px 0 29px;
+    text-align: left;
+  }
+
+  .epk-page .epk-track-links {
+    justify-content: flex-start;
+    max-width: none;
+    margin-top: 18px;
+  }
+
+  .epk-page .epk-source-list {
+    margin-top: 36px;
+  }
+
+  .epk-page .epk-source-list a {
+    grid-template-columns: 1fr auto;
+    gap: 7px 18px;
+    text-align: left;
+  }
+
+  .epk-page .epk-source-list span,
+  .epk-page .epk-source-list strong {
+    grid-column: 1;
+  }
+
+  .epk-page .epk-source-list a::after {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+
+  .epk-page .epk-official-links > div {
+    gap: 12px 22px;
+  }
+
+  .epk-page .epk-contact {
+    align-items: start;
+  }
+
+  .epk-page .epk-contact a.epk-contact-mail {
+    font-size: clamp(31px, 10.4vw, 46px);
+  }
+
+  .epk-page .epk-contact-resources {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .epk-page section.epk-infos > .epk-infos,
+  .epk-page .epk-contact-resources {
+    grid-template-columns: 1fr;
+  }
+
+  .epk-page .epk-section-title {
+    font-size: clamp(36px, 12vw, 48px);
+  }
+}
+
+/* QA responsive — agrandir uniquement les zones de contact tactiles. */
+body.epk-lightbox-open {
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .epk-burger {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .epk-page .socials a {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+  }
+
+  .epk-page .epk-download-photo,
+  .epk-page .epk-track-links a,
+  .epk-page .epk-all-press,
+  .epk-page .epk-official-links a,
+  .epk-page .epk-contact-resources a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+
+  .epk-page .site-credit a {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+}

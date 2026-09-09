@@ -3,6 +3,15 @@
   "private": true,
   "version": "1.0.0",
   "description": "morjane.re static site with Netlify Functions",
+  "scripts": {
+    "check:seo": "node scripts/validate-seo.mjs",
+    "check:set-auth": "node scripts/test-set-auth.mjs",
+    "check:acte1-auth": "node scripts/test-acte1-auth.mjs",
+    "check:private-access": "node scripts/test-private-access.mjs",
+    "check:atelier-auth": "node scripts/test-atelier-access.mjs",
+    "check:privacy": "node scripts/test-privacy-hardening.mjs",
+    "serve": "node scripts/serve-static.mjs"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4"
   },

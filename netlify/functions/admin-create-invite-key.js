@@ -62,10 +62,6 @@ async function authenticateAdmin(event, supabaseUrl, anonKey, serviceRoleKey) {
 
 exports.handler = async (event) => {
   const startedAt = Date.now();
-  if (event.httpMethod !== "POST") {
-    return json(405, { ok: false, error: "method_not_allowed" });
-  }
-
   const supabaseUrl = process.env.SUPABASE_URL;
   const anonKey = process.env.SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -84,11 +80,82 @@ exports.handler = async (event) => {
     return json(auth.statusCode, { ok: false, error: auth.error });
   }
 
+  const supabase = auth.adminClient;
+  if (event.httpMethod === "GET") {
+    const result = await supabase
+      .from("atelier_invitation_keys")
+      .select("id, label, member_status, audience_segment, source, access_wave, max_uses, uses_count, is_active, expires_at, claimed_at, created_at")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (result.error) {
+      return json(500, { ok: false, error: "key_list_failed" });
+    }
+    const now = Date.now();
+    const keys = (result.data || []).map((key) => {
+      const expired = key.expires_at && new Date(key.expires_at).getTime() <= now;
+      const exhausted = Number(key.uses_count || 0) >= Number(key.max_uses || 1);
+      const state = !key.is_active ? "revoked" : expired ? "expired" : exhausted ? "consumed" : "active";
+      return { ...key, state, usable: state === "active" };
+    });
+    return json(200, { ok: true, keys });
+  }
+
+  if (event.httpMethod !== "POST") {
+    return json(405, { ok: false, error: "method_not_allowed" });
+  }
+
   let payload = {};
   try {
     payload = JSON.parse(event.body || "{}");
   } catch (_) {
     payload = {};
+  }
+
+  if (payload.action === "revoke") {
+    const keyId = String(payload.keyId || "").trim();
+    if (!/^[0-9a-f-]{36}$/i.test(keyId)) {
+      return json(400, { ok: false, error: "invalid_key_id" });
+    }
+    const before = await supabase
+      .from("atelier_invitation_keys")
+      .select("id, label, is_active, uses_count, max_uses")
+      .eq("id", keyId)
+      .maybeSingle();
+    if (before.error || !before.data) {
+      return json(404, { ok: false, error: "key_not_found" });
+    }
+    const revoked = await supabase
+      .from("atelier_invitation_keys")
+      .update({ is_active: false, claim_token_hash: null, claim_token_expires_at: null })
+      .eq("id", keyId)
+      .eq("is_active", true)
+      .select("id")
+      .maybeSingle();
+    if (revoked.error) {
+      return json(500, { ok: false, error: "key_revoke_failed" });
+    }
+    if (!revoked.data) {
+      return json(409, { ok: false, error: "key_not_active" });
+    }
+    await supabase.from("atelier_admin_audit_logs").insert({
+      admin_user_id: auth.adminUserId,
+      action: "invitation_key_revoked",
+      target_type: "atelier_invitation_key",
+      target_id: keyId,
+      details: {
+        label: before.data.label || null,
+        was_active: Boolean(before.data.is_active),
+        uses_count: Number(before.data.uses_count || 0),
+        max_uses: Number(before.data.max_uses || 1),
+      },
+    });
+    await trackFunctionEvent(supabase, {
+      function_name: "admin-create-invite-key",
+      status: "ok",
+      latency_ms: Date.now() - startedAt,
+      meta: { action: "revoke", key_id: keyId },
+    });
+    return json(200, { ok: true, revoked: true, id: keyId });
   }
 
   const allowedSegments = ["public", "proche", "artiste", "pro"];
@@ -99,9 +166,11 @@ exports.handler = async (event) => {
   const maxUses = Math.max(1, Math.min(50, Number.parseInt(payload.max_uses, 10) || 1));
   const adminNote = String(payload.admin_note || "").trim().slice(0, 1200) || null;
   const expiresAt = payload.expires_at ? new Date(payload.expires_at) : null;
+  if (payload.expires_at && (!expiresAt || !Number.isFinite(expiresAt.getTime()) || expiresAt.getTime() <= Date.now())) {
+    return json(400, { ok: false, error: "invalid_expiration" });
+  }
   const safeExpiresAt = expiresAt && Number.isFinite(expiresAt.getTime()) ? expiresAt.toISOString() : null;
 
-  const supabase = auth.adminClient;
   let rawKey = "";
   let insert = null;
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -148,6 +217,13 @@ exports.handler = async (event) => {
     status: "ok",
     latency_ms: Date.now() - startedAt,
     meta: { key_id: insert.data.id, audience_segment: audienceSegment, member_status: memberStatus, max_uses: maxUses },
+  });
+  await supabase.from("atelier_admin_audit_logs").insert({
+    admin_user_id: auth.adminUserId,
+    action: "invitation_key_created",
+    target_type: "atelier_invitation_key",
+    target_id: insert.data.id,
+    details: { label, audience_segment: audienceSegment, member_status: memberStatus, max_uses: maxUses, expires_at: safeExpiresAt },
   });
 
   return json(200, {

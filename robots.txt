@@ -2,5 +2,12 @@ User-agent: *
 Allow: /
 Disallow: /atelier
 Disallow: /atelier/
+Disallow: /acte1
+Disallow: /acte1-access
+Disallow: /fissure
+Disallow: /set
+Disallow: /set-access
+Disallow: /private-access
+Disallow: /assets/set-private/
 
 Sitemap: https://morjane.re/sitemap.xml

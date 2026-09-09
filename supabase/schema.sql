@@ -12,6 +12,8 @@ create table if not exists public.atelier_profiles (
   access_wave text,
   admin_note text,
   last_admin_action_at timestamptz,
+  last_activity_at timestamptz,
+  adult_confirmed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -79,6 +81,35 @@ begin
 end;
 $$;
 
+create or replace function public.atelier_touch_member_activity()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.atelier_profiles
+  set last_activity_at = now()
+  where id = new.user_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists atelier_votes_touch_member_activity on public.atelier_votes;
+create trigger atelier_votes_touch_member_activity
+after insert or update on public.atelier_votes
+for each row execute function public.atelier_touch_member_activity();
+
+drop trigger if exists atelier_track_likes_touch_member_activity on public.atelier_track_likes;
+create trigger atelier_track_likes_touch_member_activity
+after insert or update on public.atelier_track_likes
+for each row execute function public.atelier_touch_member_activity();
+
+drop trigger if exists atelier_messages_touch_member_activity on public.atelier_messages;
+create trigger atelier_messages_touch_member_activity
+after insert or update on public.atelier_messages
+for each row execute function public.atelier_touch_member_activity();
+
 create or replace function public.atelier_is_member(uid uuid)
 returns boolean
 language sql
@@ -89,7 +120,8 @@ as $$
   select exists (
     select 1
     from public.atelier_profiles p
-    where p.id = uid and p.member_status in ('member', 'founder', 'priority')
+    where p.id = uid
+      and (p.role = 'admin' or p.member_status in ('member', 'founder', 'priority'))
   );
 $$;
 
@@ -170,6 +202,11 @@ create table if not exists public.atelier_track_plays (
   created_at timestamptz not null default now()
 );
 
+drop trigger if exists atelier_track_plays_touch_member_activity on public.atelier_track_plays;
+create trigger atelier_track_plays_touch_member_activity
+after insert on public.atelier_track_plays
+for each row execute function public.atelier_touch_member_activity();
+
 create index if not exists idx_atelier_track_plays_track_created
   on public.atelier_track_plays(track_id, created_at desc);
 
@@ -197,12 +234,12 @@ do $$
 begin
   if not exists (
     select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'atelier_track_plays' and policyname = 'atelier_track_plays_select_member'
+    where schemaname = 'public' and tablename = 'atelier_track_plays' and policyname = 'atelier_track_plays_select_own_or_admin'
   ) then
-    create policy atelier_track_plays_select_member
+    create policy atelier_track_plays_select_own_or_admin
     on public.atelier_track_plays
     for select to authenticated
-    using (public.atelier_is_member(auth.uid()));
+    using (auth.uid() = user_id or public.atelier_is_admin(auth.uid()));
   end if;
 end
 $$;
@@ -245,7 +282,9 @@ alter table public.atelier_profiles
   add column if not exists access_source text,
   add column if not exists access_wave text,
   add column if not exists admin_note text,
-  add column if not exists last_admin_action_at timestamptz;
+  add column if not exists last_admin_action_at timestamptz,
+  add column if not exists last_activity_at timestamptz,
+  add column if not exists adult_confirmed_at timestamptz;
 
 create index if not exists idx_atelier_profiles_audience_status
   on public.atelier_profiles(audience_status, created_at desc);
@@ -460,12 +499,12 @@ do $$
 begin
   if not exists (
     select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'atelier_track_likes' and policyname = 'atelier_track_likes_select_members'
+    where schemaname = 'public' and tablename = 'atelier_track_likes' and policyname = 'atelier_track_likes_select_own_or_admin'
   ) then
-    create policy atelier_track_likes_select_members
+    create policy atelier_track_likes_select_own_or_admin
     on public.atelier_track_likes
     for select to authenticated
-    using (public.atelier_is_member(auth.uid()));
+    using (auth.uid() = user_id or public.atelier_is_admin(auth.uid()));
   end if;
 end
 $$;

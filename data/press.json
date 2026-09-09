@@ -1,0 +1,98 @@
+{
+  "$schema": "./press.schema.json",
+  "items": [
+    {
+      "id": "francetvpro-shannker-saison-3",
+      "media": "Réunion La 1ère / France Télévisions",
+      "title": "SHANNKER",
+      "date": null,
+      "url": "https://www.francetvpro.fr/contenu-de-presse/68706567",
+      "type": "TV",
+      "relatedWork": "event-shannker",
+      "description": "Présentation de la saison 3 du concours de chant de Réunion La 1ère, qui identifie Morgane Payet sous son nom de scène Morjane.",
+      "source": "https://www.francetvpro.fr/contenu-de-presse/68706567",
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "francetvpro-shannker-episode-2",
+      "media": "Réunion La 1ère / France Télévisions",
+      "title": "SHANNKER",
+      "date": null,
+      "url": "https://www.francetvpro.fr/contenu-de-presse/69227834",
+      "type": "TV",
+      "relatedWork": "event-shannker",
+      "description": "Page programme de la saison 3 de Shannkèr qui présente Morgane Payet et son nom de scène Morjane.",
+      "source": "https://www.francetvpro.fr/contenu-de-presse/69227834",
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "francetvpro-shannker-episode-4",
+      "media": "Réunion La 1ère / France Télévisions",
+      "title": "SHANNKER",
+      "date": null,
+      "url": "https://www.francetvpro.fr/contenu-de-presse/69270512",
+      "type": "TV",
+      "relatedWork": "event-shannker",
+      "description": "Page programme de Shannkèr sur Réunion La 1ère qui relie Morgane Payet au nom de scène Morjane.",
+      "source": "https://www.francetvpro.fr/contenu-de-presse/69270512",
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "francetvpro-shannker-finale",
+      "media": "Réunion La 1ère / France Télévisions",
+      "title": "SHANNKER",
+      "date": null,
+      "url": "https://www.francetvpro.fr/contenu-de-presse/69255826",
+      "type": "TV",
+      "relatedWork": "event-shannker",
+      "description": "Présentation de la finale de la saison 3, qui cite Morgane parmi les quatre finalistes et rappelle son nom de scène Morjane.",
+      "source": "https://www.francetvpro.fr/contenu-de-presse/69255826",
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "actumedias-shannker-saison-3",
+      "media": "ActuMédias Outre-Mer",
+      "title": "Le concours de chant « Shannker » revient pour une 3ème édition sur Réunion La 1ère !",
+      "date": "2024-10-10",
+      "url": "https://actu-medias.info/2024/10/shannker-revient-pour-une-3eme-edition-reunion-la-1ere.html",
+      "type": "article",
+      "relatedWork": "event-shannker",
+      "description": "Article consacré à la troisième édition de Shannkèr, qui identifie Morgane Payet sous le nom de scène Morjane.",
+      "source": "https://actu-medias.info/2024/10/shannker-revient-pour-une-3eme-edition-reunion-la-1ere.html",
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "passions-reunion-artistes-unis-musique",
+      "media": "Passions Réunion actu",
+      "title": "Des artistes réunionnais unis par la musique",
+      "date": "2025-06-10",
+      "url": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/",
+      "type": "article",
+      "relatedWork": null,
+      "description": "Article consacré au parcours de Morjane et à son activité artistique.",
+      "source": "https://karolinecherie.com/2025/06/10/des-artistes-reunionnais-unis-par-la-musique/",
+      "verified": true,
+      "status": "published"
+    },
+    {
+      "id": "radio-coco-fete-musique-2025",
+      "media": "Radio Coco",
+      "title": "Koi i fé pou la fèt la mizik ? Tour de l’île des bons plans",
+      "date": "2025-06-16",
+      "url": "https://radiococo.re/koi-i-fe-pou-la-fet-la-mizik-tour-dile-des-bons-plans/",
+      "type": "événement",
+      "relatedWork": "event-fete-musique-saint-pierre-2025",
+      "description": "Sélection de programmes pour la Fête de la musique qui cite Morjane sur une scène à Saint-Pierre.",
+      "source": "https://radiococo.re/koi-i-fe-pou-la-fet-la-mizik-tour-dile-des-bons-plans/",
+      "verified": true,
+      "status": "published"
+    }
+  ],
+  "candidateMedia": [],
+  "note": "Les dates FranceTVPro restent nulles : les pages donnent des dates de diffusion, mais aucune date de publication fiable n'a été récupérée."
+}
