@@ -126,6 +126,7 @@ body.has-scrolled .site-header {
 
 .brand-mark {
   width: 48px;
+  height: auto;
 }
 
 .brand-name {
