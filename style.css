@@ -2034,7 +2034,10 @@ body.on-image .cursor-light {
   box-shadow: inset 0 0 0 1px rgba(201,152,82,0.06);
 }
 
-.video-feature-line,
+.video-feature-line {
+  color: rgba(194,182,166,0.8);
+}
+
 .video-note {
   color: rgba(194,182,166,0.62);
 }
