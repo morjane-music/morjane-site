@@ -7179,6 +7179,25 @@ body.on-image .cursor-light {
   }
 }
 
+/* Musique — cover principale carrée et ghost text éditorial. */
+.home-page .section-musique::before {
+  content: none !important;
+}
+
+.home-page .music-focus-cover {
+  aspect-ratio: 1 / 1;
+}
+
+.home-page .music-focus-cover img,
+.home-page .music-focus.is-focus-current .music-focus-cover img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  object-position: center;
+  transform: none;
+}
+
 @media (max-width: 380px) {
   .home-page .video-rail {
     grid-auto-columns: calc(100% - 48px);
@@ -7187,5 +7206,360 @@ body.on-image .cursor-light {
   .home-page .music-trace-artwork,
   .home-page .music-trace--sororite .music-trace-artwork {
     width: min(77vw, 278px) !important;
+  }
+}
+
+/* =========================================================
+   FOOTER — fermeture éditoriale
+========================================================= */
+.home-page .footer-closing {
+  width: min(1120px, calc(100% - 80px));
+  display: grid;
+  grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.35fr);
+  align-items: end;
+  gap: clamp(42px, 7vw, 110px);
+  margin: 46px auto 0;
+  padding-top: 30px;
+  border-top: 1px solid rgba(201, 152, 82, 0.12);
+  text-align: left;
+}
+
+.home-page .footer-signature {
+  min-width: 0;
+}
+
+.home-page .footer-signature .site-baseline {
+  margin: 0;
+  color: rgba(236, 224, 200, 0.92);
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(30px, 3vw, 42px);
+  font-style: italic;
+  letter-spacing: -0.015em;
+  line-height: 1;
+  opacity: 1;
+}
+
+.home-page .footer-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px 18px;
+  margin-top: 17px;
+}
+
+.home-page .footer-identity .site-copyright,
+.home-page .footer-identity .site-credit {
+  margin: 0;
+  color: rgba(194, 182, 166, 0.58);
+  font-size: 9px;
+  letter-spacing: 0.11em;
+  line-height: 1.5;
+  opacity: 1;
+  text-transform: uppercase;
+}
+
+.home-page .footer-identity .site-credit a {
+  color: rgba(201, 152, 82, 0.72);
+  border-bottom-color: rgba(201, 152, 82, 0.2);
+}
+
+.home-page .footer-closing .footer-links {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  justify-content: stretch;
+  align-items: center;
+  gap: 14px 26px;
+  max-width: none;
+  margin: 0;
+  font-size: 10px;
+  opacity: 1;
+}
+
+.home-page .footer-closing .footer-link-group {
+  min-height: 0;
+  justify-content: flex-start;
+  gap: 7px 20px;
+}
+
+.home-page .footer-closing .footer-link-group--primary a {
+  color: rgba(232, 223, 211, 0.78);
+  font-size: 11px;
+}
+
+.home-page .footer-closing .footer-link-group--primary a[href="/presse"],
+.home-page .footer-closing .footer-link-group--primary a[href="/epk"] {
+  color: rgba(236, 224, 200, 0.9);
+}
+
+.home-page .footer-closing .footer-link-group--private {
+  justify-self: end;
+}
+
+.home-page .footer-closing .footer-link-group--private a {
+  color: rgba(194, 182, 166, 0.58);
+}
+
+.home-page .footer-closing .footer-link-group--legal {
+  grid-column: 1 / -1;
+  justify-self: end;
+  gap: 7px 17px;
+}
+
+.home-page .footer-closing .footer-link-group--legal a {
+  color: rgba(194, 182, 166, 0.42);
+  font-size: 9px;
+}
+
+@media (max-width: 720px) {
+  .home-page .footer-closing {
+    order: 3;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 22px;
+    margin-top: 10px;
+    padding-top: 25px;
+    text-align: center;
+  }
+
+  .home-page .footer-signature .site-baseline {
+    font-size: clamp(30px, 9.4vw, 38px);
+  }
+
+  .home-page .footer-identity {
+    justify-content: center;
+    gap: 4px 14px;
+    margin-top: 14px;
+  }
+
+  .home-page .footer-closing .footer-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .home-page .footer-closing .footer-link-group {
+    width: 100%;
+    min-height: 0;
+    justify-content: center;
+    gap: 2px 16px;
+  }
+
+  .home-page .footer-closing .footer-link-group a {
+    min-height: 38px;
+  }
+
+  .home-page .footer-closing .footer-link-group--private {
+    justify-self: auto;
+  }
+
+  .home-page .footer-closing .footer-link-group--legal {
+    gap: 0 14px;
+    margin-top: 2px;
+  }
+
+  .home-page .footer-closing .footer-link-group--legal a {
+    min-height: 34px;
+  }
+}
+
+/* Footer — composition validée, bande finale compacte. */
+.home-page .site-footer {
+  padding: clamp(48px, 5vw, 64px) 40px 26px;
+  background: #0b0b0b;
+}
+
+.home-page .site-footer .socials {
+  margin-top: 0;
+}
+
+.home-page .site-footer .footer-faq {
+  margin-bottom: clamp(26px, 3vw, 38px);
+}
+
+.home-page .footer-closing {
+  width: min(1180px, calc(100% - 40px));
+  display: grid;
+  grid-template-columns: minmax(300px, 0.86fr) minmax(500px, 1.14fr) 48px;
+  align-items: center;
+  gap: clamp(30px, 4vw, 58px);
+  margin: 0 auto;
+  padding: 30px 0 4px;
+  border-top: 1px solid rgba(201, 152, 82, 0.14);
+}
+
+.home-page .footer-signature .site-baseline {
+  font-size: clamp(32px, 3vw, 43px);
+}
+
+.home-page .footer-identity {
+  gap: 5px 14px;
+  margin-top: 14px;
+}
+
+.home-page .footer-identity .site-credit::before {
+  content: "·";
+  margin-right: 14px;
+  color: rgba(194, 182, 166, 0.36);
+}
+
+.home-page .footer-closing .footer-links {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.78fr) minmax(250px, 1.22fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 7px clamp(22px, 3vw, 38px);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.home-page .footer-closing .footer-link-group {
+  min-height: 0;
+}
+
+.home-page .footer-closing .footer-link-group--primary {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  justify-content: center;
+  gap: 6px 18px;
+}
+
+.home-page .footer-closing .footer-link-group--private,
+.home-page .footer-closing .footer-link-group--legal {
+  grid-column: 2;
+  justify-self: stretch;
+  justify-content: flex-start;
+  padding-left: clamp(20px, 2vw, 28px);
+  border-left: 1px solid rgba(201, 152, 82, 0.14);
+}
+
+.home-page .footer-closing .footer-link-group--private {
+  grid-row: 1;
+}
+
+.home-page .footer-closing .footer-link-group--legal {
+  grid-row: 2;
+  gap: 5px 15px;
+}
+
+.home-page .footer-mark {
+  display: grid;
+  place-items: center;
+}
+
+.home-page .footer-mark img {
+  display: block;
+  width: 44px;
+  height: auto;
+  opacity: 0.34;
+}
+
+@media (max-width: 900px) {
+  .home-page .footer-closing {
+    grid-template-columns: minmax(250px, 0.78fr) minmax(390px, 1.22fr) 42px;
+    gap: 24px;
+  }
+
+  .home-page .footer-closing .footer-links {
+    grid-template-columns: minmax(150px, 0.72fr) minmax(220px, 1.28fr);
+    column-gap: 18px;
+  }
+}
+
+@media (max-width: 720px) {
+  .home-page .site-footer {
+    padding: 38px 20px 22px;
+  }
+
+  .home-page .site-footer .footer-faq {
+    margin-bottom: 20px;
+  }
+
+  .home-page .footer-closing {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    margin: 0;
+    padding: 25px 0 0;
+    text-align: center;
+  }
+
+  .home-page .footer-identity {
+    justify-content: center;
+    gap: 4px 12px;
+  }
+
+  .home-page .footer-signature {
+    order: 1;
+  }
+
+  .home-page .footer-identity .site-copyright {
+    order: 1;
+  }
+
+  .home-page .footer-identity .site-credit {
+    order: 2;
+  }
+
+  .home-page .footer-identity .site-credit::before {
+    margin-right: 12px;
+  }
+
+  .home-page .footer-closing .footer-links {
+    order: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .home-page .footer-closing .footer-link-group,
+  .home-page .footer-closing .footer-link-group--primary,
+  .home-page .footer-closing .footer-link-group--private,
+  .home-page .footer-closing .footer-link-group--legal {
+    width: 100%;
+    min-height: 0;
+    justify-content: center;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .home-page .footer-closing .footer-link-group--primary {
+    gap: 2px 16px;
+  }
+
+  .home-page .footer-closing .footer-link-group--private {
+    margin-top: 5px;
+  }
+
+  .home-page .footer-closing .footer-link-group--legal {
+    gap: 0 13px;
+  }
+
+  .home-page .footer-mark img {
+    width: 38px;
+  }
+
+  .home-page .footer-mark {
+    order: 3;
+  }
+
+}
+
+/* Micro-calage vertical du wordmark final. */
+.home-page .footer-wordmark,
+.home-page.motion-ready .site-footer.is-in-view .footer-wordmark {
+  transform: translateY(0.06em);
+}
+
+@media (min-width: 721px) {
+  .home-page .footer-wordmark,
+  .home-page.motion-ready .site-footer.is-in-view .footer-wordmark {
+    transform: translate(-0.35vw, 0.06em);
   }
 }

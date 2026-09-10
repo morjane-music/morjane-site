@@ -28,6 +28,7 @@ const adminLogoutBtn = document.getElementById("adminLogoutBtn");
 const adminUnlockForm = document.getElementById("adminUnlockForm");
 const adminPinInput = document.getElementById("adminPinInput");
 const adminUnlockStatus = document.getElementById("adminUnlockStatus");
+const adminUnlockedState = document.getElementById("adminUnlockedState");
 const adminSecureContent = document.getElementById("adminSecureContent");
 const adminMembersSummary = document.getElementById("adminMembersSummary");
 const adminMembersList = document.getElementById("adminMembersList");
@@ -1096,9 +1097,11 @@ function renderAdminLockState() {
   }
   if (adminUnlocked) {
     hide(adminUnlockForm);
+    show(adminUnlockedState);
     show(adminSecureContent);
   } else {
     show(adminUnlockForm);
+    hide(adminUnlockedState);
     hide(adminSecureContent);
   }
 }
@@ -4119,7 +4122,10 @@ function renderPrivateAccessAdmin(data) {
   document.querySelectorAll("[data-private-password-scope]").forEach((form) => {
     const credential = credentials.get(form.dataset.privatePasswordScope);
     const status = form.querySelector("[data-private-status]");
-    status.textContent = !credential ? "Non configuré — fallback Netlify transitoire" : credential.enabled ? "Configuré" : "Désactivé";
+    const state = !credential ? "fallback" : credential.enabled ? "configured" : "disabled";
+    status.className = "private-access-status";
+    status.dataset.state = state;
+    status.textContent = state === "fallback" ? "Fallback Netlify" : state === "configured" ? "Configuré" : "Désactivé";
   });
   if (privateInvitationsList) {
     privateInvitationsList.replaceChildren();

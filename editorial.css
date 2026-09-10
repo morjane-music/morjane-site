@@ -46,6 +46,8 @@
 .work-visual{position:relative;min-height:620px;overflow:hidden;background:#050505}
 .work-visual img{width:100%;height:100%;min-height:620px;display:block;object-fit:cover}
 .work-visual::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,transparent 62%,rgba(11,11,11,.4));pointer-events:none}
+.silence-visual{width:100%;min-height:0;aspect-ratio:1/1}
+.silence-visual img{width:100%;height:100%;min-height:0;aspect-ratio:1/1;object-fit:contain;object-position:center}
 .flamboyante-page .work-hero{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:clamp(48px,6vw,84px)}
 .flamboyante-page .work-hero>div{min-width:0;max-width:500px}
 .flamboyante-page .work-title{font-size:clamp(42px,5.4vw,76px)}
