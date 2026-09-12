@@ -3,6 +3,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const errors = [];
+const videoObjects = [];
 const checkedPages = [
   "index.html",
   "epk.html",
@@ -19,6 +20,16 @@ const checkedPages = [
 
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");
 const assert = (condition, message) => { if (!condition) errors.push(message); };
+const collectVideoObjects = (value, page) => {
+  if (Array.isArray(value)) {
+    for (const item of value) collectVideoObjects(item, page);
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  const types = Array.isArray(value["@type"]) ? value["@type"] : [value["@type"]];
+  if (types.includes("VideoObject")) videoObjects.push({ page, value });
+  for (const child of Object.values(value)) collectVideoObjects(child, page);
+};
 const cleanRouteAliases = new Map([
   ["/", "index.html"],
   ["/epk", "epk.html"],
@@ -46,7 +57,10 @@ for (const page of checkedPages) {
   assert(/<link\s+rel="canonical"\s+href="https:\/\/morjane\.re\/[^\"]*"/i.test(html), `${page}: canonical absolue manquante`);
 
   for (const match of html.matchAll(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)) {
-    try { JSON.parse(match[1]); } catch (error) { errors.push(`${page}: JSON-LD invalide (${error.message})`); }
+    try {
+      const jsonLd = JSON.parse(match[1]);
+      collectVideoObjects(jsonLd, page);
+    } catch (error) { errors.push(`${page}: JSON-LD invalide (${error.message})`); }
   }
 
   for (const match of html.matchAll(/(?:src|href)="([^"#]+)"/gi)) {
@@ -67,6 +81,23 @@ for (const page of checkedPages) {
     assert(internalRouteExists(route), `${page}: route interne absente ${route}`);
   }
 }
+
+const videoFields = ["@id", "name", "description", "thumbnailUrl", "uploadDate", "duration", "url"];
+const videosById = new Map();
+for (const { page, value: video } of videoObjects) {
+  for (const field of videoFields) assert(typeof video[field] === "string" && video[field].length > 0, `${page}: VideoObject ${video["@id"] || "sans identifiant"} sans ${field}`);
+  assert(typeof video.embedUrl === "string" || typeof video.contentUrl === "string", `${page}: VideoObject ${video["@id"] || "sans identifiant"} sans embedUrl/contentUrl`);
+  assert(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(video.uploadDate || "") && !Number.isNaN(Date.parse(video.uploadDate)), `${page}: VideoObject ${video["@id"] || "sans identifiant"} avec uploadDate invalide`);
+  assert(/^PT(?:(?:\d+)H)?(?:(?:\d+)M)?(?:(?:\d+)S)?$/.test(video.duration || ""), `${page}: VideoObject ${video["@id"] || "sans identifiant"} avec duration invalide`);
+  const youtubeId = (video.url || video.embedUrl || "").match(/(?:watch\?v=|embed\/)([A-Za-z0-9_-]{11})/)?.[1];
+  assert(Boolean(youtubeId) && read(page).includes(`data-youtube-video="${youtubeId}"`), `${page}: VideoObject sans vidéo visible correspondante`);
+  const existing = videosById.get(video["@id"]);
+  if (existing) {
+    for (const field of [...videoFields, "embedUrl"]) assert(existing[field] === video[field], `${page}: VideoObject ${video["@id"]} contradictoire sur ${field}`);
+  } else if (video["@id"]) videosById.set(video["@id"], video);
+}
+assert(videoObjects.length === 4, `VideoObject: ${videoObjects.length} déclarations au lieu de 4`);
+assert(videosById.size === 3, `VideoObject: ${videosById.size} vidéos uniques au lieu de 3`);
 
 const repositoryHtml = fs.readdirSync(root, { recursive: true })
   .filter((entry) => typeof entry === "string" && entry.endsWith(".html") && !entry.startsWith("node_modules"))
